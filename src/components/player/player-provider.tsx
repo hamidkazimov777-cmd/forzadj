@@ -131,23 +131,26 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Смена трека → новый src.
+  // Смена трека → новый src (только для программных переходов: авто-next
+  // по окончании, MediaSession). Пользовательские действия ставят src и
+  // зовут play() синхронно в обработчике — здесь src уже совпадает и мы
+  // не перезагружаем поток.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !current) return;
-    audio.src = `/api/stream/${current.versionId}`;
-    if (state.status === "playing") {
-      void audio.play().catch(() => {});
+    const wantSrc = `/api/stream/${current.versionId}`;
+    if (!audio.src.endsWith(wantSrc)) {
+      audio.src = wantSrc;
+      if (state.status === "playing") void audio.play().catch(() => {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.versionId]);
 
-  // play/pause.
+  // Синхронизация паузы (play() для user-жестов вызывается в обработчиках).
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !current) return;
-    if (state.status === "playing") void audio.play().catch(() => {});
-    else audio.pause();
+    if (state.status !== "playing") audio.pause();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);
 
@@ -177,18 +180,47 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Синхронный старт воспроизведения в рамках пользовательского жеста —
+  // исключает отклонение autoplay-политикой (play() внутри onClick, не в эффекте).
+  const playSrc = useCallback((versionId: string) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.src = `/api/stream/${versionId}`;
+    void audio.play().catch(() => {});
+  }, []);
+
   const api = useMemo<PlayerApi>(
     () => ({
       ...state,
       current,
-      play: (track, queue) => dispatch({ type: "PLAY", track, queue }),
-      toggle: () => dispatch({ type: "TOGGLE" }),
-      next: () => dispatch({ type: "NEXT" }),
-      prev: () => dispatch({ type: "PREV" }),
+      play: (track, queue) => {
+        playSrc(track.versionId);
+        dispatch({ type: "PLAY", track, queue });
+      },
+      toggle: () => {
+        const audio = audioRef.current;
+        if (audio && current) {
+          if (audio.paused) void audio.play().catch(() => {});
+          else audio.pause();
+        }
+        dispatch({ type: "TOGGLE" });
+      },
+      next: () => {
+        const nextTrack = state.queue[state.currentIndex + 1];
+        if (nextTrack) playSrc(nextTrack.versionId);
+        dispatch({ type: "NEXT" });
+      },
+      prev: () => {
+        // Совпадает с логикой reducer: в начале трека — предыдущий.
+        if (state.positionSec <= 3 && state.currentIndex > 0) {
+          playSrc(state.queue[state.currentIndex - 1].versionId);
+        }
+        dispatch({ type: "PREV" });
+      },
       seek,
       setVolume: (v) => dispatch({ type: "VOLUME", volume: v }),
     }),
-    [state, current, seek],
+    [state, current, seek, playSrc],
   );
 
   return <PlayerContext.Provider value={api}>{children}</PlayerContext.Provider>;
