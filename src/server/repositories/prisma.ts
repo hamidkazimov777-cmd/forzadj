@@ -14,7 +14,18 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 // Модели, участвующие в soft delete. Модель добавляется сюда
 // одновременно с полем deletedAt в схеме.
-const SOFT_DELETE_MODELS = new Set<string>(["User"]);
+const SOFT_DELETE_MODELS = new Set<string>([
+  "User",
+  "Label",
+  "Release",
+  "Artist",
+  "Genre",
+  "Tag",
+  "Track",
+  "TrackVersion",
+  "Asset",
+  "Collection",
+]);
 
 function createBaseClient() {
   const adapter = new PrismaPg({

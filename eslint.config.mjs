@@ -24,7 +24,7 @@ const vendorSupabase = {
 const vendorPrisma = {
   group: ["@prisma/*", "@/generated/prisma*", "**/generated/prisma*", "pg"],
   message:
-    "Прямой доступ к Prisma/БД разрешён только в server/repositories/.",
+    "Прямой доступ к Prisma/БД разрешён только в server/repositories/. Enum'ы доступны через @/types/db.",
 };
 
 const serverFromClient = {
@@ -68,6 +68,13 @@ const eslintConfig = [
   // …и кроме repositories (Prisma разрешён)
   {
     files: ["src/server/repositories/**/*.ts"],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [vendorSupabase] }],
+    },
+  },
+  // …и кроме фасада enum'ов (реэкспорт констант, БД не трогает)
+  {
+    files: ["src/types/db.ts"],
     rules: {
       "no-restricted-imports": ["error", { patterns: [vendorSupabase] }],
     },

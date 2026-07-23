@@ -1,0 +1,92 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { requirePermission } from "@/server/auth/core/session";
+import { contentService } from "@/server/services/content.service";
+import { uploadService, type UploadTicket } from "@/server/services/upload.service";
+import {
+  trackMetadataSchema,
+  versionMetadataSchema,
+  uploadRequestSchema,
+} from "@/lib/validators/content";
+
+/**
+ * Admin Server Actions. Каждый action повторно проверяет права
+ * (defense in depth) и валидирует вход zod'ом.
+ */
+
+export async function requestUploadAction(file: {
+  name: string;
+  mime: string;
+  sizeBytes: number;
+}): Promise<UploadTicket> {
+  const user = await requirePermission("content.manage");
+  const parsed = uploadRequestSchema.parse(file);
+  return uploadService.requestOriginalUpload(user.id, parsed);
+}
+
+export async function finalizeUploadAction(assetId: string): Promise<void> {
+  const user = await requirePermission("content.manage");
+  await uploadService.finalizeOriginalUpload(user.id, assetId);
+  revalidatePath("/admin/tracks");
+}
+
+export async function updateTrackAction(
+  trackId: string,
+  formData: FormData,
+): Promise<void> {
+  const user = await requirePermission("content.manage");
+  // Невалидный вход бросает ZodError → error boundary (админ-бета).
+  const parsed = trackMetadataSchema.parse(
+    Object.fromEntries(formData.entries()),
+  );
+  await contentService.updateTrackMetadata(user.id, trackId, {
+    ...parsed,
+    year: parsed.year ?? null,
+    isrc: parsed.isrc ?? null,
+  });
+  revalidatePath(`/admin/tracks/${trackId}`);
+  revalidatePath("/admin/tracks");
+}
+
+export async function updateVersionAction(
+  versionId: string,
+  trackId: string,
+  formData: FormData,
+): Promise<void> {
+  const user = await requirePermission("content.manage");
+  const parsed = versionMetadataSchema.parse(
+    Object.fromEntries(formData.entries()),
+  );
+  await contentService.updateVersion(user.id, versionId, {
+    type: parsed.type,
+    versionLabel: parsed.versionLabel ?? null,
+    bpm: parsed.bpm ?? null,
+    musicalKey: parsed.musicalKey ?? null,
+    energy: parsed.energy ?? null,
+    introSeconds: parsed.introSeconds ?? null,
+    outroSeconds: parsed.outroSeconds ?? null,
+    isExplicit: parsed.isExplicit,
+  });
+  revalidatePath(`/admin/tracks/${trackId}`);
+}
+
+export async function publishTrackAction(trackId: string): Promise<void> {
+  const user = await requirePermission("content.manage");
+  await contentService.setTrackStatus(user.id, trackId, "PUBLISHED");
+  revalidatePath(`/admin/tracks/${trackId}`);
+  revalidatePath("/admin/tracks");
+}
+
+export async function archiveTrackAction(trackId: string): Promise<void> {
+  const user = await requirePermission("content.manage");
+  await contentService.setTrackStatus(user.id, trackId, "ARCHIVED");
+  revalidatePath(`/admin/tracks/${trackId}`);
+  revalidatePath("/admin/tracks");
+}
+
+export async function deleteTrackAction(trackId: string): Promise<void> {
+  const user = await requirePermission("content.manage");
+  await contentService.deleteTrack(user.id, trackId);
+  revalidatePath("/admin/tracks");
+}

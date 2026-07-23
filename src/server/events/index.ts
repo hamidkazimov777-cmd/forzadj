@@ -8,8 +8,10 @@
  */
 
 export interface DomainEvents {
-  /** Демонстрационное событие; заменяется реальными на Этапе 2. */
-  "system.started": { at: Date };
+  /** Оригинал обработан (успешно или нет) — сигнал для UI/уведомлений. */
+  "asset.processed": { assetId: string; versionId: string; ok: boolean };
+  /** Трек опубликован — инвалидация каталога, чарты (Этап 3+). */
+  "track.published": { trackId: string };
 }
 
 export type DomainEventName = keyof DomainEvents;

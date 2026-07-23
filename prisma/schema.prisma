@@ -1,14 +1,15 @@
 // Схема БД ForzaDJ Pool.
-// Этап 0: минимальный скелет, доказывающий работу soft-delete-механики.
-// Полная модель Identity (Этап 1) и контента Release→Track→Version→Asset (Этап 2)
-// добавляются соответствующими этапами.
 //
 // Соглашения:
 // - id: UUID v7 (сортируемые, безопасны для публичных URL)
 // - все таблицы: createdAt / updatedAt
-// - soft delete: deletedAt / deletedById; частичные уникальные индексы
-//   (WHERE deleted_at IS NULL) добавляются raw-SQL в миграциях,
-//   т.к. Prisma не поддерживает их декларативно.
+// - soft delete (deletedAt/deletedById) — на всех контентных сущностях;
+//   глобальный фильтр в src/server/repositories/prisma.ts
+// - уникальность slug'ов — частичные индексы WHERE deleted_at IS NULL,
+//   добавлены raw-SQL в миграции (Prisma не поддерживает декларативно),
+//   поэтому на этих полях НЕТ @unique
+// - счётчики downloadCount — денормализация; инкремент в транзакции
+//   выдачи скачивания (Этап 4)
 
 generator client {
   provider = "prisma-client"
@@ -18,6 +19,8 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// ─── Identity & Access ─────────────────────────────────────────────────────
 
 enum UserRole {
   DJ
@@ -45,22 +48,20 @@ model User {
   deletedAt   DateTime? @map("deleted_at")
   deletedById String?   @map("deleted_by_id") @db.Uuid
 
-  identities AuthIdentity[]
+  identities  AuthIdentity[]
+  downloads   Download[]
+  favorites   Favorite[]
+  collections Collection[]
 
   @@map("users")
 }
 
-/// Способ входа, отделённый от пользователя. v1: TELEGRAM (через Supabase
-/// Auth с синтетическим email). Новый провайдер = новая запись, users
-/// не меняется — гарантия замены auth-провайдера без миграции.
 model AuthIdentity {
   id             String       @id @default(uuid(7)) @db.Uuid
   userId         String       @map("user_id") @db.Uuid
   user           User         @relation(fields: [userId], references: [id])
   provider       AuthProvider
-  /// telegram: числовой id пользователя Telegram (строкой); email: адрес.
   providerUserId String       @map("provider_user_id")
-  /// Снимок профиля провайдера (username, photo_url и т.п.).
   profile        Json?
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -69,4 +70,431 @@ model AuthIdentity {
   @@unique([provider, providerUserId])
   @@index([userId])
   @@map("auth_identities")
+}
+
+// ─── Контент: Release → Track → TrackVersion → Asset ───────────────────────
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ReleaseType {
+  SINGLE
+  EP
+  ALBUM
+  PACK
+}
+
+model Label {
+  id   String @id @default(uuid(7)) @db.Uuid
+  name String
+  slug String
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+
+  releases Release[]
+
+  @@map("labels")
+}
+
+model Release {
+  id            String        @id @default(uuid(7)) @db.Uuid
+  title         String
+  slug          String
+  type          ReleaseType   @default(SINGLE)
+  status        ContentStatus @default(DRAFT)
+  labelId       String?       @map("label_id") @db.Uuid
+  label         Label?        @relation(fields: [labelId], references: [id])
+  releaseDate   DateTime?     @map("release_date") @db.Date
+  catalogNumber String?       @map("catalog_number")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+
+  tracks Track[]
+  assets Asset[] // обложки (type = ARTWORK)
+
+  @@index([status, releaseDate])
+  @@map("releases")
+}
+
+model Artist {
+  id   String @id @default(uuid(7)) @db.Uuid
+  name String
+  slug String
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+
+  tracks TrackArtist[]
+
+  @@map("artists")
+}
+
+/// Иерархический справочник жанров (House → Tech House).
+model Genre {
+  id       String  @id @default(uuid(7)) @db.Uuid
+  name     String
+  slug     String
+  parentId String? @map("parent_id") @db.Uuid
+  parent   Genre?  @relation("GenreTree", fields: [parentId], references: [id])
+  children Genre[] @relation("GenreTree")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+
+  tracks TrackGenre[]
+
+  @@index([parentId])
+  @@map("genres")
+}
+
+enum TagType {
+  MOOD
+  EVENT
+  ERA
+  CUSTOM
+}
+
+/// Типизированные теги, чтобы фильтры не превратились в свалку.
+model Tag {
+  id   String  @id @default(uuid(7)) @db.Uuid
+  name String
+  slug String
+  type TagType @default(CUSTOM)
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+
+  tracks TrackTag[]
+
+  @@map("tags")
+}
+
+/// Произведение "Artist — Title". Может существовать вне релиза
+/// (releaseId nullable) — пул часто оперирует одиночными эдитами.
+model Track {
+  id         String        @id @default(uuid(7)) @db.Uuid
+  title      String
+  slug       String
+  releaseId  String?       @map("release_id") @db.Uuid
+  release    Release?      @relation(fields: [releaseId], references: [id])
+  status     ContentStatus @default(DRAFT)
+  /// Год оригинального произведения (для old-school эдитов).
+  year       Int?
+  isExplicit Boolean       @default(false) @map("is_explicit")
+  isrc       String?
+  /// Денормализованный счётчик по всем версиям (инкремент — Этап 4).
+  downloadCount Int        @default(0) @map("download_count")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+
+  artists  TrackArtist[]
+  genres   TrackGenre[]
+  tags     TrackTag[]
+  versions TrackVersion[]
+
+  @@index([status])
+  @@index([releaseId])
+  @@map("tracks")
+}
+
+enum ArtistRole {
+  MAIN
+  FEATURED
+  REMIXER
+}
+
+model TrackArtist {
+  trackId  String     @map("track_id") @db.Uuid
+  track    Track      @relation(fields: [trackId], references: [id])
+  artistId String     @map("artist_id") @db.Uuid
+  artist   Artist     @relation(fields: [artistId], references: [id])
+  role     ArtistRole @default(MAIN)
+  position Int        @default(0)
+
+  @@id([trackId, artistId, role])
+  @@index([artistId])
+  @@map("track_artists")
+}
+
+model TrackGenre {
+  trackId String @map("track_id") @db.Uuid
+  track   Track  @relation(fields: [trackId], references: [id])
+  genreId String @map("genre_id") @db.Uuid
+  genre   Genre  @relation(fields: [genreId], references: [id])
+
+  @@id([trackId, genreId])
+  @@index([genreId])
+  @@map("track_genres")
+}
+
+model TrackTag {
+  trackId String @map("track_id") @db.Uuid
+  track   Track  @relation(fields: [trackId], references: [id])
+  tagId   String @map("tag_id") @db.Uuid
+  tag     Tag    @relation(fields: [tagId], references: [id])
+
+  @@id([trackId, tagId])
+  @@index([tagId])
+  @@map("track_tags")
+}
+
+enum VersionType {
+  ORIGINAL
+  CLEAN
+  DIRTY
+  INTRO
+  OUTRO
+  EXTENDED
+  RADIO_EDIT
+  ACAPELLA
+  INSTRUMENTAL
+  REMIX
+}
+
+/// Конкретная версия трека. DJ-метаданные (BPM, key, energy) — здесь,
+/// т.к. Extended и Radio Edit могут отличаться.
+model TrackVersion {
+  id      String      @id @default(uuid(7)) @db.Uuid
+  trackId String      @map("track_id") @db.Uuid
+  track   Track       @relation(fields: [trackId], references: [id])
+  type    VersionType @default(ORIGINAL)
+  /// Свободный суффикс: "VIP Mix", "Festival Edit" и т.п.
+  versionLabel String? @map("version_label")
+  status  ContentStatus @default(DRAFT)
+
+  bpm             Float?
+  /// Camelot-нотация: "8A".."12B". Каноничное хранение; отображение
+  /// (классическая нотация) — забота UI.
+  musicalKey      String?   @map("musical_key") @db.VarChar(3)
+  /// Субъективная энергия 1–10 (проставляет редактор).
+  energy          Int?
+  durationSeconds Int?      @map("duration_seconds")
+  /// Тайминги для сведения: длина intro/outro в секундах.
+  introSeconds    Int?      @map("intro_seconds")
+  outroSeconds    Int?      @map("outro_seconds")
+  isExplicit      Boolean   @default(false) @map("is_explicit")
+  releaseDate     DateTime? @map("release_date") @db.Date
+  downloadCount   Int       @default(0) @map("download_count")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+
+  assets          Asset[]
+  downloads       Download[]
+  favorites       Favorite[]
+  collectionItems CollectionItem[]
+
+  @@index([trackId])
+  @@index([bpm])
+  @@index([musicalKey])
+  @@index([status, releaseDate])
+  @@map("track_versions")
+}
+
+enum AssetType {
+  ORIGINAL
+  PREVIEW
+  WAVEFORM
+  ARTWORK
+}
+
+enum AssetStatus {
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
+}
+
+/// Файл в Storage. Никогда не является источником метаданных —
+/// метаданные живут в Track/TrackVersion; файл заменяем без потери истории.
+model Asset {
+  id        String        @id @default(uuid(7)) @db.Uuid
+  versionId String?       @map("version_id") @db.Uuid
+  version   TrackVersion? @relation(fields: [versionId], references: [id])
+  /// Для обложек релиза (type = ARTWORK).
+  releaseId String?       @map("release_id") @db.Uuid
+  release   Release?      @relation(fields: [releaseId], references: [id])
+  type      AssetType
+  status    AssetStatus   @default(UPLOADED)
+  /// Провайдеро-независимый путь внутри логического бакета
+  /// (бакет детерминирован типом: ORIGINAL→audio, PREVIEW/WAVEFORM→previews,
+  /// ARTWORK→artwork).
+  storageKey     String  @map("storage_key")
+  mime           String?
+  sizeBytes      BigInt? @map("size_bytes")
+  checksumSha256 String? @map("checksum_sha256")
+  /// Текст ошибки обработки при status = FAILED.
+  error          String?
+  createdById    String? @map("created_by_id") @db.Uuid
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+
+  downloads Download[]
+
+  @@index([versionId, type])
+  @@index([releaseId, type])
+  @@index([status])
+  @@map("assets")
+}
+
+// ─── Активность DJ ─────────────────────────────────────────────────────────
+
+/// Лог скачиваний: основа квот, статистики, чартов и антифрода.
+/// Не удаляется (без soft delete) — это журнал.
+model Download {
+  id        String       @id @default(uuid(7)) @db.Uuid
+  userId    String       @map("user_id") @db.Uuid
+  user      User         @relation(fields: [userId], references: [id])
+  versionId String       @map("version_id") @db.Uuid
+  version   TrackVersion @relation(fields: [versionId], references: [id])
+  assetId   String?      @map("asset_id") @db.Uuid
+  asset     Asset?       @relation(fields: [assetId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([versionId, createdAt])
+  @@map("downloads")
+}
+
+/// Избранное. В v1 выполняет и роль лайка (отдельный рейтинг — при
+/// необходимости позже, счётчиком поверх этой таблицы).
+model Favorite {
+  userId    String       @map("user_id") @db.Uuid
+  user      User         @relation(fields: [userId], references: [id])
+  versionId String       @map("version_id") @db.Uuid
+  version   TrackVersion @relation(fields: [versionId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, versionId])
+  @@index([versionId])
+  @@map("favorites")
+}
+
+// ─── Коллекции (единая модель: крейты, подборки, чарты) ────────────────────
+
+enum CollectionType {
+  CRATE // личный крейт DJ
+  EDITORIAL // редакционная подборка
+  CHART // автогенерируемый чарт (autoRule)
+}
+
+enum CollectionVisibility {
+  PRIVATE
+  UNLISTED
+  PUBLIC
+}
+
+enum CollectionSortMode {
+  MANUAL
+  AUTO
+}
+
+model Collection {
+  id         String               @id @default(uuid(7)) @db.Uuid
+  type       CollectionType
+  title      String
+  /// Для публичных коллекций; личные крейты живут без slug.
+  slug       String?
+  ownerId    String?              @map("owner_id") @db.Uuid
+  owner      User?                @relation(fields: [ownerId], references: [id])
+  visibility CollectionVisibility @default(PRIVATE)
+  isSystem   Boolean              @default(false) @map("is_system")
+  sortMode   CollectionSortMode   @default(MANUAL) @map("sort_mode")
+  /// Правило автонаполнения для чартов:
+  /// {"metric":"downloads","periodDays":7,"genreId":"...","limit":50}
+  autoRule   Json?                @map("auto_rule")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+
+  items CollectionItem[]
+
+  @@index([type, visibility])
+  @@index([ownerId])
+  @@map("collections")
+}
+
+model CollectionItem {
+  collectionId String       @map("collection_id") @db.Uuid
+  collection   Collection   @relation(fields: [collectionId], references: [id])
+  versionId    String       @map("version_id") @db.Uuid
+  version      TrackVersion @relation(fields: [versionId], references: [id])
+  position     Int          @default(0)
+  addedById    String?      @map("added_by_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([collectionId, versionId])
+  @@index([collectionId, position])
+  @@map("collection_items")
+}
+
+// ─── Ревизии (история + аудит) ─────────────────────────────────────────────
+
+enum RevisionEntity {
+  RELEASE
+  TRACK
+  TRACK_VERSION
+  ASSET
+  ARTIST
+  GENRE
+  TAG
+  LABEL
+  COLLECTION
+  USER
+}
+
+enum RevisionAction {
+  CREATE
+  UPDATE
+  DELETE
+  RESTORE
+  PUBLISH
+  ARCHIVE
+}
+
+/// История изменений со снапшотами. Поглощает audit log: любые мутации
+/// контента и критичные админ-действия пишутся сюда service-слоем.
+model Revision {
+  id            String         @id @default(uuid(7)) @db.Uuid
+  entityType    RevisionEntity @map("entity_type")
+  entityId      String         @map("entity_id") @db.Uuid
+  action        RevisionAction
+  /// Состояние сущности ДО изменения (null для CREATE).
+  snapshot      Json?
+  changedFields String[]       @map("changed_fields")
+  actorId       String?        @map("actor_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
+  @@map("revisions")
 }

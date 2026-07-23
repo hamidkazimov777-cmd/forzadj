@@ -1,5 +1,7 @@
 import type { JobQueue } from "./jobs.interface";
 import { InlineJobQueue } from "./adapters/inline";
+// Регистрация обработчиков (side effect).
+import "./handlers/asset-process";
 
 export type { JobQueue, JobName, JobPayloads } from "./jobs.interface";
 export { registerJobHandler } from "./registry";

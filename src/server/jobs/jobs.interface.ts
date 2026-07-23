@@ -9,8 +9,11 @@
  */
 
 export interface JobPayloads {
-  /** Демонстрационная задача; заменяется реальными на Этапе 2. */
-  "system.ping": { message: string };
+  /**
+   * Обработка загруженного оригинала: ID3-метаданные, sha256,
+   * превью 128k и waveform peaks (при наличии ffmpeg).
+   */
+  "asset.process": { assetId: string };
 }
 
 export type JobName = keyof JobPayloads;
