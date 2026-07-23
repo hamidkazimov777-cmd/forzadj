@@ -14,6 +14,7 @@ import {
   publishTrackAction,
   archiveTrackAction,
   deleteTrackAction,
+  reprocessVersionAction,
 } from "@/server/actions/content.actions";
 import { VERSION_TYPES, CAMELOT_KEYS } from "@/lib/validators/content";
 
@@ -250,7 +251,14 @@ export default async function TrackEditPage({
             <Separator />
 
             <div className="text-sm">
-              <p className="mb-2 font-medium">Файлы</p>
+              <div className="mb-2 flex items-center gap-3">
+                <p className="font-medium">Файлы</p>
+                <form action={reprocessVersionAction.bind(null, version.id, track.id)}>
+                  <Button type="submit" size="sm" variant="outline">
+                    Переобработать
+                  </Button>
+                </form>
+              </div>
               <ul className="flex flex-col gap-1">
                 {version.assets.map((asset) => (
                   <li key={asset.id} className="flex items-center gap-3">

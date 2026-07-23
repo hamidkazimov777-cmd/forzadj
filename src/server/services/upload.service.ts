@@ -1,7 +1,10 @@
 import { getStorage } from "@/server/storage";
 import { bucketForAssetType } from "@/server/storage/buckets";
 import { getJobQueue } from "@/server/jobs";
-import { trackRepository } from "@/server/repositories/track.repository";
+import {
+  trackRepository,
+  trackVersionRepository,
+} from "@/server/repositories/track.repository";
 import { assetRepository } from "@/server/repositories/asset.repository";
 import { revisionRepository } from "@/server/repositories/revision.repository";
 import { guessFromFilename } from "@/lib/dj-filename";
@@ -114,5 +117,23 @@ export const uploadService = {
     }
     await assetRepository.setStatus(assetId, "PROCESSING");
     await getJobQueue().enqueue("asset.process", { assetId });
+  },
+
+  /** Повторная обработка существующего оригинала (превью/waveform/checksum). */
+  async reprocessVersion(actorId: string, versionId: string) {
+    const version = await trackVersionRepository.findById(versionId);
+    const original = version?.assets.find(
+      (a) => a.type === "ORIGINAL" && a.status !== "PROCESSING",
+    );
+    if (!original) throw new Error("У версии нет оригинала для обработки");
+    await revisionRepository.record({
+      entityType: "TRACK_VERSION",
+      entityId: versionId,
+      action: "UPDATE",
+      changedFields: ["reprocess"],
+      actorId,
+    });
+    await assetRepository.setStatus(original.id, "PROCESSING");
+    await getJobQueue().enqueue("asset.process", { assetId: original.id });
   },
 };

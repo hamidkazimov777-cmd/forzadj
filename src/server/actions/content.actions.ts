@@ -1,9 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requirePermission } from "@/server/auth/core/session";
 import { contentService } from "@/server/services/content.service";
 import { uploadService, type UploadTicket } from "@/server/services/upload.service";
+import { CATALOG_CACHE_TAG } from "@/server/services/search.service";
 import {
   trackMetadataSchema,
   versionMetadataSchema,
@@ -76,6 +77,7 @@ export async function publishTrackAction(trackId: string): Promise<void> {
   await contentService.setTrackStatus(user.id, trackId, "PUBLISHED");
   revalidatePath(`/admin/tracks/${trackId}`);
   revalidatePath("/admin/tracks");
+  revalidateTag(CATALOG_CACHE_TAG);
 }
 
 export async function archiveTrackAction(trackId: string): Promise<void> {
@@ -83,10 +85,25 @@ export async function archiveTrackAction(trackId: string): Promise<void> {
   await contentService.setTrackStatus(user.id, trackId, "ARCHIVED");
   revalidatePath(`/admin/tracks/${trackId}`);
   revalidatePath("/admin/tracks");
+  revalidateTag(CATALOG_CACHE_TAG);
 }
 
 export async function deleteTrackAction(trackId: string): Promise<void> {
   const user = await requirePermission("content.manage");
   await contentService.deleteTrack(user.id, trackId);
   revalidatePath("/admin/tracks");
+  revalidateTag(CATALOG_CACHE_TAG);
+}
+
+/**
+ * Переобработка версии: заново прогоняет asset.process по оригиналу
+ * (после установки ffmpeg сгенерирует превью и waveform без перезагрузки).
+ */
+export async function reprocessVersionAction(
+  versionId: string,
+  trackId: string,
+): Promise<void> {
+  const user = await requirePermission("content.manage");
+  await uploadService.reprocessVersion(user.id, versionId);
+  revalidatePath(`/admin/tracks/${trackId}`);
 }

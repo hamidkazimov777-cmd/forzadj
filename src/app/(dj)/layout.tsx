@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PlayerProvider } from "@/components/player/player-provider";
+import { MiniPlayer } from "@/components/player/mini-player";
 import { requireUser } from "@/server/auth/core/session";
 
 /**
@@ -14,7 +16,8 @@ export default async function DjLayout({
   const user = await requireUser();
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <PlayerProvider>
+      <div className="flex min-h-screen flex-col pb-16">
       <header className="border-b">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-8 px-4">
           <Link href="/pool" className="text-lg font-bold tracking-tight">
@@ -41,8 +44,9 @@ export default async function DjLayout({
           </Link>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">{children}</main>
-      {/* Слот персистентного mini-player — реализация на Этапе 3 */}
-    </div>
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">{children}</main>
+        <MiniPlayer />
+      </div>
+    </PlayerProvider>
   );
 }
