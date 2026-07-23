@@ -1,0 +1,44 @@
+// Схема БД ForzaDJ Pool.
+// Этап 0: минимальный скелет, доказывающий работу soft-delete-механики.
+// Полная модель Identity (Этап 1) и контента Release→Track→Version→Asset (Этап 2)
+// добавляются соответствующими этапами.
+//
+// Соглашения:
+// - id: UUID v7 (сортируемые, безопасны для публичных URL)
+// - все таблицы: createdAt / updatedAt
+// - soft delete: deletedAt / deletedById; частичные уникальные индексы
+//   (WHERE deleted_at IS NULL) добавляются raw-SQL в миграциях,
+//   т.к. Prisma не поддерживает их декларативно.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  DJ
+  UPLOADER
+  ADMIN
+}
+
+model User {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  /// Ссылка на auth.users Supabase Auth (v1). При смене провайдера auth
+  /// связь переезжает в auth_identities без изменения этой таблицы.
+  supabaseUserId String    @unique @map("supabase_user_id") @db.Uuid
+  displayName    String    @map("display_name")
+  avatarUrl      String?   @map("avatar_url")
+  role           UserRole  @default(DJ)
+  bannedAt       DateTime? @map("banned_at")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+
+  @@map("users")
+}
