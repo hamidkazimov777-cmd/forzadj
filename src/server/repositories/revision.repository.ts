@@ -23,7 +23,12 @@ export const revisionRepository = {
         snapshot:
           input.snapshot === undefined
             ? undefined
-            : (JSON.parse(JSON.stringify(input.snapshot)) as Prisma.InputJsonValue),
+            : (JSON.parse(
+                // BigInt (sizeBytes ассетов) не сериализуется штатно.
+                JSON.stringify(input.snapshot, (_k, v) =>
+                  typeof v === "bigint" ? v.toString() : v,
+                ),
+              ) as Prisma.InputJsonValue),
         changedFields: input.changedFields ?? [],
         actorId: input.actorId ?? null,
       },

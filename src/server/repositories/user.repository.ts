@@ -3,6 +3,10 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { AuthProvider } from "@/generated/prisma/enums";
 
 export const userRepository = {
+  setRole(userId: string, role: "DJ" | "UPLOADER" | "ADMIN") {
+    return prisma.user.update({ where: { id: userId }, data: { role } });
+  },
+
   findBySupabaseUserId(supabaseUserId: string) {
     return prisma.user.findFirst({ where: { supabaseUserId } });
   },

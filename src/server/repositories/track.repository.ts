@@ -45,7 +45,8 @@ export const trackRepository = {
         ? { title: { contains: opts.query, mode: "insensitive" as const } }
         : {}),
     };
-    return prisma.$transaction([
+    // Без $transaction — см. комментарий в catalog.repository.
+    return Promise.all([
       prisma.track.count({ where }),
       prisma.track.findMany({
         where,

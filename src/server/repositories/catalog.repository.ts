@@ -127,16 +127,16 @@ export const catalogRepository = {
           ? { title: "asc" }
           : { createdAt: "desc" }; // newest: uuid v7 → createdAt монотонен
 
-    const [total, tracks] = await prisma.$transaction([
-      prisma.track.count({ where }),
-      prisma.track.findMany({
-        where,
-        include: catalogInclude,
-        orderBy,
-        skip: (page - 1) * PAGE_SIZE,
-        take: PAGE_SIZE,
-      }),
-    ]);
+    // Без $transaction: строгая согласованность count/списка не нужна,
+    // а транзакции через pgbouncer дороги (P2028 при исчерпании пула).
+    const total = await prisma.track.count({ where });
+    const tracks = await prisma.track.findMany({
+      where,
+      include: catalogInclude,
+      orderBy,
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    });
 
     return {
       items: tracks.map(toCardDto),
