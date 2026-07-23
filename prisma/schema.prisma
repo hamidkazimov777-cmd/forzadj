@@ -25,6 +25,11 @@ enum UserRole {
   ADMIN
 }
 
+enum AuthProvider {
+  TELEGRAM
+  EMAIL
+}
+
 model User {
   id             String    @id @default(uuid(7)) @db.Uuid
   /// Ссылка на auth.users Supabase Auth (v1). При смене провайдера auth
@@ -40,5 +45,28 @@ model User {
   deletedAt   DateTime? @map("deleted_at")
   deletedById String?   @map("deleted_by_id") @db.Uuid
 
+  identities AuthIdentity[]
+
   @@map("users")
+}
+
+/// Способ входа, отделённый от пользователя. v1: TELEGRAM (через Supabase
+/// Auth с синтетическим email). Новый провайдер = новая запись, users
+/// не меняется — гарантия замены auth-провайдера без миграции.
+model AuthIdentity {
+  id             String       @id @default(uuid(7)) @db.Uuid
+  userId         String       @map("user_id") @db.Uuid
+  user           User         @relation(fields: [userId], references: [id])
+  provider       AuthProvider
+  /// telegram: числовой id пользователя Telegram (строкой); email: адрес.
+  providerUserId String       @map("provider_user_id")
+  /// Снимок профиля провайдера (username, photo_url и т.п.).
+  profile        Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("auth_identities")
 }

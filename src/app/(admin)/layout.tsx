@@ -1,12 +1,16 @@
 import Link from "next/link";
+import { requirePermission } from "@/server/auth/core/session";
 
 /**
  * Админ-зона: контент, пользователи, подписки, коллекции, аналитика.
- * Защита ролью (admin / uploader) добавляется на Этапе 1.
+ * Middleware проверяет сессию; роль проверяется здесь и повторно
+ * в каждом admin Server Action (defense in depth).
  */
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  await requirePermission("admin.access");
+
   return (
     <div className="flex min-h-screen">
       <aside className="w-56 shrink-0 border-r">
