@@ -34,9 +34,7 @@ export default async function DjLayout({
             <span className="cursor-default text-muted-foreground/50" title="Этап 5">
               Избранное
             </span>
-            <span className="cursor-default text-muted-foreground/50" title="Этап 4">
-              Скачивания
-            </span>
+            <Link href="/downloads" className="hover:text-foreground">Скачивания</Link>
           </nav>
           <Link href="/account" className="ml-auto flex items-center gap-2">
             <span className="text-sm text-muted-foreground">

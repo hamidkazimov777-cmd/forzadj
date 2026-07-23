@@ -5,9 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePlayer } from "@/components/player/player-provider";
 import { Waveform } from "@/components/player/waveform";
+import { DownloadButton } from "@/components/tracks/download-button";
 import { classicKeyOf } from "@/lib/camelot";
 import { toPlayerTrack } from "@/lib/player-track";
 import type { TrackCardDto } from "@/types/catalog";
+import type { RequestDownloadFn } from "@/types/download";
 
 function fmt(sec: number | null): string {
   if (sec == null) return "--:--";
@@ -15,7 +17,13 @@ function fmt(sec: number | null): string {
 }
 
 /** Детали трека: большой waveform выбранной версии + таблица версий. */
-export function TrackDetail({ track }: { track: TrackCardDto }) {
+export function TrackDetail({
+  track,
+  requestDownload,
+}: {
+  track: TrackCardDto;
+  requestDownload: RequestDownloadFn;
+}) {
   const player = usePlayer();
   const [selectedId, setSelectedId] = useState(track.versions[0]?.id);
   const selected =
@@ -101,18 +109,25 @@ export function TrackDetail({ track }: { track: TrackCardDto }) {
                 </td>
                 <td className="px-3 py-2 tabular-nums">{fmt(v.durationSeconds)}</td>
                 <td className="px-3 py-2 text-right">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      player.play(toPlayerTrack(track, v));
-                      setSelectedId(v.id);
-                    }}
-                  >
-                    ▶
-                  </Button>
-                  {/* Кнопка скачивания — Этап 4 */}
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        player.play(toPlayerTrack(track, v));
+                        setSelectedId(v.id);
+                      }}
+                    >
+                      ▶
+                    </Button>
+                    <span onClick={(e) => e.stopPropagation()}>
+                      <DownloadButton
+                        versionId={v.id}
+                        requestDownload={requestDownload}
+                      />
+                    </span>
+                  </div>
                 </td>
               </tr>
             ))}

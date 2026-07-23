@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrackDetail } from "@/components/tracks/track-detail";
 import { TrackList } from "@/components/tracks/track-list";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
+import { requestDownloadAction } from "@/server/actions/download.actions";
 import { artistLineOf } from "@/lib/player-track";
 
 export async function generateMetadata({
@@ -48,7 +49,7 @@ export default async function TrackPage({
         </div>
       </div>
 
-      <TrackDetail track={track} />
+      <TrackDetail track={track} requestDownload={requestDownloadAction} />
 
       {related.length > 0 && (
         <div>
@@ -58,7 +59,7 @@ export default async function TrackPage({
               жанр · BPM ±6 · совместимый key
             </span>
           </h2>
-          <TrackList items={related} />
+          <TrackList items={related} requestDownload={requestDownloadAction} />
         </div>
       )}
     </div>

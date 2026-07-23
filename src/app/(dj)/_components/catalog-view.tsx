@@ -4,6 +4,7 @@ import { CatalogFilters } from "@/components/tracks/catalog-filters";
 import { TrackList } from "@/components/tracks/track-list";
 import { searchCatalog } from "@/server/services/search.service";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
+import { requestDownloadAction } from "@/server/actions/download.actions";
 import type { CatalogFilters as Filters } from "@/types/catalog";
 
 /**
@@ -53,7 +54,7 @@ export async function CatalogView({
       <p className="text-sm text-muted-foreground">
         Найдено: {page.total}
       </p>
-      <TrackList items={page.items} />
+      <TrackList items={page.items} requestDownload={requestDownloadAction} />
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-4 py-2 text-sm">

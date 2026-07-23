@@ -205,10 +205,11 @@ model Track {
   deletedAt   DateTime? @map("deleted_at")
   deletedById String?   @map("deleted_by_id") @db.Uuid
 
-  artists  TrackArtist[]
-  genres   TrackGenre[]
-  tags     TrackTag[]
-  versions TrackVersion[]
+  artists   TrackArtist[]
+  genres    TrackGenre[]
+  tags      TrackTag[]
+  versions  TrackVersion[]
+  downloads Download[]
 
   @@index([status])
   @@index([releaseId])
@@ -370,12 +371,17 @@ model Download {
   user      User         @relation(fields: [userId], references: [id])
   versionId String       @map("version_id") @db.Uuid
   version   TrackVersion @relation(fields: [versionId], references: [id])
+  /// Денормализованный трек версии — для лимита «макс N на трек»
+  /// (считается по треку, а не по версии).
+  trackId   String       @map("track_id") @db.Uuid
+  track     Track        @relation(fields: [trackId], references: [id])
   assetId   String?      @map("asset_id") @db.Uuid
   asset     Asset?       @relation(fields: [assetId], references: [id])
 
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId, createdAt])
+  @@index([userId, trackId])
   @@index([versionId, createdAt])
   @@map("downloads")
 }

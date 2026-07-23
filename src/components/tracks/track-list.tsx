@@ -4,12 +4,14 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePlayer } from "@/components/player/player-provider";
+import { DownloadButton } from "@/components/tracks/download-button";
 import {
   artistLineOf,
   defaultVersionOf,
   toPlayerTrack,
 } from "@/lib/player-track";
 import type { TrackCardDto, VersionCardDto } from "@/types/catalog";
+import type { RequestDownloadFn } from "@/types/download";
 
 function fmt(sec: number | null): string {
   if (sec == null) return "--:--";
@@ -20,7 +22,14 @@ function fmt(sec: number | null): string {
  * Список треков каталога. Очередь плеера = текущая выборка:
  * play из строки ставит остальные треки следом.
  */
-export function TrackList({ items }: { items: TrackCardDto[] }) {
+export function TrackList({
+  items,
+  requestDownload,
+}: {
+  items: TrackCardDto[];
+  /** Если передан — в строках показываются кнопки скачивания версий. */
+  requestDownload?: RequestDownloadFn;
+}) {
   const player = usePlayer();
 
   function queueFrom(): ReturnType<typeof toPlayerTrack>[] {
@@ -110,7 +119,14 @@ export function TrackList({ items }: { items: TrackCardDto[] }) {
               {" · "}
               {fmt(def?.durationSeconds ?? null)}
             </div>
-            {/* Место под ♥ (Этап 5) и скачивание (Этап 4) */}
+
+            {requestDownload && def && (
+              <DownloadButton
+                versionId={def.id}
+                requestDownload={requestDownload}
+              />
+            )}
+            {/* Место под ♥ (Этап 5) */}
           </li>
         );
       })}
