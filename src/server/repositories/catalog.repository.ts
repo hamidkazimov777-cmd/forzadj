@@ -155,6 +155,30 @@ export const catalogRepository = {
   },
 
   /**
+   * Треки, содержащие переданные версии (published). Один запрос — без N+1.
+   * Порядок сохраняется по порядку versionIds (для избранного/крейтов).
+   */
+  async findByVersionIds(versionIds: string[]): Promise<TrackCardDto[]> {
+    if (versionIds.length === 0) return [];
+    const tracks = await prisma.track.findMany({
+      where: {
+        status: "PUBLISHED",
+        versions: { some: { id: { in: versionIds }, status: "PUBLISHED" } },
+      },
+      include: catalogInclude,
+    });
+    const dtos = tracks.map(toCardDto);
+    // Индекс трека по первому вхождению его версии в versionIds.
+    const orderOf = (dto: TrackCardDto) =>
+      Math.min(
+        ...dto.versions
+          .map((v) => versionIds.indexOf(v.id))
+          .filter((i) => i >= 0),
+      );
+    return dtos.sort((a, b) => orderOf(a) - orderOf(b));
+  },
+
+  /**
    * Related: общий жанр, BPM в окне ±6 от опорной версии; скоринг
    * по совместимости ключа (Camelot) — на стороне приложения.
    */
@@ -206,6 +230,19 @@ export const catalogRepository = {
     });
     scored.sort((a, b) => b.score - a.score);
     return scored.slice(0, limit).map((s) => s.dto);
+  },
+
+  /** Треки по id с сохранением порядка (для чартов). Один запрос. */
+  async findByTrackIds(trackIds: string[]): Promise<TrackCardDto[]> {
+    if (trackIds.length === 0) return [];
+    const tracks = await prisma.track.findMany({
+      where: { id: { in: trackIds }, status: "PUBLISHED" },
+      include: catalogInclude,
+    });
+    const byId = new Map(tracks.map((t) => [t.id, toCardDto(t)]));
+    return trackIds
+      .map((id) => byId.get(id))
+      .filter((t): t is TrackCardDto => t !== undefined);
   },
 
   listGenresWithCounts() {

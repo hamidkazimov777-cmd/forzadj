@@ -1,10 +1,13 @@
 "use client";
 
+import { useTransition } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePlayer } from "@/components/player/player-provider";
 import { DownloadButton } from "@/components/tracks/download-button";
+import { FavoriteButton } from "@/components/tracks/favorite-button";
+import { AddToCrateButton } from "@/components/tracks/add-to-crate-button";
 import {
   artistLineOf,
   defaultVersionOf,
@@ -12,10 +15,34 @@ import {
 } from "@/lib/player-track";
 import type { TrackCardDto, VersionCardDto } from "@/types/catalog";
 import type { RequestDownloadFn } from "@/types/download";
+import type { ToggleFavoriteFn } from "@/types/favorite";
+import type { CrateSummary, CrateActionFns } from "@/types/collection";
 
 function fmt(sec: number | null): string {
   if (sec == null) return "--:--";
   return `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
+}
+
+function RemoveButton({
+  versionId,
+  onRemove,
+}: {
+  versionId: string;
+  onRemove: (versionId: string) => Promise<{ ok: boolean }>;
+}) {
+  const [pending, startTransition] = useTransition();
+  return (
+    <button
+      type="button"
+      aria-label="Убрать из крейта"
+      title="Убрать из крейта"
+      disabled={pending}
+      onClick={() => startTransition(() => onRemove(versionId).then(() => {}))}
+      className="text-muted-foreground hover:text-destructive disabled:opacity-50"
+    >
+      ✕
+    </button>
+  );
 }
 
 /**
@@ -25,12 +52,26 @@ function fmt(sec: number | null): string {
 export function TrackList({
   items,
   requestDownload,
+  toggleFavorite,
+  favoritedVersionIds,
+  crates,
+  crateActions,
+  removeVersion,
 }: {
   items: TrackCardDto[];
   /** Если передан — в строках показываются кнопки скачивания версий. */
   requestDownload?: RequestDownloadFn;
+  /** Если переданы — показывается сердце избранного. */
+  toggleFavorite?: ToggleFavoriteFn;
+  favoritedVersionIds?: string[];
+  /** Крейты пользователя + actions — для кнопки «в крейт». */
+  crates?: CrateSummary[];
+  crateActions?: CrateActionFns;
+  /** Если передан — показывается кнопка удаления версии (из крейта). */
+  removeVersion?: (versionId: string) => Promise<{ ok: boolean }>;
 }) {
   const player = usePlayer();
+  const favoritedSet = new Set(favoritedVersionIds ?? []);
 
   function queueFrom(): ReturnType<typeof toPlayerTrack>[] {
     return items
@@ -120,13 +161,31 @@ export function TrackList({
               {fmt(def?.durationSeconds ?? null)}
             </div>
 
-            {requestDownload && def && (
-              <DownloadButton
-                versionId={def.id}
-                requestDownload={requestDownload}
-              />
-            )}
-            {/* Место под ♥ (Этап 5) */}
+            <div className="flex shrink-0 items-center gap-2">
+              {toggleFavorite && def && (
+                <FavoriteButton
+                  versionId={def.id}
+                  initialFavorited={favoritedSet.has(def.id)}
+                  toggleFavorite={toggleFavorite}
+                />
+              )}
+              {crates && crateActions && def && (
+                <AddToCrateButton
+                  versionId={def.id}
+                  crates={crates}
+                  actions={crateActions}
+                />
+              )}
+              {requestDownload && def && (
+                <DownloadButton
+                  versionId={def.id}
+                  requestDownload={requestDownload}
+                />
+              )}
+              {removeVersion && def && (
+                <RemoveButton versionId={def.id} onRemove={removeVersion} />
+              )}
+            </div>
           </li>
         );
       })}

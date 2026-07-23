@@ -4,7 +4,15 @@ import { CatalogFilters } from "@/components/tracks/catalog-filters";
 import { TrackList } from "@/components/tracks/track-list";
 import { searchCatalog } from "@/server/services/search.service";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
+import { favoriteRepository } from "@/server/repositories/favorite.repository";
+import { collectionRepository } from "@/server/repositories/collection.repository";
+import { getCurrentUser } from "@/server/auth/core/session";
 import { requestDownloadAction } from "@/server/actions/download.actions";
+import { toggleFavoriteAction } from "@/server/actions/favorite.actions";
+import {
+  createCrateAction,
+  addToCrateAction,
+} from "@/server/actions/collection.actions";
 import type { CatalogFilters as Filters } from "@/types/catalog";
 
 /**
@@ -20,10 +28,20 @@ export async function CatalogView({
   basePath: string;
   showFilters?: boolean;
 }) {
-  const [page, genres] = await Promise.all([
+  const [page, genres, user] = await Promise.all([
     searchCatalog(filters),
     catalogRepository.listGenresWithCounts(),
+    getCurrentUser(),
   ]);
+
+  // Персональные данные (избранное, крейты) — вне кэша каталога, батчем.
+  const visibleVersionIds = page.items.flatMap((t) => t.versions.map((v) => v.id));
+  const [favoritedSet, crates] = user
+    ? await Promise.all([
+        favoriteRepository.getFavoritedVersionIds(user.id, visibleVersionIds),
+        collectionRepository.listCratesForUser(user.id),
+      ])
+    : [new Set<string>(), []];
 
   const totalPages = Math.max(1, Math.ceil(page.total / page.pageSize));
   const pageHref = (p: number) => {
@@ -54,7 +72,18 @@ export async function CatalogView({
       <p className="text-sm text-muted-foreground">
         Найдено: {page.total}
       </p>
-      <TrackList items={page.items} requestDownload={requestDownloadAction} />
+      <TrackList
+        items={page.items}
+        requestDownload={requestDownloadAction}
+        toggleFavorite={toggleFavoriteAction}
+        favoritedVersionIds={[...favoritedSet]}
+        crates={crates.map((c) => ({
+          id: c.id,
+          title: c.title,
+          itemCount: c._count.items,
+        }))}
+        crateActions={{ createCrate: createCrateAction, addToCrate: addToCrateAction }}
+      />
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-4 py-2 text-sm">
