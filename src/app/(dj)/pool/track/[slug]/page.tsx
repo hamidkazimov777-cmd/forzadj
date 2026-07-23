@@ -1,9 +1,21 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { TrackDetail } from "@/components/tracks/track-detail";
 import { TrackList } from "@/components/tracks/track-list";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
 import { artistLineOf } from "@/lib/player-track";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const track = await catalogRepository.findBySlug(slug);
+  if (!track) return { title: "Трек не найден" };
+  return { title: `${artistLineOf(track)} — ${track.title}` };
+}
 
 export default async function TrackPage({
   params,

@@ -20,8 +20,11 @@ const CAMELOT = Array.from({ length: 12 }, (_, i) => i + 1).flatMap((n) => [
 
 export function CatalogFilters({
   genres,
+  defaultSort = "newest",
 }: {
   genres: Array<{ slug: string; name: string; count: number }>;
+  /** Эффективная сортировка страницы (пресет /charts, /new), если в URL не задана. */
+  defaultSort?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -145,7 +148,7 @@ export function CatalogFilters({
 
       <select
         className={`${selectCls} ml-auto`}
-        value={params.get("sort") ?? "newest"}
+        value={params.get("sort") ?? defaultSort}
         onChange={(e) => setParam("sort", e.target.value)}
       >
         <option value="newest">Сначала новые</option>

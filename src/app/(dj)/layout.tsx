@@ -27,9 +27,16 @@ export default async function DjLayout({
             <Link href="/pool" className="hover:text-foreground">Каталог</Link>
             <Link href="/new" className="hover:text-foreground">Новинки</Link>
             <Link href="/charts" className="hover:text-foreground">Чарты</Link>
-            <Link href="/collections" className="hover:text-foreground">Крейты</Link>
-            <Link href="/favorites" className="hover:text-foreground">Избранное</Link>
-            <Link href="/downloads" className="hover:text-foreground">Скачивания</Link>
+            {/* Разделы будущих этапов: помечены «скоро», ещё не кликабельны */}
+            <span className="cursor-default text-muted-foreground/50" title="Этап 5">
+              Крейты
+            </span>
+            <span className="cursor-default text-muted-foreground/50" title="Этап 5">
+              Избранное
+            </span>
+            <span className="cursor-default text-muted-foreground/50" title="Этап 4">
+              Скачивания
+            </span>
           </nav>
           <Link href="/account" className="ml-auto flex items-center gap-2">
             <span className="text-sm text-muted-foreground">

@@ -45,6 +45,7 @@ export async function CatalogView({
               name: g.name,
               count: g._count.tracks,
             }))}
+            defaultSort={filters.sort ?? "newest"}
           />
         </Suspense>
       )}
