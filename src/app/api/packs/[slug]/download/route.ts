@@ -1,9 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { Readable } from "node:stream";
-import type { Archiver } from "archiver";
-// Рантайм archiver — CJS-функция-фабрика; @types не объявляют default-экспорт.
-// @ts-expect-error CommonJS default interop
-import archiver from "archiver";
+import { createRequire } from "node:module";
+import type { Archiver, ArchiverOptions } from "archiver";
 import { getCurrentUser } from "@/server/auth/core/session";
 import { can } from "@/server/auth/core/permissions";
 import { packDownloadService } from "@/server/services/pack-download.service";
@@ -15,6 +13,13 @@ import { slugify } from "@/lib/slug";
 // ZIP-стриминг тяжёлый — Node runtime (не edge).
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// archiver — CJS-функция-фабрика; берём реальный экспорт минуя ESM-интероп.
+const require = createRequire(import.meta.url);
+const archiver = require("archiver") as (
+  format: string,
+  options?: ArchiverOptions,
+) => Archiver;
 
 /**
  * ZIP-скачивание редакционного пака. Каждый включённый трек уже списан

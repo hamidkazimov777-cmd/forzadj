@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlayerProvider } from "@/components/player/player-provider";
 import { MiniPlayer } from "@/components/player/mini-player";
+import { DjNavDesktop, DjNavMobile } from "@/components/layout/dj-nav";
 import { requireUser } from "@/server/auth/core/session";
 
 /**
@@ -19,21 +20,14 @@ export default async function DjLayout({
     <PlayerProvider>
       <div className="flex min-h-screen flex-col pb-16">
       <header className="border-b">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-8 px-4">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 md:gap-8">
+          <DjNavMobile />
           <Link href="/pool" className="text-lg font-bold tracking-tight">
             ForzaDJ Pool
           </Link>
-          <nav className="flex items-center gap-6 text-sm text-muted-foreground">
-            <Link href="/pool" className="hover:text-foreground">Каталог</Link>
-            <Link href="/new" className="hover:text-foreground">Новинки</Link>
-            <Link href="/charts" className="hover:text-foreground">Чарты</Link>
-            <Link href="/packs" className="hover:text-foreground">Паки</Link>
-            <Link href="/collections" className="hover:text-foreground">Крейты</Link>
-            <Link href="/favorites" className="hover:text-foreground">Избранное</Link>
-            <Link href="/downloads" className="hover:text-foreground">Скачивания</Link>
-          </nav>
+          <DjNavDesktop />
           <Link href="/account" className="ml-auto flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
+            <span className="hidden text-sm text-muted-foreground sm:inline">
               {user.displayName}
             </span>
             <Avatar className="size-8">
