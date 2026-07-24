@@ -130,6 +130,15 @@ export const trackVersionRepository = {
     });
   },
 
+  /** Батч-выборка версий по id (для паков) — один запрос вместо N. */
+  findManyByIds(ids: string[]) {
+    if (ids.length === 0) return Promise.resolve([]);
+    return prisma.trackVersion.findMany({
+      where: { id: { in: ids } },
+      include: { track: true, assets: { where: { deletedAt: null } } },
+    });
+  },
+
   create(input: { trackId: string; type: VersionType; versionLabel?: string }) {
     return prisma.trackVersion.create({ data: input });
   },

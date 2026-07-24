@@ -43,9 +43,15 @@ async function resolvePackItems(packSlug: string): Promise<{
   const pack = await collectionRepository.findPublishedPackBySlug(packSlug);
   if (!pack) return null;
 
+  // Батч-выборка всех версий пака одним запросом (без N+1).
+  const orderedIds = pack.items.map((i) => i.versionId);
+  const versions = await trackVersionRepository.findManyByIds(orderedIds);
+  const byId = new Map(versions.map((v) => [v.id, v]));
+
   const items: ResolvedItem[] = [];
-  for (const it of pack.items) {
-    const version = await trackVersionRepository.findById(it.versionId);
+  // Сохраняем порядок пака (позиции items).
+  for (const vId of orderedIds) {
+    const version = byId.get(vId);
     if (!version) continue;
     const published =
       version.status === "PUBLISHED" && version.track.status === "PUBLISHED";
@@ -74,14 +80,25 @@ export const packDownloadService = {
 
     const dailyLimit = downloadLimits.dailyPerUser;
     const since = new Date(Date.now() - downloadLimits.dailyWindowMs);
-    const usedToday = await downloadRepository.countUserSince(userId, since);
+
+    // Параллельно: суточный счётчик + групповой счётчик по трекам пака.
+    const trackIds = resolved.items.map((i) => i.trackId);
+    const [usedToday, perTrackCounts] = await Promise.all([
+      downloadRepository.countUserSince(userId, since),
+      downloadRepository.countUserTracksGrouped(userId, trackIds),
+    ]);
     const remaining = Math.max(0, dailyLimit - usedToday);
 
-    // Сколько версий пользователь ещё может скачать (не достиг per-track cap).
+    // Версии, не достигшие per-track cap (учёт возможных дублей трека в паке).
+    const seenTrack = new Map<string, number>();
     let eligible = 0;
     for (const it of resolved.items) {
-      const perTrack = await downloadRepository.countUserTrack(userId, it.trackId);
-      if (perTrack < downloadLimits.maxPerTrack) eligible += 1;
+      const already =
+        (perTrackCounts.get(it.trackId) ?? 0) + (seenTrack.get(it.trackId) ?? 0);
+      if (already < downloadLimits.maxPerTrack) {
+        eligible += 1;
+        seenTrack.set(it.trackId, (seenTrack.get(it.trackId) ?? 0) + 1);
+      }
     }
 
     return {

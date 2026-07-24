@@ -224,18 +224,6 @@ export const collectionRepository = {
     });
   },
 
-  /** Полная переустановка порядка треков (drag-sort в админке). */
-  async reorderItems(collectionId: string, orderedVersionIds: string[]) {
-    await prisma.$transaction(
-      orderedVersionIds.map((versionId, position) =>
-        prisma.collectionItem.updateMany({
-          where: { collectionId, versionId },
-          data: { position },
-        }),
-      ),
-    );
-  },
-
   async softDeletePack(packId: string, actorId: string) {
     const res = await prisma.collection.updateMany({
       where: { id: packId, type: "EDITORIAL" },

@@ -16,12 +16,21 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(appUrl),
   title: {
     default: "ForzaDJ Pool",
     template: "%s — ForzaDJ Pool",
   },
-  description: "Коммерческий DJ Pool: эксклюзивные версии треков для диджеев",
+  description: "Бесплатный DJ Pool на донатах: эксклюзивные версии треков для диджеев",
+  openGraph: {
+    siteName: "ForzaDJ Pool",
+    type: "website",
+    locale: "ru_RU",
+  },
+  twitter: { card: "summary" },
 };
 
 export default function RootLayout({

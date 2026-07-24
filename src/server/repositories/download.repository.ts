@@ -12,9 +12,21 @@ export const downloadRepository = {
     });
   },
 
-  /** Сколько раз пользователь скачивал конкретный трек (за всё время). */
-  countUserTrack(userId: string, trackId: string) {
-    return prisma.download.count({ where: { userId, trackId } });
+  /**
+   * Батч: число скачиваний пользователя по набору треков (для пака).
+   * Один groupBy вместо N отдельных count — исключает N+1.
+   */
+  async countUserTracksGrouped(
+    userId: string,
+    trackIds: string[],
+  ): Promise<Map<string, number>> {
+    if (trackIds.length === 0) return new Map();
+    const rows = await prisma.download.groupBy({
+      by: ["trackId"],
+      where: { userId, trackId: { in: trackIds } },
+      _count: { trackId: true },
+    });
+    return new Map(rows.map((r) => [r.trackId, r._count.trackId]));
   },
 
   listForUser(userId: string, opts?: { skip?: number; take?: number }) {
