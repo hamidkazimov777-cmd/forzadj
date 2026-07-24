@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { Readable } from "node:stream";
-import { createRequire } from "node:module";
-import type { Archiver, ArchiverOptions } from "archiver";
+import { ZipArchive } from "archiver";
 import { getCurrentUser } from "@/server/auth/core/session";
 import { can } from "@/server/auth/core/permissions";
 import { packDownloadService } from "@/server/services/pack-download.service";
@@ -11,15 +10,9 @@ import { downloadRateLimit } from "@/lib/config/limits";
 import { slugify } from "@/lib/slug";
 
 // ZIP-стриминг тяжёлый — Node runtime (не edge).
+// archiver 8.x — ESM с именованными классами (ZipArchive), фабрики нет.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-// archiver — CJS-функция-фабрика; берём реальный экспорт минуя ESM-интероп.
-const require = createRequire(import.meta.url);
-const archiver = require("archiver") as (
-  format: string,
-  options?: ArchiverOptions,
-) => Archiver;
 
 /**
  * ZIP-скачивание редакционного пака. Каждый включённый трек уже списан
@@ -57,7 +50,7 @@ export async function GET(
 
   const storage = getStorage();
   // аудио уже сжато → level 0 (store)
-  const archive: Archiver = archiver("zip", { zlib: { level: 0 } });
+  const archive = new ZipArchive({ zlib: { level: 0 } });
 
   // Наполняем архив асинхронно; ошибки логируем.
   (async () => {
