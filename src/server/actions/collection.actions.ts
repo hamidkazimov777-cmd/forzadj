@@ -65,3 +65,19 @@ export async function removeFromCrateAction(
   revalidatePath(`/collections/${crateId}`);
   return { ok: true };
 }
+
+/** Публичный / приватный. Slug у крейта есть всегда (генерируется при создании). */
+export async function setCrateVisibilityAction(
+  crateId: string,
+  isPublic: boolean,
+): Promise<CrateMutationResult & { slug?: string }> {
+  const user = await requireUser();
+  const ok = await collectionRepository.setVisibility(
+    user.id,
+    crateId,
+    isPublic ? "PUBLIC" : "PRIVATE",
+  );
+  revalidatePath(`/collections/${crateId}`);
+  const crate = await collectionRepository.findOwnedById(user.id, crateId);
+  return { ok, slug: crate?.slug ?? undefined };
+}

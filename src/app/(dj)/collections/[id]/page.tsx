@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TrackList } from "@/components/tracks/track-list";
 import { CrateActions } from "@/components/tracks/crate-manager";
+import { CrateShareControls } from "@/components/tracks/crate-share";
 import { requireUser } from "@/server/auth/core/session";
 import { collectionRepository } from "@/server/repositories/collection.repository";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
@@ -12,6 +13,7 @@ import {
   renameCrateAction,
   deleteCrateAction,
   removeFromCrateAction,
+  setCrateVisibilityAction,
 } from "@/server/actions/collection.actions";
 
 export default async function CrateDetailPage({
@@ -34,7 +36,7 @@ export default async function CrateDetailPage({
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
             href="/collections"
@@ -51,6 +53,15 @@ export default async function CrateDetailPage({
           rename={renameCrateAction}
           remove={deleteCrateAction}
           redirectAfterDelete
+        />
+      </div>
+
+      <div className="mt-3">
+        <CrateShareControls
+          crateId={crate.id}
+          slug={crate.slug ?? ""}
+          initialPublic={crate.visibility === "PUBLIC"}
+          setVisibility={setCrateVisibilityAction}
         />
       </div>
 

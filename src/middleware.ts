@@ -12,6 +12,8 @@ const PROTECTED_PREFIXES = [
   "/new",
   "/charts",
   "/collections",
+  "/c",
+  "/packs",
   "/favorites",
   "/downloads",
   "/account",
