@@ -95,4 +95,59 @@ export const collectionRepository = {
       where: { collectionId: crateId, versionId },
     });
   },
+
+  // ─── Видимость / публичный доступ ──────────────────────────────────────
+  async setVisibility(
+    userId: string,
+    crateId: string,
+    visibility: "PRIVATE" | "UNLISTED" | "PUBLIC",
+  ) {
+    const res = await prisma.collection.updateMany({
+      where: { id: crateId, ownerId: userId, type: "CRATE" },
+      data: { visibility },
+    });
+    return res.count > 0;
+  },
+
+  /** Публичный/unlisted крейт по slug — для страницы шаринга (любой зритель). */
+  findPublicBySlug(slug: string) {
+    return prisma.collection.findFirst({
+      where: {
+        slug,
+        type: "CRATE",
+        visibility: { in: ["PUBLIC", "UNLISTED"] },
+      },
+      include: {
+        owner: { select: { displayName: true } },
+        items: {
+          orderBy: { position: "asc" },
+          select: { versionId: true },
+        },
+        _count: { select: { followers: true } },
+      },
+    });
+  },
+
+  // ─── Подписки (schema-ready, без UI на этом этапе) ─────────────────────
+  followRepository: {
+    follow(userId: string, collectionId: string) {
+      return prisma.collectionFollow.upsert({
+        where: { userId_collectionId: { userId, collectionId } },
+        create: { userId, collectionId },
+        update: {},
+      });
+    },
+    unfollow(userId: string, collectionId: string) {
+      return prismaBase.collectionFollow.deleteMany({
+        where: { userId, collectionId },
+      });
+    },
+    isFollowing(userId: string, collectionId: string) {
+      return prisma.collectionFollow
+        .findUnique({
+          where: { userId_collectionId: { userId, collectionId } },
+        })
+        .then((r) => r !== null);
+    },
+  },
 };

@@ -52,6 +52,7 @@ model User {
   downloads   Download[]
   favorites   Favorite[]
   collections Collection[]
+  follows     CollectionFollow[]
 
   @@map("users")
 }
@@ -435,16 +436,37 @@ model Collection {
   /// {"metric":"downloads","periodDays":7,"genreId":"...","limit":50}
   autoRule   Json?                @map("auto_rule")
 
+  /// Обложка редакционного пака (Storage key в бакете artwork). Опционально.
+  coverKey    String?   @map("cover_key")
+  /// Краткое описание (для витрины паков).
+  description String?
+
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
   deletedById String?   @map("deleted_by_id") @db.Uuid
 
-  items CollectionItem[]
+  items     CollectionItem[]
+  followers CollectionFollow[]
 
   @@index([type, visibility])
   @@index([ownerId])
   @@map("collections")
+}
+
+/// Подписки на публичные коллекции (крейты/паки). Фундамент для будущей
+/// ленты подписок; на этом этапе — schema-ready, репозиторий без UI.
+model CollectionFollow {
+  userId       String     @map("user_id") @db.Uuid
+  user         User       @relation(fields: [userId], references: [id])
+  collectionId String     @map("collection_id") @db.Uuid
+  collection   Collection @relation(fields: [collectionId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, collectionId])
+  @@index([collectionId])
+  @@map("collection_follows")
 }
 
 model CollectionItem {
