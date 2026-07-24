@@ -245,6 +245,52 @@ export const catalogRepository = {
       .filter((t): t is TrackCardDto => t !== undefined);
   },
 
+  /** Поиск опубликованных версий для пикера (админка паков). */
+  async searchVersionsForPicker(query: string, limit = 20) {
+    const versions = await prisma.trackVersion.findMany({
+      where: {
+        status: "PUBLISHED",
+        track: {
+          status: "PUBLISHED",
+          ...(query
+            ? {
+                OR: [
+                  { title: { contains: query, mode: "insensitive" } },
+                  {
+                    artists: {
+                      some: {
+                        artist: { name: { contains: query, mode: "insensitive" } },
+                      },
+                    },
+                  },
+                ],
+              }
+            : {}),
+        },
+      },
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        type: true,
+        versionLabel: true,
+        track: {
+          select: {
+            title: true,
+            artists: {
+              where: { role: "MAIN" },
+              include: { artist: { select: { name: true } } },
+            },
+          },
+        },
+      },
+    });
+    return versions.map((v) => ({
+      versionId: v.id,
+      label: `${v.track.artists.map((a) => a.artist.name).join(", ") || "Unknown"} — ${v.track.title} (${v.type}${v.versionLabel ? ` ${v.versionLabel}` : ""})`,
+    }));
+  },
+
   listGenresWithCounts() {
     return prisma.genre.findMany({
       orderBy: { name: "asc" },

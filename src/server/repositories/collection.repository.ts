@@ -128,6 +128,122 @@ export const collectionRepository = {
     });
   },
 
+  // ─── Редакционные паки (EDITORIAL) ─────────────────────────────────────
+  createPack(input: {
+    title: string;
+    slug: string;
+    description?: string;
+    ownerId: string;
+  }) {
+    return prisma.collection.create({
+      data: {
+        type: "EDITORIAL",
+        title: input.title.trim(),
+        slug: input.slug,
+        description: input.description?.trim() || null,
+        ownerId: input.ownerId,
+        visibility: "PRIVATE", // публикуется отдельным действием
+      },
+      select: { id: true, slug: true },
+    });
+  },
+
+  /** Все паки для админки (любой видимости), с числом треков. */
+  listAllPacks() {
+    return prisma.collection.findMany({
+      where: { type: "EDITORIAL" },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        visibility: true,
+        description: true,
+        coverKey: true,
+        _count: { select: { items: true } },
+      },
+    });
+  },
+
+  /** Опубликованные паки для витрины /packs. */
+  listPublishedPacks() {
+    return prisma.collection.findMany({
+      where: { type: "EDITORIAL", visibility: "PUBLIC" },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        description: true,
+        coverKey: true,
+        _count: { select: { items: true } },
+      },
+    });
+  },
+
+  /** Пак по id (админка) с треками. */
+  findPackById(packId: string) {
+    return prisma.collection.findFirst({
+      where: { id: packId, type: "EDITORIAL" },
+      include: {
+        items: {
+          orderBy: { position: "asc" },
+          select: { versionId: true, position: true },
+        },
+      },
+    });
+  },
+
+  /** Опубликованный пак по slug (витрина). */
+  findPublishedPackBySlug(slug: string) {
+    return prisma.collection.findFirst({
+      where: { slug, type: "EDITORIAL", visibility: "PUBLIC" },
+      include: {
+        items: {
+          orderBy: { position: "asc" },
+          select: { versionId: true },
+        },
+      },
+    });
+  },
+
+  updatePackMeta(
+    packId: string,
+    data: { title?: string; description?: string | null; coverKey?: string | null },
+  ) {
+    return prisma.collection.updateMany({
+      where: { id: packId, type: "EDITORIAL" },
+      data,
+    });
+  },
+
+  setPackVisibility(packId: string, visibility: "PRIVATE" | "PUBLIC") {
+    return prisma.collection.updateMany({
+      where: { id: packId, type: "EDITORIAL" },
+      data: { visibility },
+    });
+  },
+
+  /** Полная переустановка порядка треков (drag-sort в админке). */
+  async reorderItems(collectionId: string, orderedVersionIds: string[]) {
+    await prisma.$transaction(
+      orderedVersionIds.map((versionId, position) =>
+        prisma.collectionItem.updateMany({
+          where: { collectionId, versionId },
+          data: { position },
+        }),
+      ),
+    );
+  },
+
+  async softDeletePack(packId: string, actorId: string) {
+    const res = await prisma.collection.updateMany({
+      where: { id: packId, type: "EDITORIAL" },
+      data: { deletedAt: new Date(), deletedById: actorId },
+    });
+    return res.count > 0;
+  },
+
   // ─── Подписки (schema-ready, без UI на этом этапе) ─────────────────────
   followRepository: {
     follow(userId: string, collectionId: string) {
