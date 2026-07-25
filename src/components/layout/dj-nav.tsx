@@ -28,12 +28,20 @@ function useIsActive() {
     pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/**
+ * Ссылки навигации. Studio добавляется ТОЛЬКО для персонала (showStudio) —
+ * обычные пользователи вообще не видят пункт и не знают о зоне.
+ */
+function linksFor(showStudio: boolean) {
+  return showStudio ? [...LINKS, { href: "/studio", label: "Studio" }] : LINKS;
+}
+
 /** Десктоп: горизонтальные ссылки (скрыты на мобайле). */
-export function DjNavDesktop() {
+export function DjNavDesktop({ showStudio = false }: { showStudio?: boolean }) {
   const isActive = useIsActive();
   return (
     <nav className="hidden items-center gap-5 text-sm text-muted-foreground md:flex">
-      {LINKS.map((l) => (
+      {linksFor(showStudio).map((l) => (
         <Link
           key={l.href}
           href={l.href}
@@ -50,7 +58,7 @@ export function DjNavDesktop() {
 }
 
 /** Мобайл: бургер + выезжающее меню (скрыт на десктопе). */
-export function DjNavMobile() {
+export function DjNavMobile({ showStudio = false }: { showStudio?: boolean }) {
   const isActive = useIsActive();
   const [open, setOpen] = useState(false);
   return (
@@ -70,7 +78,7 @@ export function DjNavMobile() {
           <SheetTitle>ForzaDJ Pool</SheetTitle>
         </SheetHeader>
         <nav className="mt-4 flex flex-col gap-1">
-          {LINKS.map((l) => (
+          {linksFor(showStudio).map((l) => (
             <Link
               key={l.href}
               href={l.href}

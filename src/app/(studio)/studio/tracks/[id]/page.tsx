@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { requirePermission } from "@/server/auth/core/session";
+import { requireStudioPermission } from "@/server/auth/core/session";
 import { trackRepository } from "@/server/repositories/track.repository";
 import { revisionRepository } from "@/server/repositories/revision.repository";
 import {
@@ -38,7 +38,7 @@ export default async function TrackEditPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requirePermission("content.manage");
+  await requireStudioPermission("content.manage");
   const { id } = await params;
 
   const track = await trackRepository.findById(id);

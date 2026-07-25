@@ -21,7 +21,7 @@ export function CreatePackForm({
     startTransition(async () => {
       const pack = await createPack(formData);
       toast.success("Пак создан");
-      router.push(`/admin/collections/${pack.id}`);
+      router.push(`/studio/collections/${pack.id}`);
     });
   }
 
@@ -112,7 +112,7 @@ export function PackPublishControls({
           startTransition(async () => {
             await remove(packId);
             toast.success("Пак удалён");
-            router.push("/admin/collections");
+            router.push("/studio/collections");
           });
         }}
       >

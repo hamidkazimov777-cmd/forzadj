@@ -1,14 +1,14 @@
-import { TrackUploader } from "@/components/admin/track-uploader";
+import { TrackUploader } from "@/components/studio/track-uploader";
 import {
   requestUploadAction,
   finalizeUploadAction,
 } from "@/server/actions/content.actions";
-import { requirePermission } from "@/server/auth/core/session";
+import { requireStudioPermission } from "@/server/auth/core/session";
 
 export const metadata = { title: "Загрузка треков" };
 
 export default async function UploadPage() {
-  await requirePermission("content.manage");
+  await requireStudioPermission("content.manage");
 
   return (
     <div className="mx-auto max-w-3xl">

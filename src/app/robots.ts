@@ -16,7 +16,7 @@ export default function robots(): MetadataRoute.Robots {
       // Приватный контент за авторизацией — закрыт.
       disallow: [
         "/api/",
-        "/admin/",
+        "/studio/",
         "/account",
         "/downloads",
         "/favorites",

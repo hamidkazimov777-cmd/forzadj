@@ -24,8 +24,9 @@ datasource db {
 
 enum UserRole {
   DJ
-  UPLOADER
+  UPLOADER // легаси (контент-менеджер); в новой модели не назначается
   ADMIN
+  SUPER_ADMIN // владелец проекта: полный доступ, управление ролями/настройками
 }
 
 enum AuthProvider {
@@ -42,6 +43,8 @@ model User {
   avatarUrl      String?   @map("avatar_url")
   role           UserRole  @default(DJ)
   bannedAt       DateTime? @map("banned_at")
+  /// Время последнего успешного входа (обновляется при Telegram-логине).
+  lastLoginAt    DateTime? @map("last_login_at")
 
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")

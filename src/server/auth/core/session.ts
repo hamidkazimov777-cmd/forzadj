@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import {
   createSupabaseServerClient,
   isSupabaseConfigured,
@@ -48,5 +48,18 @@ export async function requirePermission(
 ): Promise<SessionUser> {
   const user = await requireUser();
   if (!can(user, permission)) redirect("/pool");
+  return user;
+}
+
+/**
+ * Guard для Studio: при отсутствии права отдаёт 404 — обычные пользователи
+ * не должны даже знать о существовании зоны. Гость (без сессии) тоже → 404,
+ * а не редирект на логин (не раскрываем наличие Studio).
+ */
+export async function requireStudioPermission(
+  permission: Permission,
+): Promise<SessionUser> {
+  const user = await getCurrentUser();
+  if (!user || !can(user, permission)) notFound();
   return user;
 }

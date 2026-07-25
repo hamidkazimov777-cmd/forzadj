@@ -11,6 +11,7 @@ const ROLE_LABELS: Record<string, string> = {
   DJ: "DJ",
   UPLOADER: "Контент-менеджер",
   ADMIN: "Администратор",
+  SUPER_ADMIN: "Владелец",
 };
 
 export default async function AccountPage() {

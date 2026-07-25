@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { CreatePackForm } from "@/components/admin/pack-forms";
-import { requirePermission } from "@/server/auth/core/session";
+import { CreatePackForm } from "@/components/studio/pack-forms";
+import { requireStudioPermission } from "@/server/auth/core/session";
 import { collectionRepository } from "@/server/repositories/collection.repository";
 import { createPackAction } from "@/server/actions/pack.actions";
 
 export const metadata = { title: "Редакционные паки" };
 
 export default async function AdminCollectionsPage() {
-  await requirePermission("collections.manage");
+  await requireStudioPermission("collections.manage");
   const packs = await collectionRepository.listAllPacks();
 
   return (
@@ -32,7 +32,7 @@ export default async function AdminCollectionsPage() {
           <Card key={p.id} className="flex flex-col gap-2 p-4">
             <div className="flex items-center gap-2">
               <Link
-                href={`/admin/collections/${p.id}`}
+                href={`/studio/collections/${p.id}`}
                 className="text-lg font-medium hover:underline"
               >
                 {p.title}

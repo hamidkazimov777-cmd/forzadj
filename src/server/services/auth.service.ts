@@ -8,6 +8,7 @@ import {
   telegramSyntheticEmail,
 } from "@/server/auth/providers/supabase-admin-auth";
 import { userRepository } from "@/server/repositories/user.repository";
+import { isOwnerTelegramId } from "@/lib/config/owner";
 
 /**
  * Оркестрация входа через Telegram:
@@ -48,6 +49,9 @@ export async function loginWithTelegram(
     telegram_id: profile.id,
   });
 
+  // Владелец проекта (по Telegram ID из ENV) → SUPER_ADMIN; остальные → DJ.
+  const isOwner = isOwnerTelegramId(profile.id);
+
   const existing = await userRepository.findByIdentity("TELEGRAM", profile.id);
   const isNew = !existing;
 
@@ -61,12 +65,18 @@ export async function loginWithTelegram(
       avatarUrl: profile.photo_url ?? null,
       profile: profileSnapshot,
     });
+    // Восстанавливаем роль владельца, если она была понижена/иная.
+    if (isOwner && existing.role !== "SUPER_ADMIN") {
+      await userRepository.setRole(existing.id, "SUPER_ADMIN");
+    }
+    await userRepository.touchLastLogin(existing.id);
   } else {
-    // Первый вход: автоматическая регистрация пользователя (роль DJ по умолчанию).
+    // Первый вход: автоматическая регистрация (владелец → SUPER_ADMIN, иначе DJ).
     await userRepository.createWithIdentity({
       supabaseUserId,
       displayName: displayNameOf(profile),
       avatarUrl: profile.photo_url ?? null,
+      role: isOwner ? "SUPER_ADMIN" : "DJ",
       provider: "TELEGRAM",
       providerUserId: profile.id,
       profile: profileSnapshot,

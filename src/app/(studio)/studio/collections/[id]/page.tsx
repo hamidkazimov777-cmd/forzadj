@@ -8,9 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   PackPublishControls,
   RemovePackTrackButton,
-} from "@/components/admin/pack-forms";
-import { PackTrackPicker } from "@/components/admin/pack-track-picker";
-import { requirePermission } from "@/server/auth/core/session";
+} from "@/components/studio/pack-forms";
+import { PackTrackPicker } from "@/components/studio/pack-track-picker";
+import { requireStudioPermission } from "@/server/auth/core/session";
 import { collectionRepository } from "@/server/repositories/collection.repository";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
 import { artistLineOf } from "@/lib/player-track";
@@ -30,7 +30,7 @@ export default async function PackEditPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requirePermission("collections.manage");
+  await requireStudioPermission("collections.manage");
   const { id } = await params;
 
   const pack = await collectionRepository.findPackById(id);
@@ -47,7 +47,7 @@ export default async function PackEditPage({
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div>
         <Link
-          href="/admin/collections"
+          href="/studio/collections"
           className="text-sm text-muted-foreground hover:underline"
         >
           ← Паки

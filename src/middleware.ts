@@ -2,14 +2,15 @@ import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/server/auth/providers/supabase-middleware";
 
 /**
- * Первая линия защиты: наличие сессии для зон (dj) и (admin).
- * Проверка ролей — НЕ здесь: она выполняется в server-guards
- * (requirePermission) в layouts и каждом Server Action (defense in depth).
+ * Первая линия защиты: наличие сессии для зоны DJ.
+ * Проверка ролей — НЕ здесь: она в server-guards в layouts и каждом
+ * Server Action (defense in depth).
+ *
+ * /studio НАМЕРЕННО не здесь: доступ проверяет layout через
+ * requireStudioPermission → 404 для гостей и DJ (не раскрываем существование
+ * зоны редиректом на логин).
+ * /packs и /c/[slug] тоже не здесь — публичная витрина (guest preview).
  */
-
-// /packs и /c/[slug] намеренно НЕ здесь: публичная витрина доступна гостю
-// (guest preview). Безопасность контента — на уровне репозиториев
-// (только PUBLIC-коллекции) и стриминга (гостю — только превью).
 const PROTECTED_PREFIXES = [
   "/pool",
   "/new",
@@ -18,7 +19,6 @@ const PROTECTED_PREFIXES = [
   "/favorites",
   "/downloads",
   "/account",
-  "/admin",
 ];
 
 export async function middleware(request: NextRequest) {

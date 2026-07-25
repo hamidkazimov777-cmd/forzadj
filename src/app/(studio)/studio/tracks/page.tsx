@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { requirePermission } from "@/server/auth/core/session";
+import { requireStudioPermission } from "@/server/auth/core/session";
 import { trackRepository } from "@/server/repositories/track.repository";
 import type { ContentStatus } from "@/types/db";
 
@@ -27,7 +27,7 @@ export default async function AdminTracksPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
-  await requirePermission("content.manage");
+  await requireStudioPermission("content.manage");
   const { q, status } = await searchParams;
 
   const [total, tracks] = await trackRepository.list({
@@ -43,11 +43,11 @@ export default async function AdminTracksPage({
           Треки <span className="text-base font-normal text-muted-foreground">({total})</span>
         </h1>
         <Button asChild>
-          <Link href="/admin/tracks/upload">Загрузить треки</Link>
+          <Link href="/studio/tracks/upload">Загрузить треки</Link>
         </Button>
       </div>
 
-      <form className="mt-4 flex gap-2" action="/admin/tracks">
+      <form className="mt-4 flex gap-2" action="/studio/tracks">
         <Input
           name="q"
           placeholder="Поиск по названию…"
@@ -83,7 +83,7 @@ export default async function AdminTracksPage({
               <TableRow>
                 <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
                   Пока нет треков —{" "}
-                  <Link href="/admin/tracks/upload" className="underline underline-offset-4">
+                  <Link href="/studio/tracks/upload" className="underline underline-offset-4">
                     загрузите первые
                   </Link>
                 </TableCell>
@@ -93,7 +93,7 @@ export default async function AdminTracksPage({
               <TableRow key={track.id}>
                 <TableCell>
                   <Link
-                    href={`/admin/tracks/${track.id}`}
+                    href={`/studio/tracks/${track.id}`}
                     className="font-medium hover:underline"
                   >
                     {track.title}

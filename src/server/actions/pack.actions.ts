@@ -42,7 +42,7 @@ export async function createPackAction(
     action: "CREATE",
     actorId: user.id,
   });
-  revalidatePath("/admin/collections");
+  revalidatePath("/studio/collections");
   return { id: pack.id, slug: pack.slug ?? "" };
 }
 
@@ -66,7 +66,7 @@ export async function updatePackMetaAction(
     changedFields: ["title", "description"],
     actorId: user.id,
   });
-  revalidatePath(`/admin/collections/${packId}`);
+  revalidatePath(`/studio/collections/${packId}`);
   revalidateTag(PACKS_CACHE_TAG);
 }
 
@@ -83,7 +83,7 @@ export async function addTrackToPackAction(
 ): Promise<{ ok: boolean }> {
   const user = await requirePermission("collections.manage");
   await collectionRepository.addItem(packId, versionId, user.id);
-  revalidatePath(`/admin/collections/${packId}`);
+  revalidatePath(`/studio/collections/${packId}`);
   revalidateTag(PACKS_CACHE_TAG);
   return { ok: true };
 }
@@ -94,7 +94,7 @@ export async function removeTrackFromPackAction(
 ): Promise<{ ok: boolean }> {
   await requirePermission("collections.manage");
   await collectionRepository.removeItem(packId, versionId);
-  revalidatePath(`/admin/collections/${packId}`);
+  revalidatePath(`/studio/collections/${packId}`);
   revalidateTag(PACKS_CACHE_TAG);
   return { ok: true };
 }
@@ -114,8 +114,8 @@ export async function setPackVisibilityAction(
     action: isPublic ? "PUBLISH" : "ARCHIVE",
     actorId: user.id,
   });
-  revalidatePath(`/admin/collections/${packId}`);
-  revalidatePath("/admin/collections");
+  revalidatePath(`/studio/collections/${packId}`);
+  revalidatePath("/studio/collections");
   revalidateTag(PACKS_CACHE_TAG);
 }
 
@@ -142,6 +142,6 @@ export async function deletePackAction(packId: string): Promise<void> {
     action: "DELETE",
     actorId: user.id,
   });
-  revalidatePath("/admin/collections");
+  revalidatePath("/studio/collections");
   revalidateTag(PACKS_CACHE_TAG);
 }

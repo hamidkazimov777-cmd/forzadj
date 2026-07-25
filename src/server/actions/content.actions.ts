@@ -29,7 +29,7 @@ export async function requestUploadAction(file: {
 export async function finalizeUploadAction(assetId: string): Promise<void> {
   const user = await requirePermission("content.manage");
   await uploadService.finalizeOriginalUpload(user.id, assetId);
-  revalidatePath("/admin/tracks");
+  revalidatePath("/studio/tracks");
 }
 
 export async function updateTrackAction(
@@ -46,8 +46,8 @@ export async function updateTrackAction(
     year: parsed.year ?? null,
     isrc: parsed.isrc ?? null,
   });
-  revalidatePath(`/admin/tracks/${trackId}`);
-  revalidatePath("/admin/tracks");
+  revalidatePath(`/studio/tracks/${trackId}`);
+  revalidatePath("/studio/tracks");
 }
 
 export async function updateVersionAction(
@@ -69,29 +69,29 @@ export async function updateVersionAction(
     outroSeconds: parsed.outroSeconds ?? null,
     isExplicit: parsed.isExplicit,
   });
-  revalidatePath(`/admin/tracks/${trackId}`);
+  revalidatePath(`/studio/tracks/${trackId}`);
 }
 
 export async function publishTrackAction(trackId: string): Promise<void> {
   const user = await requirePermission("content.manage");
   await contentService.setTrackStatus(user.id, trackId, "PUBLISHED");
-  revalidatePath(`/admin/tracks/${trackId}`);
-  revalidatePath("/admin/tracks");
+  revalidatePath(`/studio/tracks/${trackId}`);
+  revalidatePath("/studio/tracks");
   revalidateTag(CATALOG_CACHE_TAG);
 }
 
 export async function archiveTrackAction(trackId: string): Promise<void> {
   const user = await requirePermission("content.manage");
   await contentService.setTrackStatus(user.id, trackId, "ARCHIVED");
-  revalidatePath(`/admin/tracks/${trackId}`);
-  revalidatePath("/admin/tracks");
+  revalidatePath(`/studio/tracks/${trackId}`);
+  revalidatePath("/studio/tracks");
   revalidateTag(CATALOG_CACHE_TAG);
 }
 
 export async function deleteTrackAction(trackId: string): Promise<void> {
   const user = await requirePermission("content.manage");
   await contentService.deleteTrack(user.id, trackId);
-  revalidatePath("/admin/tracks");
+  revalidatePath("/studio/tracks");
   revalidateTag(CATALOG_CACHE_TAG);
 }
 
@@ -105,5 +105,5 @@ export async function reprocessVersionAction(
 ): Promise<void> {
   const user = await requirePermission("content.manage");
   await uploadService.reprocessVersion(user.id, versionId);
-  revalidatePath(`/admin/tracks/${trackId}`);
+  revalidatePath(`/studio/tracks/${trackId}`);
 }

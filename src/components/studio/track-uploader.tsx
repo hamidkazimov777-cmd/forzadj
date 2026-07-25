@@ -130,7 +130,7 @@ export function TrackUploader({
               {state.phase === "processing" && <Badge variant="secondary">обработка…</Badge>}
               {state.phase === "done" && (
                 <Link
-                  href={`/admin/tracks/${state.trackId}`}
+                  href={`/studio/tracks/${state.trackId}`}
                   className="text-sm font-medium underline underline-offset-4"
                 >
                   готово → редактировать

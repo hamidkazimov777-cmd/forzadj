@@ -4,7 +4,7 @@
  * клиенту (ESLint-граница), а строковые значения совместимы.
  */
 
-export type UserRole = "DJ" | "UPLOADER" | "ADMIN";
+export type UserRole = "DJ" | "UPLOADER" | "ADMIN" | "SUPER_ADMIN";
 
 export interface SessionUser {
   id: string;
