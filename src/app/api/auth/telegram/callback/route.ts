@@ -5,10 +5,29 @@ import { createSupabaseServerClient } from "@/server/auth/providers/supabase-ser
 /**
  * Приём redirect'а Telegram Login Widget (data-auth-url).
  * Параметры виджета приходят в query string вместе с HMAC-подписью.
+ * Наш собственный `next` (куда вернуть после входа) отделяется от полей
+ * Telegram до верификации — иначе он попал бы в data-check-string и сломал
+ * подпись.
  */
+
+/** Разрешаем только внутренние относительные пути (защита от open-redirect). */
+function safeNext(next: string | null): string {
+  if (next && next.startsWith("/") && !next.startsWith("//")) return next;
+  return "/pool";
+}
+
 export async function GET(request: NextRequest) {
-  const params = Object.fromEntries(request.nextUrl.searchParams.entries());
+  const sp = request.nextUrl.searchParams;
+  const next = safeNext(sp.get("next"));
+
+  // Поля Telegram — всё, кроме нашего служебного next.
+  const params: Record<string, string> = {};
+  for (const [key, value] of sp.entries()) {
+    if (key !== "next") params[key] = value;
+  }
+
   const loginUrl = new URL("/login", request.nextUrl.origin);
+  if (sp.get("next")) loginUrl.searchParams.set("next", next);
 
   try {
     const result = await loginWithTelegram(params);
@@ -28,7 +47,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    return NextResponse.redirect(new URL("/pool", request.nextUrl.origin));
+    // Успех: сразу в личный кабинет (или туда, откуда пришёл гость).
+    return NextResponse.redirect(new URL(next, request.nextUrl.origin));
   } catch (err) {
     console.error("[auth] telegram callback failed:", err);
     loginUrl.searchParams.set("error", "internal");

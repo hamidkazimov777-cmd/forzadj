@@ -26,7 +26,9 @@ function displayNameOf(profile: TelegramProfile): string {
 
 export async function loginWithTelegram(
   params: Record<string, string>,
-): Promise<{ tokenHash: string } | { error: "invalid_signature" }> {
+): Promise<
+  { tokenHash: string; isNew: boolean } | { error: "invalid_signature" }
+> {
   const profile = verifyTelegramLogin(params);
   if (!profile) return { error: "invalid_signature" };
 
@@ -39,10 +41,18 @@ export async function loginWithTelegram(
     last_name: profile.last_name ?? null,
   };
 
+  // Supabase Auth-пользователь гарантируется всегда (идемпотентно): и при
+  // первом входе (регистрация), и при повторном — чтобы выпуск сессии не
+  // зависел от рассинхрона между нашей БД и Supabase Auth.
+  const supabaseUserId = await ensureSupabaseUser(email, {
+    telegram_id: profile.id,
+  });
+
   const existing = await userRepository.findByIdentity("TELEGRAM", profile.id);
+  const isNew = !existing;
 
   if (existing) {
-    // Обновляем снапшот профиля (имя/аватар могли смениться в Telegram).
+    // Повторный вход: обновляем снапшот профиля (имя/аватар могли смениться).
     await userRepository.updateProfileSnapshot({
       userId: existing.id,
       provider: "TELEGRAM",
@@ -52,9 +62,7 @@ export async function loginWithTelegram(
       profile: profileSnapshot,
     });
   } else {
-    const supabaseUserId = await ensureSupabaseUser(email, {
-      telegram_id: profile.id,
-    });
+    // Первый вход: автоматическая регистрация пользователя (роль DJ по умолчанию).
     await userRepository.createWithIdentity({
       supabaseUserId,
       displayName: displayNameOf(profile),
@@ -66,5 +74,5 @@ export async function loginWithTelegram(
   }
 
   const tokenHash = await createSessionTokenHash(email);
-  return { tokenHash };
+  return { tokenHash, isNew };
 }
