@@ -1,8 +1,21 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { getPublishedPacks } from "@/server/services/pack.service";
 
-export const metadata = { title: "Паки" };
+export const metadata: Metadata = {
+  title: "Паки",
+  description:
+    "Готовые подборки треков от редакции ForzaDJ под конкретные ситуации — скачиваются одним архивом.",
+  alternates: { canonical: "/packs" },
+  openGraph: {
+    title: "Паки — ForzaDJ Pool",
+    description:
+      "Готовые подборки треков от редакции под конкретные ситуации.",
+    url: "/packs",
+    type: "website",
+  },
+};
 
 export default async function PacksPage() {
   const packs = await getPublishedPacks();

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { TrackList } from "@/components/tracks/track-list";
-import { requireUser } from "@/server/auth/core/session";
+import { getCurrentUser } from "@/server/auth/core/session";
 import { collectionRepository } from "@/server/repositories/collection.repository";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
 import { favoriteRepository } from "@/server/repositories/favorite.repository";
@@ -18,33 +18,46 @@ export async function generateMetadata({
   const { slug } = await params;
   const crate = await collectionRepository.findPublicBySlug(slug);
   if (!crate) return { title: "Крейт не найден" };
+  const owner = crate.owner?.displayName ?? "DJ";
+  const description = `Крейт ${owner}: ${crate.items.length} треков на ForzaDJ Pool`;
   return {
-    title: `${crate.title} — крейт ${crate.owner?.displayName ?? "DJ"}`,
+    title: `${crate.title} — крейт ${owner}`,
+    description,
+    // UNLISTED крейты (по ссылке) не индексируем; PUBLIC — можно.
+    robots: crate.visibility === "PUBLIC" ? undefined : { index: false },
+    alternates: { canonical: `/c/${slug}` },
+    openGraph: {
+      title: `${crate.title} — крейт ${owner}`,
+      description,
+      url: `/c/${slug}`,
+      type: "music.playlist",
+    },
   };
 }
 
 /**
- * Публичная страница крейта (шаринг по ссылке). Read-only для всех
- * авторизованных DJ. Воспроизведение и скачивание работают в рамках лимитов.
+ * Публичная страница крейта (шаринг по ссылке). Доступна гостю: просмотр +
+ * превью. Скачивание/избранное предлагают вход. findPublicBySlug отдаёт
+ * только PUBLIC/UNLISTED — приватные крейты недоступны никому по ссылке.
  */
 export default async function PublicCratePage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const user = await requireUser();
+  const user = await getCurrentUser();
   const { slug } = await params;
 
   const crate = await collectionRepository.findPublicBySlug(slug);
   if (!crate) notFound();
 
   const versionIds = crate.items.map((i) => i.versionId);
-  const [tracks, favoritedSet] = await Promise.all([
-    catalogRepository.findByVersionIds(versionIds),
-    favoriteRepository.getFavoritedVersionIds(user.id, versionIds),
-  ]);
+  const tracks = await catalogRepository.findByVersionIds(versionIds);
+  const favoritedSet = user
+    ? await favoriteRepository.getFavoritedVersionIds(user.id, versionIds)
+    : new Set<string>();
 
-  const isOwner = crate.ownerId === user.id;
+  const isOwner = user != null && crate.ownerId === user.id;
 
   return (
     <div>
@@ -69,19 +82,30 @@ export default async function PublicCratePage({
           </Link>
         </p>
       )}
+      {!user && (
+        <p className="mt-3 rounded-md border bg-muted/40 px-4 py-2 text-sm text-muted-foreground">
+          Слушайте превью бесплатно.{" "}
+          <Link href="/login" className="font-medium underline underline-offset-4">
+            Войдите
+          </Link>{" "}
+          — чтобы скачивать треки, сохранять в избранное и собирать свои крейты.
+        </p>
+      )}
 
       <div className="mt-6">
         {tracks.length === 0 ? (
           <p className="py-16 text-center text-muted-foreground">
             В этом крейте пока нет треков.
           </p>
-        ) : (
+        ) : user ? (
           <TrackList
             items={tracks}
             requestDownload={requestDownloadAction}
             toggleFavorite={toggleFavoriteAction}
             favoritedVersionIds={[...favoritedSet]}
           />
+        ) : (
+          <TrackList items={tracks} guest />
         )}
       </div>
     </div>

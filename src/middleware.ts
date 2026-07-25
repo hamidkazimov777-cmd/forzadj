@@ -7,13 +7,14 @@ import { updateSession } from "@/server/auth/providers/supabase-middleware";
  * (requirePermission) в layouts и каждом Server Action (defense in depth).
  */
 
+// /packs и /c/[slug] намеренно НЕ здесь: публичная витрина доступна гостю
+// (guest preview). Безопасность контента — на уровне репозиториев
+// (только PUBLIC-коллекции) и стриминга (гостю — только превью).
 const PROTECTED_PREFIXES = [
   "/pool",
   "/new",
   "/charts",
   "/collections",
-  "/c",
-  "/packs",
   "/favorites",
   "/downloads",
   "/account",

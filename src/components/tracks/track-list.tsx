@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePlayer } from "@/components/player/player-provider";
@@ -57,6 +58,7 @@ export function TrackList({
   crates,
   crateActions,
   removeVersion,
+  guest = false,
 }: {
   items: TrackCardDto[];
   /** Если передан — в строках показываются кнопки скачивания версий. */
@@ -69,9 +71,25 @@ export function TrackList({
   crateActions?: CrateActionFns;
   /** Если передан — показывается кнопка удаления версии (из крейта). */
   removeVersion?: (versionId: string) => Promise<{ ok: boolean }>;
+  /**
+   * Гостевой режим: превью играет, но действия с аккаунтом (избранное,
+   * скачивание) вместо выполнения предлагают войти.
+   */
+  guest?: boolean;
 }) {
   const player = usePlayer();
   const favoritedSet = new Set(favoritedVersionIds ?? []);
+
+  function promptLogin() {
+    toast("Войдите, чтобы скачивать и сохранять треки", {
+      action: {
+        label: "Войти",
+        onClick: () => {
+          window.location.href = "/login";
+        },
+      },
+    });
+  }
 
   function queueFrom(): ReturnType<typeof toPlayerTrack>[] {
     return items
@@ -162,28 +180,47 @@ export function TrackList({
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
-              {toggleFavorite && def && (
-                <FavoriteButton
-                  versionId={def.id}
-                  initialFavorited={favoritedSet.has(def.id)}
-                  toggleFavorite={toggleFavorite}
-                />
-              )}
-              {crates && crateActions && def && (
-                <AddToCrateButton
-                  versionId={def.id}
-                  crates={crates}
-                  actions={crateActions}
-                />
-              )}
-              {requestDownload && def && (
-                <DownloadButton
-                  versionId={def.id}
-                  requestDownload={requestDownload}
-                />
-              )}
-              {removeVersion && def && (
-                <RemoveButton versionId={def.id} onRemove={removeVersion} />
+              {guest && def ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={promptLogin}
+                    aria-label="Войдите, чтобы добавить в избранное"
+                    title="Войдите, чтобы добавить в избранное"
+                    className="text-lg leading-none text-muted-foreground hover:text-red-500"
+                  >
+                    ♡
+                  </button>
+                  <Button size="sm" variant="secondary" onClick={promptLogin}>
+                    Скачать
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {toggleFavorite && def && (
+                    <FavoriteButton
+                      versionId={def.id}
+                      initialFavorited={favoritedSet.has(def.id)}
+                      toggleFavorite={toggleFavorite}
+                    />
+                  )}
+                  {crates && crateActions && def && (
+                    <AddToCrateButton
+                      versionId={def.id}
+                      crates={crates}
+                      actions={crateActions}
+                    />
+                  )}
+                  {requestDownload && def && (
+                    <DownloadButton
+                      versionId={def.id}
+                      requestDownload={requestDownload}
+                    />
+                  )}
+                  {removeVersion && def && (
+                    <RemoveButton versionId={def.id} onRemove={removeVersion} />
+                  )}
+                </>
               )}
             </div>
           </li>

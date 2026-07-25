@@ -3,6 +3,8 @@ import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
+import { PlayerProvider } from "@/components/player/player-provider";
+import { MiniPlayer } from "@/components/player/mini-player";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -43,7 +45,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        {/* Плеер в корне: воспроизведение переживает переходы между зонами
+            (гостевая витрина ↔ кабинет DJ), не перемонтируется. */}
+        <PlayerProvider>
+          {children}
+          <MiniPlayer />
+        </PlayerProvider>
         <Toaster />
       </body>
     </html>

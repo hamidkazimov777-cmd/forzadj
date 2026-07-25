@@ -6,10 +6,12 @@ import { can } from "@/server/auth/core/permissions";
 /**
  * PlaybackService: выдача аудио для прослушивания.
  *
- * Правила:
- * - версия должна быть PUBLISHED (черновики слышат только content.manage);
- * - стримится PREVIEW; если превью нет — ОРИГИНАЛ, но только в dev
- *   (в production оригинал без квоты не выдаётся — это скачивание, Этап 4).
+ * Правила (guest preview):
+ * - PREVIEW опубликованной версии слышат ВСЕ, включая гостя (шаринг-витрина);
+ * - черновики (не PUBLISHED) — только content.manage;
+ * - ОРИГИНАЛ гостю не выдаётся НИКОГДА. Fallback на оригинал — только dev
+ *   и только для авторизованных (превью ещё не сгенерировано). В production
+ *   оригинал без квоты не выдаётся — это скачивание (Этап 4).
  */
 
 const STREAM_TTL_SECONDS = 60 * 15;
@@ -23,23 +25,23 @@ export const playbackService = {
     user: SessionUser | null,
     versionId: string,
   ): Promise<PlaybackResult> {
-    if (!user) return { ok: false, status: 401 };
-
     const version = await trackVersionRepository.findById(versionId);
     if (!version) return { ok: false, status: 404 };
 
     const isPublished =
       version.status === "PUBLISHED" && version.track.status === "PUBLISHED";
-    if (!isPublished && !can(user, "content.manage")) {
-      return { ok: false, status: 403 };
+    // Черновики — только для контент-менеджеров (гость сюда не пройдёт).
+    if (!isPublished && !(user && can(user, "content.manage"))) {
+      return { ok: false, status: user ? 403 : 401 };
     }
 
     const preview = version.assets.find(
       (a) => a.type === "PREVIEW" && a.status === "READY",
     );
     let streamAsset = preview;
-    if (!streamAsset && process.env.NODE_ENV === "development") {
-      // Dev-fallback: превью ещё нет (ffmpeg не установлен) — оригинал.
+    if (!streamAsset && process.env.NODE_ENV === "development" && user) {
+      // Dev-fallback (только авторизованным): превью ещё нет — оригинал.
+      // Гостю оригинал не отдаём ни при каких условиях.
       streamAsset = version.assets.find(
         (a) => a.type === "ORIGINAL" && a.status === "READY",
       );
@@ -55,14 +57,22 @@ export const playbackService = {
     return { ok: true, url: signed.url };
   },
 
-  /** peaks.json версии; null — волна ещё не сгенерирована. */
+  /**
+   * peaks.json версии — только для опубликованных (данные волны, гость тоже
+   * видит). Черновики — content.manage. null-волна → 404.
+   */
   async getWaveformData(
     user: SessionUser | null,
     versionId: string,
-  ): Promise<{ ok: true; data: Uint8Array } | { ok: false; status: 401 | 404 }> {
-    if (!user) return { ok: false, status: 401 };
+  ): Promise<{ ok: true; data: Uint8Array } | { ok: false; status: 403 | 404 }> {
     const version = await trackVersionRepository.findById(versionId);
-    const waveform = version?.assets.find(
+    if (!version) return { ok: false, status: 404 };
+    const isPublished =
+      version.status === "PUBLISHED" && version.track.status === "PUBLISHED";
+    if (!isPublished && !(user && can(user, "content.manage"))) {
+      return { ok: false, status: 403 };
+    }
+    const waveform = version.assets.find(
       (a) => a.type === "WAVEFORM" && a.status === "READY",
     );
     if (!waveform) return { ok: false, status: 404 };

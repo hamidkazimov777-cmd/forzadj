@@ -12,6 +12,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
+      // Открыто для индексации: / , /pricing , /packs , /packs/* , /c/* .
+      // Приватный контент за авторизацией — закрыт.
       disallow: [
         "/api/",
         "/admin/",
@@ -22,7 +24,6 @@ export default function robots(): MetadataRoute.Robots {
         "/pool",
         "/new",
         "/charts",
-        "/c/",
       ],
     },
     sitemap: `${appUrl}/sitemap.xml`,

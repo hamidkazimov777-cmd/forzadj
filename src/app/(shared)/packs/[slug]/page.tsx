@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { TrackList } from "@/components/tracks/track-list";
 import { PackDownloadButton } from "@/components/tracks/pack-download-button";
-import { requireUser } from "@/server/auth/core/session";
+import { getCurrentUser } from "@/server/auth/core/session";
 import { getPublishedPackBySlug } from "@/server/services/pack.service";
 import { favoriteRepository } from "@/server/repositories/favorite.repository";
 import { requestDownloadAction } from "@/server/actions/download.actions";
@@ -17,7 +18,21 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const pack = await getPublishedPackBySlug(slug);
-  return { title: pack ? pack.title : "Пак не найден" };
+  if (!pack) return { title: "Пак не найден" };
+  const description =
+    pack.description ?? `Подборка из ${pack.trackCount} треков — ForzaDJ Pool`;
+  return {
+    title: pack.title,
+    description,
+    alternates: { canonical: `/packs/${pack.slug}` },
+    openGraph: {
+      title: `${pack.title} — ForzaDJ Pool`,
+      description,
+      url: `/packs/${pack.slug}`,
+      type: "music.playlist",
+      ...(pack.coverUrl ? { images: [{ url: pack.coverUrl }] } : {}),
+    },
+  };
 }
 
 export default async function PackDetailPage({
@@ -25,17 +40,17 @@ export default async function PackDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const user = await requireUser();
+  const user = await getCurrentUser();
   const { slug } = await params;
 
   const pack = await getPublishedPackBySlug(slug);
   if (!pack) notFound();
 
   const versionIds = pack.tracks.flatMap((t) => t.versions.map((v) => v.id));
-  const favoritedSet = await favoriteRepository.getFavoritedVersionIds(
-    user.id,
-    versionIds,
-  );
+  // Избранное — только для авторизованного; гостю не запрашиваем.
+  const favoritedSet = user
+    ? await favoriteRepository.getFavoritedVersionIds(user.id, versionIds)
+    : new Set<string>();
 
   return (
     <div>
@@ -53,9 +68,17 @@ export default async function PackDetailPage({
           )}
           <p className="mt-1 text-sm text-muted-foreground">{pack.trackCount} треков</p>
         </div>
-        {pack.tracks.length > 0 && (
-          <PackDownloadButton slug={pack.slug} preflight={preflightPackDownloadAction} />
-        )}
+        {pack.tracks.length > 0 &&
+          (user ? (
+            <PackDownloadButton
+              slug={pack.slug}
+              preflight={preflightPackDownloadAction}
+            />
+          ) : (
+            <Button asChild size="lg">
+              <Link href="/login">Войти, чтобы скачать пак</Link>
+            </Button>
+          ))}
       </div>
 
       <div className="mt-6">
@@ -63,13 +86,15 @@ export default async function PackDetailPage({
           <p className="py-16 text-center text-muted-foreground">
             В этом паке пока нет треков.
           </p>
-        ) : (
+        ) : user ? (
           <TrackList
             items={pack.tracks}
             requestDownload={requestDownloadAction}
             toggleFavorite={toggleFavoriteAction}
             favoritedVersionIds={[...favoritedSet]}
           />
+        ) : (
+          <TrackList items={pack.tracks} guest />
         )}
       </div>
     </div>

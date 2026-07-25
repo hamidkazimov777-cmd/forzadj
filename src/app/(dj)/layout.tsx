@@ -1,15 +1,14 @@
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlayerProvider } from "@/components/player/player-provider";
-import { MiniPlayer } from "@/components/player/mini-player";
 import { DjNavDesktop, DjNavMobile } from "@/components/layout/dj-nav";
 import { requireUser } from "@/server/auth/core/session";
 
 /**
  * Зона DJ: каталог, крейты, избранное, скачивания, аккаунт.
  * Middleware проверяет сессию; requireUser здесь — вторая линия.
- * В layout живёт персистентный mini-player (Этап 3) — поэтому
- * навигация внутри зоны не прерывает воспроизведение.
+ * PlayerProvider/MiniPlayer вынесены в корневой layout — воспроизведение
+ * не прерывается при переходах между зонами (DJ ↔ гостевая витрина).
+ * pb-16 резервирует место под фиксированный mini-player.
  */
 export default async function DjLayout({
   children,
@@ -17,8 +16,7 @@ export default async function DjLayout({
   const user = await requireUser();
 
   return (
-    <PlayerProvider>
-      <div className="flex min-h-screen flex-col pb-16">
+    <div className="flex min-h-screen flex-col pb-16">
       <header className="border-b">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 md:gap-8">
           <DjNavMobile />
@@ -39,9 +37,7 @@ export default async function DjLayout({
           </Link>
         </div>
       </header>
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">{children}</main>
-        <MiniPlayer />
-      </div>
-    </PlayerProvider>
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">{children}</main>
+    </div>
   );
 }
