@@ -13,6 +13,7 @@ export default async function StudioLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const user = await requireStudioPermission("studio.access");
   const canManageUsers = can(user, "users.manage");
+  const canManageDonations = can(user, "donations.manage");
 
   return (
     <div className="flex min-h-screen">
@@ -27,6 +28,11 @@ export default async function StudioLayout({
           {canManageUsers && (
             <Link href="/studio/users" className="rounded-md px-3 py-2 hover:bg-accent">
               Пользователи
+            </Link>
+          )}
+          {canManageDonations && (
+            <Link href="/studio/support" className="rounded-md px-3 py-2 hover:bg-accent">
+              Поддержка проекта
             </Link>
           )}
           <Link

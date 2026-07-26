@@ -57,6 +57,27 @@ export const donationRepository = {
     ]);
   },
 
+  /** Все заявки для Studio (с автором); по умолчанию — ручные переводы. */
+  listAll(opts?: {
+    provider?: DonationProvider;
+    skip?: number;
+    take?: number;
+  }) {
+    const where = opts?.provider ? { provider: opts.provider } : {};
+    return Promise.all([
+      prisma.donation.count({ where }),
+      prisma.donation.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: opts?.skip ?? 0,
+        take: opts?.take ?? 100,
+        include: {
+          user: { select: { displayName: true, avatarUrl: true } },
+        },
+      }),
+    ]);
+  },
+
   update(
     id: string,
     data: {

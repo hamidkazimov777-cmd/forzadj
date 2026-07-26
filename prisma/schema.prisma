@@ -539,6 +539,7 @@ model Revision {
 // На этом этапе НЕТ платёжной логики, ссылок, вебхуков и SDK — только домен.
 
 enum DonationProvider {
+  MANUAL // ручной банковский перевод (заявка + ручная сверка владельцем)
   TELEGRAM_STARS
   YOOKASSA
   STRIPE

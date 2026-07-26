@@ -20,6 +20,7 @@ function bucketName(bucket: StorageBucket): string {
     audio: process.env.STORAGE_BUCKET_AUDIO,
     previews: process.env.STORAGE_BUCKET_PREVIEWS,
     artwork: process.env.STORAGE_BUCKET_ARTWORK,
+    receipts: process.env.STORAGE_BUCKET_RECEIPTS ?? "receipts",
   };
   const name = map[bucket];
   if (!name) {

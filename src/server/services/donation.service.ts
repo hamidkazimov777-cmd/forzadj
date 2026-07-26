@@ -16,6 +16,7 @@ import type { DonationProvider, DonationStatus } from "@/types/db";
  */
 
 const PROVIDERS = [
+  "MANUAL",
   "TELEGRAM_STARS",
   "YOOKASSA",
   "STRIPE",
@@ -62,6 +63,47 @@ export const donationService = {
     });
     await donationRepository.appendEvent(donation.id, "created");
     return donation;
+  },
+
+  /**
+   * Заявка о ручном банковском переводе. Создаёт донат сразу в статусе
+   * PENDING (ожидает ручной сверки владельцем). Наличие чека необязательно.
+   * Донорские данные (имя/ник, комментарий, ключ чека) — в metadata.
+   */
+  async createManualDonation(
+    userId: string,
+    input: {
+      amountMinor: number;
+      currency: string;
+      donorName?: string;
+      comment?: string;
+      receiptKey?: string;
+    },
+  ) {
+    const parsed = createDonationSchema.parse({
+      provider: "MANUAL",
+      amountMinor: input.amountMinor,
+      currency: input.currency,
+    });
+    const metadata: Record<string, unknown> = {};
+    if (input.donorName) metadata.donorName = input.donorName;
+    if (input.comment) metadata.comment = input.comment;
+    if (input.receiptKey) metadata.receiptKey = input.receiptKey;
+
+    const donation = await donationRepository.create({
+      userId,
+      provider: parsed.provider,
+      amountMinor: parsed.amountMinor,
+      currency: parsed.currency,
+      metadata,
+    });
+    await donationRepository.appendEvent(donation.id, "created");
+    // Заявка отправлена — сразу PENDING (ждёт ручной сверки).
+    const pending = await donationRepository.update(donation.id, {
+      status: "PENDING",
+    });
+    await donationRepository.appendEvent(donation.id, "status:PENDING");
+    return pending;
   },
 
   /**
