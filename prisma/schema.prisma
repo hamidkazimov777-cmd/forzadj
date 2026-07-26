@@ -56,6 +56,7 @@ model User {
   favorites   Favorite[]
   collections Collection[]
   follows     CollectionFollow[]
+  donations   Donation[]
 
   @@map("users")
 }
@@ -191,18 +192,18 @@ model Tag {
 /// Произведение "Artist — Title". Может существовать вне релиза
 /// (releaseId nullable) — пул часто оперирует одиночными эдитами.
 model Track {
-  id         String        @id @default(uuid(7)) @db.Uuid
-  title      String
-  slug       String
-  releaseId  String?       @map("release_id") @db.Uuid
-  release    Release?      @relation(fields: [releaseId], references: [id])
-  status     ContentStatus @default(DRAFT)
+  id            String        @id @default(uuid(7)) @db.Uuid
+  title         String
+  slug          String
+  releaseId     String?       @map("release_id") @db.Uuid
+  release       Release?      @relation(fields: [releaseId], references: [id])
+  status        ContentStatus @default(DRAFT)
   /// Год оригинального произведения (для old-school эдитов).
-  year       Int?
-  isExplicit Boolean       @default(false) @map("is_explicit")
-  isrc       String?
+  year          Int?
+  isExplicit    Boolean       @default(false) @map("is_explicit")
+  isrc          String?
   /// Денормализованный счётчик по всем версиям (инкремент — Этап 4).
-  downloadCount Int        @default(0) @map("download_count")
+  downloadCount Int           @default(0) @map("download_count")
 
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
@@ -277,13 +278,13 @@ enum VersionType {
 /// Конкретная версия трека. DJ-метаданные (BPM, key, energy) — здесь,
 /// т.к. Extended и Radio Edit могут отличаться.
 model TrackVersion {
-  id      String      @id @default(uuid(7)) @db.Uuid
-  trackId String      @map("track_id") @db.Uuid
-  track   Track       @relation(fields: [trackId], references: [id])
-  type    VersionType @default(ORIGINAL)
+  id           String        @id @default(uuid(7)) @db.Uuid
+  trackId      String        @map("track_id") @db.Uuid
+  track        Track         @relation(fields: [trackId], references: [id])
+  type         VersionType   @default(ORIGINAL)
   /// Свободный суффикс: "VIP Mix", "Festival Edit" и т.п.
-  versionLabel String? @map("version_label")
-  status  ContentStatus @default(DRAFT)
+  versionLabel String?       @map("version_label")
+  status       ContentStatus @default(DRAFT)
 
   bpm             Float?
   /// Camelot-нотация: "8A".."12B". Каноничное хранение; отображение
@@ -333,24 +334,24 @@ enum AssetStatus {
 /// Файл в Storage. Никогда не является источником метаданных —
 /// метаданные живут в Track/TrackVersion; файл заменяем без потери истории.
 model Asset {
-  id        String        @id @default(uuid(7)) @db.Uuid
-  versionId String?       @map("version_id") @db.Uuid
-  version   TrackVersion? @relation(fields: [versionId], references: [id])
+  id             String        @id @default(uuid(7)) @db.Uuid
+  versionId      String?       @map("version_id") @db.Uuid
+  version        TrackVersion? @relation(fields: [versionId], references: [id])
   /// Для обложек релиза (type = ARTWORK).
-  releaseId String?       @map("release_id") @db.Uuid
-  release   Release?      @relation(fields: [releaseId], references: [id])
-  type      AssetType
-  status    AssetStatus   @default(UPLOADED)
+  releaseId      String?       @map("release_id") @db.Uuid
+  release        Release?      @relation(fields: [releaseId], references: [id])
+  type           AssetType
+  status         AssetStatus   @default(UPLOADED)
   /// Провайдеро-независимый путь внутри логического бакета
   /// (бакет детерминирован типом: ORIGINAL→audio, PREVIEW/WAVEFORM→previews,
   /// ARTWORK→artwork).
-  storageKey     String  @map("storage_key")
+  storageKey     String        @map("storage_key")
   mime           String?
-  sizeBytes      BigInt? @map("size_bytes")
-  checksumSha256 String? @map("checksum_sha256")
+  sizeBytes      BigInt?       @map("size_bytes")
+  checksumSha256 String?       @map("checksum_sha256")
   /// Текст ошибки обработки при status = FAILED.
   error          String?
-  createdById    String? @map("created_by_id") @db.Uuid
+  createdById    String?       @map("created_by_id") @db.Uuid
 
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
@@ -440,7 +441,7 @@ model Collection {
   autoRule   Json?                @map("auto_rule")
 
   /// Обложка редакционного пака (Storage key в бакете artwork). Опционально.
-  coverKey    String?   @map("cover_key")
+  coverKey    String? @map("cover_key")
   /// Краткое описание (для витрины паков).
   description String?
 
@@ -528,4 +529,100 @@ model Revision {
   @@index([entityType, entityId, createdAt])
   @@index([actorId, createdAt])
   @@map("revisions")
+}
+
+// ─── Донаты (provider-agnostic; на MVP только доменная модель) ──────────────
+//
+// Архитектура рассчитана на подключение любых провайдеров (Telegram Stars,
+// ЮKassa, Stripe, Boosty, Patreon, крипто) без изменения бизнес-логики:
+// провайдер — значение enum + адаптер за DonationProviderInterface.
+// На этом этапе НЕТ платёжной логики, ссылок, вебхуков и SDK — только домен.
+
+enum DonationProvider {
+  TELEGRAM_STARS
+  YOOKASSA
+  STRIPE
+  BOOSTY
+  PATREON
+  CRYPTO
+}
+
+enum DonationStatus {
+  CREATED // запись создана, провайдер ещё не задействован
+  PENDING // платёж инициирован у провайдера, ждём подтверждения
+  COMPLETED // успешно оплачено
+  FAILED // платёж не прошёл
+  CANCELLED // отменён пользователем/до оплаты
+  REFUNDED // возврат после оплаты
+}
+
+/// Донат пользователя. Сумма — в минорных единицах валюты (копейки/центы;
+/// для Telegram Stars currency=XTR, amountMinor = число звёзд).
+model Donation {
+  id     String @id @default(uuid(7)) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
+
+  provider          DonationProvider
+  /// Идентификатор платежа на стороне провайдера (появляется при инициации).
+  externalPaymentId String?          @map("external_payment_id")
+
+  amountMinor Int            @map("amount_minor")
+  currency    String         @db.VarChar(8) // ISO-4217 или XTR (Telegram Stars)
+  status      DonationStatus @default(CREATED)
+
+  /// Награда, засчитанная за этот донат (выдача — будущая логика, сейчас null).
+  rewardId String?         @map("reward_id") @db.Uuid
+  reward   DonationReward? @relation(fields: [rewardId], references: [id])
+
+  /// Провайдеро-специфичные данные (ссылки/референсы). Без чувствительных ПД
+  /// и платёжных реквизитов — их хранит провайдер.
+  metadata Json?
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  completedAt DateTime? @map("completed_at")
+
+  events DonationEvent[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@index([provider, externalPaymentId])
+  @@map("donations")
+}
+
+/// Append-only журнал событий доната (переходы статусов, будущие вебхуки).
+/// Основа для сверки платежей и отладки — не изменяется после записи.
+model DonationEvent {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  donationId String   @map("donation_id") @db.Uuid
+  donation   Donation @relation(fields: [donationId], references: [id])
+  /// Короткий код события: "created", "status:PENDING", "provider.webhook"…
+  type       String
+  /// Сырые данные события (например, payload вебхука в будущем).
+  payload    Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([donationId, createdAt])
+  @@map("donation_events")
+}
+
+/// Каталог наград (место под будущее). Награды настраиваются, но пока ничего
+/// не выдаётся автоматически. Порог — в минорных единицах.
+model DonationReward {
+  id             String  @id @default(uuid(7)) @db.Uuid
+  code           String  @unique // "thanks", "supporter", "backer", "premium"…
+  title          String
+  description    String?
+  minAmountMinor Int     @map("min_amount_minor")
+  currency       String  @db.VarChar(8)
+  isActive       Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  donations Donation[]
+
+  @@map("donation_rewards")
 }

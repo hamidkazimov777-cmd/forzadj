@@ -21,7 +21,8 @@ export type Permission =
   | "studio.access" // доступ в Studio (админ-зону)
   | "users.manage" // список пользователей, смена ролей — только владелец
   | "roles.manage" // назначение/снятие ADMIN — только владелец
-  | "system.manage"; // системные настройки — только владелец
+  | "system.manage" // системные настройки — только владелец
+  | "donations.manage"; // просмотр/управление донатами — только владелец
 
 const PERMISSION_MAP: Record<Permission, readonly UserRole[]> = {
   "pool.view": ["DJ", "UPLOADER", "ADMIN", "SUPER_ADMIN"],
@@ -33,6 +34,7 @@ const PERMISSION_MAP: Record<Permission, readonly UserRole[]> = {
   "users.manage": ["SUPER_ADMIN"],
   "roles.manage": ["SUPER_ADMIN"],
   "system.manage": ["SUPER_ADMIN"],
+  "donations.manage": ["SUPER_ADMIN"],
 };
 
 export function can(
