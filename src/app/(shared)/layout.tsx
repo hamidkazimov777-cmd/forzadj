@@ -45,7 +45,7 @@ export default async function SharedLayout({
             </Link>
           ) : (
             <Button asChild size="sm" className="ml-auto">
-              <Link href="/login">Войти</Link>
+              <Link href="/">Войти</Link>
             </Button>
           )}
         </div>

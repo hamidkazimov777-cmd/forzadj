@@ -10,18 +10,10 @@ export default function PublicLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+        <div className="mx-auto flex h-14 max-w-6xl items-center px-4">
           <Link href="/" className="text-lg font-bold tracking-tight">
             ForzaDJ
           </Link>
-          <nav className="flex items-center gap-6 text-sm">
-            <Link href="/pricing" className="text-muted-foreground hover:text-foreground">
-              Тарифы
-            </Link>
-            <Link href="/login" className="font-medium">
-              Войти
-            </Link>
-          </nav>
         </div>
       </header>
       <main className="flex-1">{children}</main>

@@ -86,7 +86,7 @@ export function TrackList({
       action: {
         label: "Войти",
         onClick: () => {
-          window.location.href = "/login";
+          window.location.href = "/";
         },
       },
     });

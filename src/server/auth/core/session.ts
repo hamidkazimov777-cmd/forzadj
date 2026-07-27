@@ -38,7 +38,7 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
 /** Guard для страниц/actions, требующих входа. */
 export async function requireUser(): Promise<SessionUser> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
   return user;
 }
 

@@ -32,8 +32,9 @@ export async function middleware(request: NextRequest) {
   if (isProtected && !isAuthenticated) {
     // За обратным прокси request.url указывает на localhost — берём
     // канонический публичный адрес из ENV, иначе origin запроса (dev).
+    // Вход живёт на главной (Hero), отдельной /login нет.
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
-    const loginUrl = new URL("/login", baseUrl);
+    const loginUrl = new URL("/", baseUrl);
     loginUrl.searchParams.set("next", path);
     return NextResponse.redirect(loginUrl);
   }

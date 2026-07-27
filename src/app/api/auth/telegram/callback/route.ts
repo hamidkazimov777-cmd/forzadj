@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
     if (key !== "next") params[key] = value;
   }
 
-  const loginUrl = new URL("/login", baseUrl);
+  // Ошибки возвращаем на главную (там Hero со входом), не на /login.
+  const loginUrl = new URL("/", baseUrl);
   if (sp.get("next")) loginUrl.searchParams.set("next", next);
 
   try {

@@ -85,7 +85,7 @@ export default async function PublicCratePage({
       {!user && (
         <p className="mt-3 rounded-md border bg-muted/40 px-4 py-2 text-sm text-muted-foreground">
           Слушайте превью бесплатно.{" "}
-          <Link href="/login" className="font-medium underline underline-offset-4">
+          <Link href="/" className="font-medium underline underline-offset-4">
             Войдите
           </Link>{" "}
           — чтобы скачивать треки, сохранять в избранное и собирать свои плейлисты.

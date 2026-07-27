@@ -77,7 +77,7 @@ export default async function PackDetailPage({
             />
           ) : (
             <Button asChild size="lg">
-              <Link href="/login">Войти, чтобы скачать пак</Link>
+              <Link href="/">Войти, чтобы скачать пак</Link>
             </Button>
           ))}
       </div>
