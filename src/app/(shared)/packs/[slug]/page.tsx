@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { TrackList } from "@/components/tracks/track-list";
-import { PackDownloadButton } from "@/components/tracks/pack-download-button";
+import { ZipDownloadButton } from "@/components/tracks/zip-download-button";
 import { getCurrentUser } from "@/server/auth/core/session";
 import { getPublishedPackBySlug } from "@/server/services/pack.service";
 import { favoriteRepository } from "@/server/repositories/favorite.repository";
@@ -20,13 +20,13 @@ export async function generateMetadata({
   const pack = await getPublishedPackBySlug(slug);
   if (!pack) return { title: "Пак не найден" };
   const description =
-    pack.description ?? `Подборка из ${pack.trackCount} треков — ForzaDJ Pool`;
+    pack.description ?? `Подборка из ${pack.trackCount} треков — ForzaDJ`;
   return {
     title: pack.title,
     description,
     alternates: { canonical: `/packs/${pack.slug}` },
     openGraph: {
-      title: `${pack.title} — ForzaDJ Pool`,
+      title: `${pack.title} — ForzaDJ`,
       description,
       url: `/packs/${pack.slug}`,
       type: "music.playlist",
@@ -70,9 +70,10 @@ export default async function PackDetailPage({
         </div>
         {pack.tracks.length > 0 &&
           (user ? (
-            <PackDownloadButton
-              slug={pack.slug}
-              preflight={preflightPackDownloadAction}
+            <ZipDownloadButton
+              preflight={preflightPackDownloadAction.bind(null, pack.slug)}
+              href={`/api/packs/${pack.slug}/download`}
+              idleLabel="⬇ Скачать пак (ZIP)"
             />
           ) : (
             <Button asChild size="lg">

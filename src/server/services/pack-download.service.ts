@@ -4,7 +4,10 @@ import { collectionRepository } from "@/server/repositories/collection.repositor
 import { trackVersionRepository } from "@/server/repositories/track.repository";
 
 /**
- * Подготовка ZIP-скачивания редакционного пака.
+ * Подготовка ZIP-скачивания коллекций: редакционных паков (публичных)
+ * и личных плейлистов (крейтов владельца). Общая доменная логика — резолв
+ * треков, предпроверка квоты и списание — вынесена в приватные функции;
+ * паки и плейлисты отличаются только способом получения набора версий.
  *
  * Правило (утверждено): каждый трек внутри ZIP списывает 1 из суточного
  * лимита. Треки, уже скачанные пользователем макс. число раз (per-track
@@ -16,7 +19,7 @@ import { trackVersionRepository } from "@/server/repositories/track.repository";
  */
 
 export interface PackPreflight {
-  packTitle: string;
+  title: string;
   totalTracks: number;
   /** Треки, которые реально будут скачаны (не достигли per-track cap). */
   eligibleTracks: number;
@@ -36,20 +39,22 @@ interface ResolvedItem {
   fileName: string;
 }
 
-async function resolvePackItems(packSlug: string): Promise<{
+interface ResolvedCollection {
   title: string;
   items: ResolvedItem[];
-} | null> {
-  const pack = await collectionRepository.findPublishedPackBySlug(packSlug);
-  if (!pack) return null;
+}
 
-  // Батч-выборка всех версий пака одним запросом (без N+1).
-  const orderedIds = pack.items.map((i) => i.versionId);
+/** Резолвит набор версий в скачиваемые элементы (published + READY original). */
+async function resolveItems(
+  title: string,
+  orderedIds: string[],
+): Promise<ResolvedCollection> {
+  // Батч-выборка всех версий одним запросом (без N+1).
   const versions = await trackVersionRepository.findManyByIds(orderedIds);
   const byId = new Map(versions.map((v) => [v.id, v]));
 
   const items: ResolvedItem[] = [];
-  // Сохраняем порядок пака (позиции items).
+  // Сохраняем исходный порядок (позиции).
   for (const vId of orderedIds) {
     const version = byId.get(vId);
     if (!version) continue;
@@ -69,97 +74,138 @@ async function resolvePackItems(packSlug: string): Promise<{
       fileName: `${String(items.length + 1).padStart(2, "0")}. ${version.track.title} (${version.type}).${ext}`,
     });
   }
-  return { title: pack.title, items };
+  return { title, items };
+}
+
+async function resolvePack(packSlug: string): Promise<ResolvedCollection | null> {
+  const pack = await collectionRepository.findPublishedPackBySlug(packSlug);
+  if (!pack) return null;
+  return resolveItems(pack.title, pack.items.map((i) => i.versionId));
+}
+
+async function resolveCrate(
+  userId: string,
+  crateId: string,
+): Promise<ResolvedCollection | null> {
+  const crate = await collectionRepository.findOwnedById(userId, crateId);
+  if (!crate) return null;
+  return resolveItems(crate.title, crate.items.map((i) => i.versionId));
+}
+
+/** Предпроверка квоты по резолвнутому набору — без списаний. */
+async function computePreflight(
+  userId: string,
+  resolved: ResolvedCollection,
+): Promise<PackPreflight> {
+  const dailyLimit = downloadLimits.dailyPerUser;
+  const since = new Date(Date.now() - downloadLimits.dailyWindowMs);
+
+  const trackIds = resolved.items.map((i) => i.trackId);
+  const [usedToday, perTrackCounts] = await Promise.all([
+    downloadRepository.countUserSince(userId, since),
+    downloadRepository.countUserTracksGrouped(userId, trackIds),
+  ]);
+  const remaining = Math.max(0, dailyLimit - usedToday);
+
+  // Версии, не достигшие per-track cap (учёт возможных дублей трека).
+  const seenTrack = new Map<string, number>();
+  let eligible = 0;
+  for (const it of resolved.items) {
+    const already =
+      (perTrackCounts.get(it.trackId) ?? 0) + (seenTrack.get(it.trackId) ?? 0);
+    if (already < downloadLimits.maxPerTrack) {
+      eligible += 1;
+      seenTrack.set(it.trackId, (seenTrack.get(it.trackId) ?? 0) + 1);
+    }
+  }
+
+  return {
+    title: resolved.title,
+    totalTracks: resolved.items.length,
+    eligibleTracks: eligible,
+    cappedTracks: resolved.items.length - eligible,
+    remaining,
+    dailyLimit,
+    canDownload: eligible > 0 && remaining >= eligible,
+  };
+}
+
+type PrepareResult =
+  | {
+      ok: true;
+      title: string;
+      included: ResolvedItem[];
+      skipped: Array<{ fileName: string; reason: string }>;
+    }
+  | { ok: false; reason: "not_found" | "insufficient_quota" };
+
+/** Списывает скачивания и формирует список включаемых элементов. */
+async function commit(
+  userId: string,
+  resolved: ResolvedCollection,
+): Promise<PrepareResult> {
+  const since = new Date(Date.now() - downloadLimits.dailyWindowMs);
+  const included: ResolvedItem[] = [];
+  const skipped: Array<{ fileName: string; reason: string }> = [];
+
+  for (const it of resolved.items) {
+    const record = await downloadRepository.recordDownload({
+      userId,
+      versionId: it.versionId,
+      trackId: it.trackId,
+      assetId: it.assetId,
+      dailyLimit: downloadLimits.dailyPerUser,
+      maxPerTrack: downloadLimits.maxPerTrack,
+      since,
+    });
+    if (record.ok) {
+      included.push(it);
+    } else if (record.reason === "per_track_limit") {
+      skipped.push({ fileName: it.fileName, reason: "уже скачан максимум раз" });
+    } else {
+      skipped.push({ fileName: it.fileName, reason: "дневной лимит исчерпан" });
+    }
+  }
+
+  if (included.length === 0) {
+    return { ok: false, reason: "insufficient_quota" };
+  }
+  return { ok: true, title: resolved.title, included, skipped };
 }
 
 export const packDownloadService = {
-  /** Предпроверка без каких-либо списаний. */
+  /** Предпроверка пака без списаний. */
   async preflight(userId: string, packSlug: string): Promise<PackPreflight | null> {
-    const resolved = await resolvePackItems(packSlug);
+    const resolved = await resolvePack(packSlug);
     if (!resolved) return null;
-
-    const dailyLimit = downloadLimits.dailyPerUser;
-    const since = new Date(Date.now() - downloadLimits.dailyWindowMs);
-
-    // Параллельно: суточный счётчик + групповой счётчик по трекам пака.
-    const trackIds = resolved.items.map((i) => i.trackId);
-    const [usedToday, perTrackCounts] = await Promise.all([
-      downloadRepository.countUserSince(userId, since),
-      downloadRepository.countUserTracksGrouped(userId, trackIds),
-    ]);
-    const remaining = Math.max(0, dailyLimit - usedToday);
-
-    // Версии, не достигшие per-track cap (учёт возможных дублей трека в паке).
-    const seenTrack = new Map<string, number>();
-    let eligible = 0;
-    for (const it of resolved.items) {
-      const already =
-        (perTrackCounts.get(it.trackId) ?? 0) + (seenTrack.get(it.trackId) ?? 0);
-      if (already < downloadLimits.maxPerTrack) {
-        eligible += 1;
-        seenTrack.set(it.trackId, (seenTrack.get(it.trackId) ?? 0) + 1);
-      }
-    }
-
-    return {
-      packTitle: resolved.title,
-      totalTracks: resolved.items.length,
-      eligibleTracks: eligible,
-      cappedTracks: resolved.items.length - eligible,
-      remaining,
-      dailyLimit,
-      canDownload: eligible > 0 && remaining >= eligible,
-    };
+    return computePreflight(userId, resolved);
   },
 
-  /**
-   * Разрешает и списывает скачивания под ZIP. Возвращает список включаемых
-   * ассетов (для стриминга) + manifest. НЕ списывает, если лимита не хватает
-   * (предпроверка уже прошла, но защищаемся от гонки — по факту записи).
-   */
-  async prepareArchive(
-    userId: string,
-    packSlug: string,
-  ): Promise<
-    | {
-        ok: true;
-        title: string;
-        included: ResolvedItem[];
-        skipped: Array<{ fileName: string; reason: string }>;
-      }
-    | { ok: false; reason: "not_found" | "insufficient_quota" }
-  > {
-    const resolved = await resolvePackItems(packSlug);
+  /** Разрешает и списывает скачивания под ZIP пака. */
+  async prepareArchive(userId: string, packSlug: string): Promise<PrepareResult> {
+    const resolved = await resolvePack(packSlug);
     if (!resolved) return { ok: false, reason: "not_found" };
+    return commit(userId, resolved);
+  },
 
-    const since = new Date(Date.now() - downloadLimits.dailyWindowMs);
-    const included: ResolvedItem[] = [];
-    const skipped: Array<{ fileName: string; reason: string }> = [];
+  /** Предпроверка плейлиста (крейта) владельца без списаний. */
+  async preflightCrate(
+    userId: string,
+    crateId: string,
+  ): Promise<PackPreflight | null> {
+    const resolved = await resolveCrate(userId, crateId);
+    if (!resolved) return null;
+    return computePreflight(userId, resolved);
+  },
 
-    for (const it of resolved.items) {
-      const record = await downloadRepository.recordDownload({
-        userId,
-        versionId: it.versionId,
-        trackId: it.trackId,
-        assetId: it.assetId,
-        dailyLimit: downloadLimits.dailyPerUser,
-        maxPerTrack: downloadLimits.maxPerTrack,
-        since,
-      });
-      if (record.ok) {
-        included.push(it);
-      } else if (record.reason === "per_track_limit") {
-        skipped.push({ fileName: it.fileName, reason: "уже скачан максимум раз" });
-      } else {
-        // daily_limit достигнут в процессе — прекращаем, остальное в skipped.
-        skipped.push({ fileName: it.fileName, reason: "дневной лимит исчерпан" });
-      }
-    }
-
-    if (included.length === 0) {
-      return { ok: false, reason: "insufficient_quota" };
-    }
-    return { ok: true, title: resolved.title, included, skipped };
+  /** Разрешает и списывает скачивания под ZIP плейлиста (крейта) владельца. */
+  async prepareCrateArchive(
+    userId: string,
+    crateId: string,
+  ): Promise<PrepareResult> {
+    const resolved = await resolveCrate(userId, crateId);
+    if (!resolved) return { ok: false, reason: "not_found" };
+    return commit(userId, resolved);
   },
 };
 

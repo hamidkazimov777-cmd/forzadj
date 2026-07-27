@@ -23,12 +23,12 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
   title: {
-    default: "ForzaDJ Pool",
-    template: "%s — ForzaDJ Pool",
+    default: "ForzaDJ",
+    template: "%s — ForzaDJ",
   },
   description: "Бесплатный DJ Pool на донатах: эксклюзивные версии треков для диджеев",
   openGraph: {
-    siteName: "ForzaDJ Pool",
+    siteName: "ForzaDJ",
     type: "website",
     locale: "ru_RU",
   },

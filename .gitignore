@@ -48,3 +48,6 @@ next-env.d.ts
 
 # local claude settings
 .claude/settings.local.json
+
+# Локальный изолированный npm-кэш (обход сломанного глобального)
+.npm-cache/

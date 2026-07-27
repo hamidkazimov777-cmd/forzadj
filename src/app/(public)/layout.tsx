@@ -12,7 +12,7 @@ export default function PublicLayout({
       <header className="border-b">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <Link href="/" className="text-lg font-bold tracking-tight">
-            ForzaDJ Pool
+            ForzaDJ
           </Link>
           <nav className="flex items-center gap-6 text-sm">
             <Link href="/pricing" className="text-muted-foreground hover:text-foreground">
@@ -27,7 +27,7 @@ export default function PublicLayout({
       <main className="flex-1">{children}</main>
       <footer className="border-t">
         <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-muted-foreground">
-          © {new Date().getFullYear()} ForzaDJ Pool
+          © {new Date().getFullYear()} ForzaDJ
         </div>
       </footer>
     </div>

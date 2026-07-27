@@ -41,7 +41,7 @@ export function CrateShareControls({
       const res = await setVisibility(crateId, next);
       if (res.ok) {
         setIsPublic(next);
-        toast.success(next ? "Крейт публичный" : "Крейт приватный");
+        toast.success(next ? "Плейлист публичный" : "Плейлист приватный");
       } else {
         toast.error(res.error ?? "Не удалось изменить видимость");
       }

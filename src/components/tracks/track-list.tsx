@@ -9,6 +9,7 @@ import { usePlayer } from "@/components/player/player-provider";
 import { DownloadButton } from "@/components/tracks/download-button";
 import { FavoriteButton } from "@/components/tracks/favorite-button";
 import { AddToCrateButton } from "@/components/tracks/add-to-crate-button";
+import { EnergyRating } from "@/components/tracks/energy-rating";
 import {
   artistLineOf,
   defaultVersionOf,
@@ -35,8 +36,8 @@ function RemoveButton({
   return (
     <button
       type="button"
-      aria-label="Убрать из крейта"
-      title="Убрать из крейта"
+      aria-label="Убрать из плейлиста"
+      title="Убрать из плейлиста"
       disabled={pending}
       onClick={() => startTransition(() => onRemove(versionId).then(() => {}))}
       className="text-muted-foreground hover:text-destructive disabled:opacity-50"
@@ -69,7 +70,7 @@ export function TrackList({
   /** Крейты пользователя + actions — для кнопки «в крейт». */
   crates?: CrateSummary[];
   crateActions?: CrateActionFns;
-  /** Если передан — показывается кнопка удаления версии (из крейта). */
+  /** Если передан — показывается кнопка удаления версии (из плейлиста). */
   removeVersion?: (versionId: string) => Promise<{ ok: boolean }>;
   /**
    * Гостевой режим: превью играет, но действия с аккаунтом (избранное,
@@ -149,7 +150,6 @@ export function TrackList({
               </div>
               <p className="truncate text-sm text-muted-foreground">
                 {artistLineOf(track)}
-                {track.genres.length > 0 && ` · ${track.genres.join(", ")}`}
               </p>
             </div>
 
@@ -171,12 +171,29 @@ export function TrackList({
               ))}
             </div>
 
-            <div className="hidden w-40 shrink-0 text-right text-sm tabular-nums text-muted-foreground sm:block">
-              {def?.bpm ? `${def.bpm} BPM` : "—"}
-              {" · "}
-              {def?.musicalKey ?? "—"}
-              {" · "}
-              {fmt(def?.durationSeconds ?? null)}
+            {/* Единый техблок: жанр, BPM, тональность, энергия, длительность. */}
+            <div className="hidden shrink-0 items-center justify-end gap-1.5 whitespace-nowrap text-sm text-muted-foreground sm:flex">
+              {track.genres[0] && (
+                <>
+                  <span className="max-w-[7rem] truncate">{track.genres[0]}</span>
+                  <span aria-hidden className="text-muted-foreground/40">•</span>
+                </>
+              )}
+              <span className="tabular-nums">
+                {def?.bpm ? `${def.bpm} BPM` : "—"}
+              </span>
+              <span aria-hidden className="text-muted-foreground/40">•</span>
+              <span className="tabular-nums">{def?.musicalKey ?? "—"}</span>
+              {def?.energy != null && (
+                <>
+                  <span aria-hidden className="text-muted-foreground/40">•</span>
+                  <EnergyRating value={def.energy} />
+                </>
+              )}
+              <span aria-hidden className="text-muted-foreground/40">•</span>
+              <span className="tabular-nums">
+                {fmt(def?.durationSeconds ?? null)}
+              </span>
             </div>
 
             <div className="flex shrink-0 items-center gap-2">

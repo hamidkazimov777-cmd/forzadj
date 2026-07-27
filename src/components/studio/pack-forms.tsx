@@ -73,51 +73,68 @@ export function PackPublishControls({
   const [pending, startTransition] = useTransition();
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <button
-        type="button"
-        disabled={pending}
-        onClick={() =>
-          startTransition(async () => {
-            await setVisibility(packId, !isPublic);
-            toast.success(isPublic ? "Снято с публикации" : "Опубликовано");
-            router.refresh();
-          })
-        }
-        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm disabled:opacity-50 ${
-          isPublic
-            ? "border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-400"
-            : "text-muted-foreground"
-        }`}
-      >
-        <span className={`size-2 rounded-full ${isPublic ? "bg-green-500" : "bg-muted-foreground"}`} />
-        {isPublic ? "Опубликован" : "Черновик"}
-      </button>
-      {isPublic && (
-        <a
-          href={`/packs/${slug}`}
-          target="_blank"
-          rel="noreferrer"
-          className="text-sm underline underline-offset-4"
+    <div className="flex flex-col gap-3 rounded-lg border p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">Статус:</span>
+        <span
+          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm ${
+            isPublic
+              ? "border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-400"
+              : "text-muted-foreground"
+          }`}
         >
-          Открыть на витрине ↗
-        </a>
-      )}
-      <Button
-        size="sm"
-        variant="ghost"
-        disabled={pending}
-        onClick={() => {
-          if (!confirm("Удалить пак?")) return;
-          startTransition(async () => {
-            await remove(packId);
-            toast.success("Пак удалён");
-            router.push("/studio/collections");
-          });
-        }}
-      >
-        Удалить
-      </Button>
+          <span className={`size-2 rounded-full ${isPublic ? "bg-green-500" : "bg-muted-foreground"}`} />
+          {isPublic ? "Опубликован" : "Черновик"}
+        </span>
+      </div>
+
+      <p className="text-sm text-muted-foreground">
+        {isPublic
+          ? "Пак виден всем в разделе «Паки» на сайте."
+          : "Пак пока виден только в Studio. Опубликуйте, чтобы он появился в разделе «Паки»."}
+      </p>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          disabled={pending}
+          variant={isPublic ? "outline" : "default"}
+          onClick={() =>
+            startTransition(async () => {
+              await setVisibility(packId, !isPublic);
+              toast.success(isPublic ? "Снято с публикации" : "Пак опубликован");
+              router.refresh();
+            })
+          }
+        >
+          {isPublic ? "Снять с публикации" : "Опубликовать пак"}
+        </Button>
+        {isPublic && (
+          <a
+            href={`/packs/${slug}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm underline underline-offset-4"
+          >
+            Открыть на витрине ↗
+          </a>
+        )}
+        <Button
+          size="sm"
+          variant="ghost"
+          className="ml-auto text-muted-foreground"
+          disabled={pending}
+          onClick={() => {
+            if (!confirm("Удалить пак?")) return;
+            startTransition(async () => {
+              await remove(packId);
+              toast.success("Пак удалён");
+              router.push("/studio/collections");
+            });
+          }}
+        >
+          Удалить
+        </Button>
+      </div>
     </div>
   );
 }

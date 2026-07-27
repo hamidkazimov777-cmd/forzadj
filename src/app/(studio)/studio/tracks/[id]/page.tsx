@@ -199,13 +199,13 @@ export default async function TrackEditPage({
                 </select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor={`en-${version.id}`}>Energy 1–10</Label>
+                <Label htmlFor={`en-${version.id}`}>Energy 1–5</Label>
                 <Input
                   id={`en-${version.id}`}
                   name="energy"
                   type="number"
                   min={1}
-                  max={10}
+                  max={5}
                   defaultValue={version.energy ?? ""}
                 />
               </div>

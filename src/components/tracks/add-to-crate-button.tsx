@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import type { CrateSummary, CrateActionFns } from "@/types/collection";
 
 /**
- * Кнопка «в крейт»: выпадающее меню с крейтами пользователя + создание
+ * Кнопка «в плейлист»: выпадающее меню с крейтами пользователя + создание
  * нового. Список крейтов и actions приходят props'ами (без запросов из UI).
  */
 export function AddToCrateButton({
@@ -49,26 +49,26 @@ export function AddToCrateButton({
       ]);
       setNewTitle("");
       const res = await actions.addToCrate(crate.id, versionId);
-      if (res.ok) toast.success(`Крейт «${crate.title}» создан, трек добавлен`);
+      if (res.ok) toast.success(`Плейлист «${crate.title}» создан, трек добавлен`);
     });
   }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label="Добавить в крейт"
-        title="Добавить в крейт"
+        aria-label="Добавить в плейлист"
+        title="Добавить в плейлист"
         disabled={pending}
         className="text-lg leading-none text-muted-foreground hover:text-foreground disabled:opacity-50"
       >
         ＋
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Добавить в крейт</DropdownMenuLabel>
+        <DropdownMenuLabel>Добавить в плейлист</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {localCrates.length === 0 && (
           <p className="px-2 py-1.5 text-xs text-muted-foreground">
-            Крейтов пока нет
+            Плейлистов пока нет
           </p>
         )}
         {localCrates.map((c) => (
@@ -90,7 +90,7 @@ export function AddToCrateButton({
                 createAndAdd();
               }
             }}
-            placeholder="Новый крейт…"
+            placeholder="Новый плейлист…"
             className="h-8 text-sm"
           />
         </div>

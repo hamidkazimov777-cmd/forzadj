@@ -164,7 +164,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     navigator.mediaSession.metadata = new MediaMetadata({
       title: `${current.title} (${current.versionType})`,
       artist: current.artistLine,
-      album: "ForzaDJ Pool",
+      album: "ForzaDJ",
     });
     navigator.mediaSession.setActionHandler("play", () => dispatch({ type: "TOGGLE" }));
     navigator.mediaSession.setActionHandler("pause", () => dispatch({ type: "TOGGLE" }));

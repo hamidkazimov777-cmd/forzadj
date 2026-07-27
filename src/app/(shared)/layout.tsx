@@ -28,7 +28,7 @@ export default async function SharedLayout({
             href={user ? "/pool" : "/"}
             className="text-lg font-bold tracking-tight"
           >
-            ForzaDJ Pool
+            ForzaDJ
           </Link>
           {user && <DjNavDesktop showStudio={showStudio} />}
           {user ? (

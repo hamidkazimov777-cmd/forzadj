@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     "Готовые подборки треков от редакции ForzaDJ под конкретные ситуации — скачиваются одним архивом.",
   alternates: { canonical: "/packs" },
   openGraph: {
-    title: "Паки — ForzaDJ Pool",
+    title: "Паки — ForzaDJ",
     description:
       "Готовые подборки треков от редакции под конкретные ситуации.",
     url: "/packs",

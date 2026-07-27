@@ -17,17 +17,17 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const crate = await collectionRepository.findPublicBySlug(slug);
-  if (!crate) return { title: "Крейт не найден" };
+  if (!crate) return { title: "Плейлист не найден" };
   const owner = crate.owner?.displayName ?? "DJ";
-  const description = `Крейт ${owner}: ${crate.items.length} треков на ForzaDJ Pool`;
+  const description = `Плейлист ${owner}: ${crate.items.length} треков на ForzaDJ`;
   return {
-    title: `${crate.title} — крейт ${owner}`,
+    title: `${crate.title} — плейлист ${owner}`,
     description,
     // UNLISTED крейты (по ссылке) не индексируем; PUBLIC — можно.
     robots: crate.visibility === "PUBLIC" ? undefined : { index: false },
     alternates: { canonical: `/c/${slug}` },
     openGraph: {
-      title: `${crate.title} — крейт ${owner}`,
+      title: `${crate.title} — плейлист ${owner}`,
       description,
       url: `/c/${slug}`,
       type: "music.playlist",
@@ -62,7 +62,7 @@ export default async function PublicCratePage({
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="secondary">Крейт</Badge>
+        <Badge variant="secondary">Плейлист</Badge>
         {crate.visibility === "PUBLIC" && <Badge variant="outline">публичный</Badge>}
       </div>
       <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
@@ -78,7 +78,7 @@ export default async function PublicCratePage({
             href={`/collections/${crate.id}`}
             className="underline underline-offset-4"
           >
-            Это ваш крейт — редактировать
+            Это ваш плейлист — редактировать
           </Link>
         </p>
       )}
@@ -88,14 +88,14 @@ export default async function PublicCratePage({
           <Link href="/login" className="font-medium underline underline-offset-4">
             Войдите
           </Link>{" "}
-          — чтобы скачивать треки, сохранять в избранное и собирать свои крейты.
+          — чтобы скачивать треки, сохранять в избранное и собирать свои плейлисты.
         </p>
       )}
 
       <div className="mt-6">
         {tracks.length === 0 ? (
           <p className="py-16 text-center text-muted-foreground">
-            В этом крейте пока нет треков.
+            В этом плейлисте пока нет треков.
           </p>
         ) : user ? (
           <TrackList

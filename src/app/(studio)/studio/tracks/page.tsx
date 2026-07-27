@@ -10,7 +10,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DeleteTrackButton } from "@/components/studio/delete-track-button";
 import { requireStudioPermission } from "@/server/auth/core/session";
+import { deleteTrackAction } from "@/server/actions/content.actions";
 import { trackRepository } from "@/server/repositories/track.repository";
 import type { ContentStatus } from "@/types/db";
 
@@ -76,12 +78,13 @@ export default async function AdminTracksPage({
               <TableHead>Версии</TableHead>
               <TableHead>Статус</TableHead>
               <TableHead>Скачиваний</TableHead>
+              <TableHead className="text-right">Действия</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {tracks.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                   Пока нет треков —{" "}
                   <Link href="/studio/tracks/upload" className="underline underline-offset-4">
                     загрузите первые
@@ -121,6 +124,13 @@ export default async function AdminTracksPage({
                   </Badge>
                 </TableCell>
                 <TableCell>{track.downloadCount}</TableCell>
+                <TableCell className="text-right">
+                  <DeleteTrackButton
+                    trackId={track.id}
+                    title={track.title}
+                    onDelete={deleteTrackAction}
+                  />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

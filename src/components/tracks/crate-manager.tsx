@@ -23,7 +23,7 @@ export function CreateCrateForm({
     startTransition(async () => {
       await createCrate(t);
       setTitle("");
-      toast.success(`Крейт «${t}» создан`);
+      toast.success(`Плейлист «${t}» создан`);
       router.refresh();
     });
   }
@@ -34,7 +34,7 @@ export function CreateCrateForm({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), submit())}
-        placeholder="Название нового крейта…"
+        placeholder="Название нового плейлиста…"
       />
       <Button onClick={submit} disabled={pending}>
         Создать
@@ -81,11 +81,11 @@ export function CrateActions({
   }
 
   function doDelete() {
-    if (!confirm(`Удалить крейт «${currentTitle}»?`)) return;
+    if (!confirm(`Удалить плейлист «${currentTitle}»?`)) return;
     startTransition(async () => {
       const res = await remove(crateId);
       if (res.ok) {
-        toast.success("Крейт удалён");
+        toast.success("Плейлист удалён");
         if (redirectAfterDelete) router.push("/collections");
         else router.refresh();
       } else {

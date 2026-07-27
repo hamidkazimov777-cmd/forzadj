@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DjNavDesktop, DjNavMobile } from "@/components/layout/dj-nav";
+import { SupportButton } from "@/components/support/support-button";
+import { submitSupportRequestAction } from "@/server/actions/donation.actions";
 import { requireUser } from "@/server/auth/core/session";
 import { can } from "@/server/auth/core/permissions";
 
@@ -23,10 +25,21 @@ export default async function DjLayout({
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 md:gap-8">
           <DjNavMobile showStudio={showStudio} />
           <Link href="/pool" className="text-lg font-bold tracking-tight">
-            ForzaDJ Pool
+            ForzaDJ
           </Link>
           <DjNavDesktop showStudio={showStudio} />
-          <Link href="/account" className="ml-auto flex items-center gap-2">
+          <SupportButton
+            submit={submitSupportRequestAction}
+            variant="ghost"
+            className="ml-auto px-2 sm:px-3"
+            label={
+              <>
+                <span className="hidden sm:inline">❤️ Поддержать</span>
+                <span className="text-base sm:hidden">❤️</span>
+              </>
+            }
+          />
+          <Link href="/account" className="flex items-center gap-2">
             <span className="hidden text-sm text-muted-foreground sm:inline">
               {user.displayName}
             </span>

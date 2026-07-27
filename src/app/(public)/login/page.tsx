@@ -38,7 +38,7 @@ export default async function LoginPage({
     <div className="flex justify-center py-24">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Вход в ForzaDJ Pool</CardTitle>
+          <CardTitle>Вход в ForzaDJ</CardTitle>
           <CardDescription>
             Авторизация через Telegram — быстро и без паролей.
           </CardDescription>

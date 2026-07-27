@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -16,10 +17,42 @@ function fmt(sec: number): string {
 export function MiniPlayer() {
   const player = usePlayer();
   const { current } = player;
+  // Свёрнутое состояние — только внешний вид; аудио живёт в PlayerProvider,
+  // поэтому музыка продолжает играть при сворачивании.
+  const [collapsed, setCollapsed] = useState(false);
   if (!current) return null;
 
   const duration = current.durationSeconds ?? 0;
   const progress = duration > 0 ? player.positionSec / duration : 0;
+
+  // Свёрнутый вид: компактная плашка в углу (play/pause + название + развернуть).
+  if (collapsed) {
+    return (
+      <div className="fixed bottom-3 right-3 z-50 flex items-center gap-2 rounded-full border bg-background/95 py-1.5 pl-2 pr-1.5 shadow-lg backdrop-blur">
+        <Button
+          size="icon"
+          className="size-8"
+          onClick={player.toggle}
+          aria-label={player.status === "playing" ? "Пауза" : "Играть"}
+        >
+          {player.status === "playing" ? "⏸" : "▶"}
+        </Button>
+        <span className="max-w-[40vw] truncate text-sm font-medium sm:max-w-[16rem]">
+          {current.title}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-8"
+          onClick={() => setCollapsed(false)}
+          aria-label="Развернуть плеер"
+          title="Развернуть плеер"
+        >
+          ▴
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 backdrop-blur">
@@ -78,6 +111,17 @@ export function MiniPlayer() {
             onValueChange={([v]) => player.setVolume(v / 100)}
           />
         </div>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="shrink-0"
+          onClick={() => setCollapsed(true)}
+          aria-label="Свернуть плеер"
+          title="Свернуть плеер"
+        >
+          ▾
+        </Button>
       </div>
     </div>
   );

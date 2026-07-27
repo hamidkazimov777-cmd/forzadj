@@ -29,10 +29,13 @@ export function SupportButton({
   submit,
   variant = "default",
   className,
+  label,
 }: {
   submit: SupportSubmitFn;
   variant?: "default" | "outline" | "secondary" | "ghost";
   className?: string;
+  /** Текст/иконка на кнопке-триггере. По умолчанию — полная подпись. */
+  label?: React.ReactNode;
 }) {
   const [swiftOpen, setSwiftOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -41,7 +44,7 @@ export function SupportButton({
     <Dialog>
       <DialogTrigger asChild>
         <Button variant={variant} className={className}>
-          ❤️ Поддержать ForzaDJ
+          {label ?? "❤️ Поддержать ForzaDJ"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">

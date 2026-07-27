@@ -48,6 +48,9 @@ export async function updateTrackAction(
   });
   revalidatePath(`/studio/tracks/${trackId}`);
   revalidatePath("/studio/tracks");
+  // Метаданные (жанр, название и т.д.) видны в каталоге — сбрасываем кэш,
+  // иначе /pool показывает старые значения до истечения revalidate.
+  revalidateTag(CATALOG_CACHE_TAG);
 }
 
 export async function updateVersionAction(
@@ -70,6 +73,8 @@ export async function updateVersionAction(
     isExplicit: parsed.isExplicit,
   });
   revalidatePath(`/studio/tracks/${trackId}`);
+  // BPM/Key/Energy версии отображаются в каталоге — сбрасываем кэш.
+  revalidateTag(CATALOG_CACHE_TAG);
 }
 
 export async function publishTrackAction(trackId: string): Promise<void> {

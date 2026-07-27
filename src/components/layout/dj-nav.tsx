@@ -17,7 +17,7 @@ const LINKS = [
   { href: "/new", label: "Новинки" },
   { href: "/charts", label: "Чарты" },
   { href: "/packs", label: "Паки" },
-  { href: "/collections", label: "Крейты" },
+  { href: "/collections", label: "Плейлисты" },
   { href: "/favorites", label: "Избранное" },
   { href: "/downloads", label: "Скачивания" },
 ];
@@ -75,7 +75,7 @@ export function DjNavMobile({ showStudio = false }: { showStudio?: boolean }) {
       </SheetTrigger>
       <SheetContent side="left" className="w-64">
         <SheetHeader>
-          <SheetTitle>ForzaDJ Pool</SheetTitle>
+          <SheetTitle>ForzaDJ</SheetTitle>
         </SheetHeader>
         <nav className="mt-4 flex flex-col gap-1">
           {linksFor(showStudio).map((l) => (

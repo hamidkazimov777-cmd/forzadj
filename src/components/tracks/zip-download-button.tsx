@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 interface Preflight {
-  packTitle: string;
+  title: string;
   totalTracks: number;
   eligibleTracks: number;
   cappedTracks: number;
@@ -15,17 +15,19 @@ interface Preflight {
 }
 
 /**
- * Кнопка ZIP-скачивания пака. Сначала предпроверка квоты (не начинаем
- * архив, если лимита не хватает) — затем переход на стрим-эндпоинт.
+ * Универсальная кнопка ZIP-скачивания коллекции (пак или плейлист).
+ * Сначала предпроверка квоты (архив не начинаем, если лимита не хватает) —
+ * затем переход на стрим-эндпоинт. Логика едина; различаются лишь preflight,
+ * href и подпись — приходят props'ами.
  */
-export function PackDownloadButton({
-  slug,
+export function ZipDownloadButton({
   preflight,
+  href,
+  idleLabel,
 }: {
-  slug: string;
-  preflight: (
-    slug: string,
-  ) => Promise<Preflight | { error: "forbidden" | "not_found" }>;
+  preflight: () => Promise<Preflight | { error: "forbidden" | "not_found" }>;
+  href: string;
+  idleLabel: string;
 }) {
   const [pending, startTransition] = useTransition();
   const [warning, setWarning] = useState<string | null>(null);
@@ -33,14 +35,14 @@ export function PackDownloadButton({
   function handleClick() {
     setWarning(null);
     startTransition(async () => {
-      const pre = await preflight(slug);
+      const pre = await preflight();
       if ("error" in pre) {
-        toast.error(pre.error === "forbidden" ? "Нет доступа" : "Пак не найден");
+        toast.error(pre.error === "forbidden" ? "Нет доступа" : "Не найдено");
         return;
       }
       if (pre.eligibleTracks === 0) {
         setWarning(
-          "Все треки пака уже скачаны максимальное число раз — новых списаний не будет.",
+          "Все треки уже скачаны максимальное число раз — новых списаний не будет.",
         );
         return;
       }
@@ -51,7 +53,6 @@ export function PackDownloadButton({
         toast.error("Недостаточно дневного лимита");
         return;
       }
-      // Хватает — запускаем стрим ZIP.
       const note =
         pre.cappedTracks > 0
           ? ` (${pre.cappedTracks} уже скачаны ранее — в архив не войдут)`
@@ -59,18 +60,16 @@ export function PackDownloadButton({
       toast.success(
         `Готовим ZIP: ${pre.eligibleTracks} треков${note}. Спишется ${pre.eligibleTracks} из лимита.`,
       );
-      window.location.href = `/api/packs/${slug}/download`;
+      window.location.href = href;
     });
   }
 
   return (
     <div className="flex flex-col gap-2">
       <Button onClick={handleClick} disabled={pending} size="lg">
-        {pending ? "Проверяем лимит…" : "⬇ Скачать пак (ZIP)"}
+        {pending ? "Проверяем лимит…" : idleLabel}
       </Button>
-      {warning && (
-        <p className="max-w-md text-sm text-destructive">{warning}</p>
-      )}
+      {warning && <p className="max-w-md text-sm text-destructive">{warning}</p>}
     </div>
   );
 }

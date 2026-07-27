@@ -20,13 +20,17 @@ export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams;
   const next = safeNext(sp.get("next"));
 
+  // За обратным прокси (Caddy → 127.0.0.1) Next видит origin как localhost.
+  // Канонический публичный адрес берём из ENV, иначе — из запроса (dev).
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
+
   // Поля Telegram — всё, кроме нашего служебного next.
   const params: Record<string, string> = {};
   for (const [key, value] of sp.entries()) {
     if (key !== "next") params[key] = value;
   }
 
-  const loginUrl = new URL("/login", request.nextUrl.origin);
+  const loginUrl = new URL("/login", baseUrl);
   if (sp.get("next")) loginUrl.searchParams.set("next", next);
 
   try {
@@ -48,7 +52,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Успех: сразу в личный кабинет (или туда, откуда пришёл гость).
-    return NextResponse.redirect(new URL(next, request.nextUrl.origin));
+    return NextResponse.redirect(new URL(next, baseUrl));
   } catch (err) {
     console.error("[auth] telegram callback failed:", err);
     loginUrl.searchParams.set("error", "internal");

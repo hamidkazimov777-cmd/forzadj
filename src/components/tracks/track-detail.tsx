@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { usePlayer } from "@/components/player/player-provider";
 import { Waveform } from "@/components/player/waveform";
 import { DownloadButton } from "@/components/tracks/download-button";
+import { EnergyRating } from "@/components/tracks/energy-rating";
 import { classicKeyOf } from "@/lib/camelot";
 import { toPlayerTrack } from "@/lib/player-track";
 import type { TrackCardDto } from "@/types/catalog";
@@ -101,7 +102,9 @@ export function TrackDetail({
                     ? `${v.musicalKey} (${classicKeyOf(v.musicalKey) ?? "?"})`
                     : "—"}
                 </td>
-                <td className="px-3 py-2">{v.energy ?? "—"}</td>
+                <td className="px-3 py-2">
+                  <EnergyRating value={v.energy} />
+                </td>
                 <td className="px-3 py-2 tabular-nums">
                   {v.introSeconds != null || v.outroSeconds != null
                     ? `${v.introSeconds ?? 0}s / ${v.outroSeconds ?? 0}s`

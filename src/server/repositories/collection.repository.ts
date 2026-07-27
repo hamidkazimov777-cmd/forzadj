@@ -74,6 +74,20 @@ export const collectionRepository = {
     return c !== null;
   },
 
+  /** Число треков в коллекции (для лимита плейлиста). */
+  countItems(collectionId: string): Promise<number> {
+    return prisma.collectionItem.count({ where: { collectionId } });
+  },
+
+  /** Есть ли уже эта версия в коллекции (лимит не блокирует повторное добавление). */
+  async itemExists(collectionId: string, versionId: string): Promise<boolean> {
+    const item = await prisma.collectionItem.findUnique({
+      where: { collectionId_versionId: { collectionId, versionId } },
+      select: { versionId: true },
+    });
+    return item !== null;
+  },
+
   /** Добавить версию в конец крейта (идемпотентно по составному PK). */
   async addItem(crateId: string, versionId: string, userId: string) {
     const last = await prisma.collectionItem.findFirst({

@@ -63,7 +63,7 @@ export const versionMetadataSchema = z.object({
   ),
   energy: z.preprocess(
     emptyToUndef,
-    z.coerce.number().int().min(1).max(10).optional(),
+    z.coerce.number().int().min(1).max(5).optional(),
   ),
   introSeconds: z.preprocess(
     emptyToUndef,

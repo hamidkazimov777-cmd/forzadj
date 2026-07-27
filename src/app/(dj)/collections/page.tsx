@@ -9,7 +9,7 @@ import {
   deleteCrateAction,
 } from "@/server/actions/collection.actions";
 
-export const metadata = { title: "Крейты" };
+export const metadata = { title: "Плейлисты" };
 
 export default async function CollectionsPage() {
   const user = await requireUser();
@@ -17,7 +17,7 @@ export default async function CollectionsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold tracking-tight">Мои крейты</h1>
+      <h1 className="text-2xl font-bold tracking-tight">Мои плейлисты</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Личные подборки треков. Добавляйте треки из каталога кнопкой ＋.
       </p>
@@ -28,7 +28,7 @@ export default async function CollectionsPage() {
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {crates.length === 0 && (
-          <p className="text-muted-foreground">Крейтов пока нет — создайте первый.</p>
+          <p className="text-muted-foreground">Плейлистов пока нет — создайте первый.</p>
         )}
         {crates.map((c) => (
           <Card key={c.id} className="flex flex-col gap-2 p-4">
