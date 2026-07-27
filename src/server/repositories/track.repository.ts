@@ -127,7 +127,17 @@ export const trackVersionRepository = {
   findById(id: string) {
     return prisma.trackVersion.findFirst({
       where: { id },
-      include: { track: true, assets: { where: { deletedAt: null } } },
+      include: {
+        track: {
+          include: {
+            artists: {
+              include: { artist: true },
+              orderBy: { position: "asc" },
+            },
+          },
+        },
+        assets: { where: { deletedAt: null } },
+      },
     });
   },
 

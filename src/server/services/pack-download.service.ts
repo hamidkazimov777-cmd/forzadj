@@ -1,4 +1,5 @@
 import { downloadLimits } from "@/lib/config/limits";
+import { trackFileName } from "@/lib/filename";
 import { downloadRepository } from "@/server/repositories/download.repository";
 import { collectionRepository } from "@/server/repositories/collection.repository";
 import { trackVersionRepository } from "@/server/repositories/track.repository";
@@ -66,12 +67,18 @@ async function resolveItems(
     );
     if (!original) continue;
     const ext = original.storageKey.match(/\.([a-z0-9]+)$/i)?.[1] ?? "wav";
+    const nn = String(items.length + 1).padStart(2, "0");
     items.push({
       versionId: version.id,
       trackId: version.trackId,
       assetId: original.id,
       storageKey: original.storageKey,
-      fileName: `${String(items.length + 1).padStart(2, "0")}. ${version.track.title} (${version.type}).${ext}`,
+      // Нумерованный префикс для порядка в архиве + читаемое имя трека.
+      fileName: `${nn}. ${trackFileName({
+        title: version.track.title,
+        type: version.type,
+        ext,
+      })}`,
     });
   }
   return { title, items };

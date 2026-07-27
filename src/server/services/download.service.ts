@@ -3,7 +3,7 @@ import { trackVersionRepository } from "@/server/repositories/track.repository";
 import { downloadRepository } from "@/server/repositories/download.repository";
 import { can } from "@/server/auth/core/permissions";
 import { downloadLimits } from "@/lib/config/limits";
-import { slugify } from "@/lib/slug";
+import { trackFileName } from "@/lib/filename";
 import type { SessionUser } from "@/types/auth";
 
 /**
@@ -93,8 +93,17 @@ export const downloadService = {
     }
 
     const ext = extensionOf(original.storageKey);
-    const label = version.versionLabel ? ` ${version.versionLabel}` : "";
-    const fileName = `${slugify(version.track.title)}-${version.type.toLowerCase()}${label}.${ext}`;
+    const mainArtists = version.track.artists
+      .filter((a) => a.role === "MAIN")
+      .map((a) => a.artist.name)
+      .join(", ");
+    const fileName = trackFileName({
+      title: version.track.title,
+      type: version.type,
+      versionLabel: version.versionLabel,
+      ext,
+      artistLine: mainArtists,
+    });
 
     const signed = await getStorage().createSignedDownloadUrl(
       "audio",
