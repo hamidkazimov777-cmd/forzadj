@@ -103,8 +103,21 @@ async function resolveCrate(
 async function computePreflight(
   userId: string,
   resolved: ResolvedCollection,
+  bypassLimits = false,
 ): Promise<PackPreflight> {
   const dailyLimit = downloadLimits.dailyPerUser;
+  // Владелец без лимитов: все треки доступны, ничего не блокируется.
+  if (bypassLimits) {
+    return {
+      title: resolved.title,
+      totalTracks: resolved.items.length,
+      eligibleTracks: resolved.items.length,
+      cappedTracks: 0,
+      remaining: resolved.items.length,
+      dailyLimit,
+      canDownload: resolved.items.length > 0,
+    };
+  }
   const since = new Date(Date.now() - downloadLimits.dailyWindowMs);
 
   const trackIds = resolved.items.map((i) => i.trackId);
@@ -150,6 +163,7 @@ type PrepareResult =
 async function commit(
   userId: string,
   resolved: ResolvedCollection,
+  bypassLimits = false,
 ): Promise<PrepareResult> {
   const since = new Date(Date.now() - downloadLimits.dailyWindowMs);
   const included: ResolvedItem[] = [];
@@ -164,6 +178,7 @@ async function commit(
       dailyLimit: downloadLimits.dailyPerUser,
       maxPerTrack: downloadLimits.maxPerTrack,
       since,
+      bypassLimits,
     });
     if (record.ok) {
       included.push(it);
@@ -182,37 +197,47 @@ async function commit(
 
 export const packDownloadService = {
   /** Предпроверка пака без списаний. */
-  async preflight(userId: string, packSlug: string): Promise<PackPreflight | null> {
+  async preflight(
+    userId: string,
+    packSlug: string,
+    bypassLimits = false,
+  ): Promise<PackPreflight | null> {
     const resolved = await resolvePack(packSlug);
     if (!resolved) return null;
-    return computePreflight(userId, resolved);
+    return computePreflight(userId, resolved, bypassLimits);
   },
 
   /** Разрешает и списывает скачивания под ZIP пака. */
-  async prepareArchive(userId: string, packSlug: string): Promise<PrepareResult> {
+  async prepareArchive(
+    userId: string,
+    packSlug: string,
+    bypassLimits = false,
+  ): Promise<PrepareResult> {
     const resolved = await resolvePack(packSlug);
     if (!resolved) return { ok: false, reason: "not_found" };
-    return commit(userId, resolved);
+    return commit(userId, resolved, bypassLimits);
   },
 
   /** Предпроверка плейлиста (крейта) владельца без списаний. */
   async preflightCrate(
     userId: string,
     crateId: string,
+    bypassLimits = false,
   ): Promise<PackPreflight | null> {
     const resolved = await resolveCrate(userId, crateId);
     if (!resolved) return null;
-    return computePreflight(userId, resolved);
+    return computePreflight(userId, resolved, bypassLimits);
   },
 
   /** Разрешает и списывает скачивания под ZIP плейлиста (крейта) владельца. */
   async prepareCrateArchive(
     userId: string,
     crateId: string,
+    bypassLimits = false,
   ): Promise<PrepareResult> {
     const resolved = await resolveCrate(userId, crateId);
     if (!resolved) return { ok: false, reason: "not_found" };
-    return commit(userId, resolved);
+    return commit(userId, resolved, bypassLimits);
   },
 };
 

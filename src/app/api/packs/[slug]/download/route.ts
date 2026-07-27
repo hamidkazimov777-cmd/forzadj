@@ -33,16 +33,24 @@ export async function GET(
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  const rl = checkRateLimit(
-    `pack-download:${user.id}`,
-    downloadRateLimit.maxRequests,
-    downloadRateLimit.windowMs,
-  );
-  if (!rl.allowed) {
-    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  // Владелец (downloads.unlimited) — без rate-limit и без квот.
+  const unlimited = can(user, "downloads.unlimited");
+  if (!unlimited) {
+    const rl = checkRateLimit(
+      `pack-download:${user.id}`,
+      downloadRateLimit.maxRequests,
+      downloadRateLimit.windowMs,
+    );
+    if (!rl.allowed) {
+      return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+    }
   }
 
-  const prepared = await packDownloadService.prepareArchive(user.id, slug);
+  const prepared = await packDownloadService.prepareArchive(
+    user.id,
+    slug,
+    unlimited,
+  );
   if (!prepared.ok) {
     const status = prepared.reason === "not_found" ? 404 : 409;
     return NextResponse.json({ error: prepared.reason }, { status });

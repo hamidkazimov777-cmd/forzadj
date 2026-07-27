@@ -16,6 +16,7 @@ import type { SessionUser, UserRole } from "@/types/auth";
 export type Permission =
   | "pool.view"
   | "track.download"
+  | "downloads.unlimited" // без суточного/пер-трек лимита — владелец
   | "content.manage" // релизы/треки/версии/ассеты
   | "collections.manage" // редакционные паки
   | "studio.access" // доступ в Studio (админ-зону)
@@ -27,6 +28,7 @@ export type Permission =
 const PERMISSION_MAP: Record<Permission, readonly UserRole[]> = {
   "pool.view": ["DJ", "UPLOADER", "ADMIN", "SUPER_ADMIN"],
   "track.download": ["DJ", "UPLOADER", "ADMIN", "SUPER_ADMIN"],
+  "downloads.unlimited": ["SUPER_ADMIN"],
   "content.manage": ["UPLOADER", "ADMIN", "SUPER_ADMIN"],
   "collections.manage": ["UPLOADER", "ADMIN", "SUPER_ADMIN"],
   "studio.access": ["UPLOADER", "ADMIN", "SUPER_ADMIN"],

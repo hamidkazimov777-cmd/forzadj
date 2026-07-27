@@ -92,7 +92,11 @@ export async function preflightCrateDownloadAction(
 ): Promise<PackPreflight | { error: "forbidden" | "not_found" }> {
   const user = await requireUser();
   if (!can(user, "track.download")) return { error: "forbidden" };
-  const pre = await packDownloadService.preflightCrate(user.id, crateId);
+  const pre = await packDownloadService.preflightCrate(
+    user.id,
+    crateId,
+    can(user, "downloads.unlimited"),
+  );
   if (!pre) return { error: "not_found" };
   return pre;
 }

@@ -128,7 +128,11 @@ export async function preflightPackDownloadAction(
 ): Promise<PackPreflight | { error: "forbidden" | "not_found" }> {
   const user = await requireUser();
   if (!can(user, "track.download")) return { error: "forbidden" };
-  const pre = await packDownloadService.preflight(user.id, slug);
+  const pre = await packDownloadService.preflight(
+    user.id,
+    slug,
+    can(user, "downloads.unlimited"),
+  );
   if (!pre) return { error: "not_found" };
   return pre;
 }

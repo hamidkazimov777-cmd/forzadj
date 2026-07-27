@@ -77,6 +77,7 @@ export const downloadService = {
       dailyLimit: downloadLimits.dailyPerUser,
       maxPerTrack: downloadLimits.maxPerTrack,
       since,
+      bypassLimits: can(user, "downloads.unlimited"),
     });
 
     const dailyLimit = downloadLimits.dailyPerUser;

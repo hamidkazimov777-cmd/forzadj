@@ -20,18 +20,21 @@ export async function requestDownloadAction(
     return { ok: false, error: "forbidden" };
   }
 
-  // Базовый антифрод: не даём массово дёргать эндпоинт.
-  const rl = checkRateLimit(
-    `download:${user.id}`,
-    downloadRateLimit.maxRequests,
-    downloadRateLimit.windowMs,
-  );
-  if (!rl.allowed) {
-    return {
-      ok: false,
-      error: "rate_limited",
-      retryAfterSec: Math.ceil(rl.retryAfterMs / 1000),
-    };
+  // Базовый антифрод: не даём массово дёргать эндпоинт. Владелец
+  // (downloads.unlimited) — без rate-limit и без квот.
+  if (!can(user, "downloads.unlimited")) {
+    const rl = checkRateLimit(
+      `download:${user.id}`,
+      downloadRateLimit.maxRequests,
+      downloadRateLimit.windowMs,
+    );
+    if (!rl.allowed) {
+      return {
+        ok: false,
+        error: "rate_limited",
+        retryAfterSec: Math.ceil(rl.retryAfterMs / 1000),
+      };
+    }
   }
 
   const result = await downloadService.requestDownload(user, versionId);

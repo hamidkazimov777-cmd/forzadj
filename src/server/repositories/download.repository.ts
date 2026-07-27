@@ -63,6 +63,8 @@ export const downloadRepository = {
     dailyLimit: number;
     maxPerTrack: number;
     since: Date;
+    /** Владелец (SUPER_ADMIN): пропускаем лимиты, но всё равно записываем. */
+    bypassLimits?: boolean;
   }): Promise<
     | { ok: true; downloadId: string; usedToday: number }
     | { ok: false; reason: "daily_limit" | "per_track_limit"; usedToday: number }
@@ -72,18 +74,20 @@ export const downloadRepository = {
         const usedToday = await tx.download.count({
           where: { userId: input.userId, createdAt: { gte: input.since } },
         });
-        if (usedToday >= input.dailyLimit) {
+        if (!input.bypassLimits && usedToday >= input.dailyLimit) {
           return { ok: false as const, reason: "daily_limit" as const, usedToday };
         }
-        const perTrack = await tx.download.count({
-          where: { userId: input.userId, trackId: input.trackId },
-        });
-        if (perTrack >= input.maxPerTrack) {
-          return {
-            ok: false as const,
-            reason: "per_track_limit" as const,
-            usedToday,
-          };
+        if (!input.bypassLimits) {
+          const perTrack = await tx.download.count({
+            where: { userId: input.userId, trackId: input.trackId },
+          });
+          if (perTrack >= input.maxPerTrack) {
+            return {
+              ok: false as const,
+              reason: "per_track_limit" as const,
+              usedToday,
+            };
+          }
         }
 
         const download = await tx.download.create({
