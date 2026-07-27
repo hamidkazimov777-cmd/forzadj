@@ -41,7 +41,7 @@ function toCardDto(track: CatalogTrack): TrackCardDto {
       type: v.type,
       versionLabel: v.versionLabel,
       bpm: v.bpm,
-      musicalKey: v.musicalKey,
+      camelotKey: v.camelotKey,
       energy: v.energy,
       durationSeconds: v.durationSeconds,
       introSeconds: v.introSeconds,
@@ -66,7 +66,7 @@ function versionWhere(filters: CatalogFilters): Prisma.TrackVersionWhereInput {
     };
   }
   if (filters.key) {
-    where.musicalKey = filters.keyCompatible
+    where.camelotKey = filters.keyCompatible
       ? { in: camelotNeighbors(filters.key) }
       : filters.key.toUpperCase();
   }
@@ -216,14 +216,14 @@ export const catalogRepository = {
       orderBy: { downloadCount: "desc" },
     });
 
-    const compatible = ref?.musicalKey
-      ? new Set(camelotNeighbors(ref.musicalKey))
+    const compatible = ref?.camelotKey
+      ? new Set(camelotNeighbors(ref.camelotKey))
       : null;
     const scored = candidates.map((c) => {
       const dto = toCardDto(c);
       const keyMatch = compatible
         ? dto.versions.some(
-            (v) => v.musicalKey && compatible.has(v.musicalKey),
+            (v) => v.camelotKey && compatible.has(v.camelotKey),
           )
         : false;
       return { dto, score: (keyMatch ? 10 : 0) + Math.min(c.downloadCount, 9) };

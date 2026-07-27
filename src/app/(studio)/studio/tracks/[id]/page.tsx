@@ -34,6 +34,13 @@ const ASSET_STATUS_RU: Record<string, string> = {
   FAILED: "ошибка",
 };
 
+const ANALYSIS_STATUS_RU: Record<string, string> = {
+  PENDING: "анализ…",
+  DONE: "анализ ✓",
+  FAILED: "анализ ✗",
+  SKIPPED: "анализ —",
+};
+
 export default async function TrackEditPage({
   params,
 }: {
@@ -141,6 +148,18 @@ export default async function TrackEditPage({
               Версия: {version.type}
               {version.versionLabel && ` (${version.versionLabel})`}
               <Badge variant="outline">{version.status}</Badge>
+              <Badge
+                variant={
+                  version.analysisStatus === "DONE"
+                    ? "default"
+                    : version.analysisStatus === "FAILED"
+                      ? "destructive"
+                      : "secondary"
+                }
+                title="Автоанализ BPM / Camelot"
+              >
+                {ANALYSIS_STATUS_RU[version.analysisStatus]}
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
@@ -171,10 +190,10 @@ export default async function TrackEditPage({
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Key (Camelot)</Label>
+                <Label>Camelot Key</Label>
                 <select
-                  name="musicalKey"
-                  defaultValue={version.musicalKey ?? ""}
+                  name="camelotKey"
+                  defaultValue={version.camelotKey ?? ""}
                   className="h-9 rounded-md border bg-transparent px-3 text-sm"
                 >
                   <option value="">—</option>

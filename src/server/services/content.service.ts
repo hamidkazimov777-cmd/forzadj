@@ -4,6 +4,7 @@ import {
 } from "@/server/repositories/track.repository";
 import { taxonomyRepository } from "@/server/repositories/taxonomy.repository";
 import { revisionRepository } from "@/server/repositories/revision.repository";
+import { classicKeyOf } from "@/lib/camelot";
 import type {
   ArtistRole,
   ContentStatus,
@@ -115,7 +116,8 @@ export const contentService = {
       type?: VersionType;
       versionLabel?: string | null;
       bpm?: number | null;
-      musicalKey?: string | null;
+      /** Camelot ("8A"), задаётся редактором; musicalKey выводим из него. */
+      camelotKey?: string | null;
       energy?: number | null;
       introSeconds?: number | null;
       outroSeconds?: number | null;
@@ -126,7 +128,15 @@ export const contentService = {
     const before = await trackVersionRepository.findById(versionId);
     if (!before) throw new Error("Version not found");
 
-    await trackVersionRepository.update(versionId, input);
+    const { camelotKey, ...rest } = input;
+    const data: Parameters<typeof trackVersionRepository.update>[1] = { ...rest };
+    if (camelotKey !== undefined) {
+      data.camelotKey = camelotKey;
+      // Держим служебную musicalKey согласованной с ручным Camelot.
+      data.musicalKey = camelotKey ? classicKeyOf(camelotKey) : null;
+    }
+
+    await trackVersionRepository.update(versionId, data);
     await revisionRepository.record({
       entityType: "TRACK_VERSION",
       entityId: versionId,
@@ -134,7 +144,7 @@ export const contentService = {
       snapshot: before,
       changedFields: changedFieldsOf(
         before as unknown as Record<string, unknown>,
-        input as Record<string, unknown>,
+        data as Record<string, unknown>,
       ),
       actorId,
     });

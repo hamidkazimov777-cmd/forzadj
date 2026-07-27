@@ -51,7 +51,7 @@ export const versionMetadataSchema = z.object({
     emptyToUndef,
     z.coerce.number().min(40).max(250).optional(),
   ),
-  musicalKey: z.preprocess(
+  camelotKey: z.preprocess(
     emptyToUndef,
     z
       .string()

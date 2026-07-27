@@ -9,7 +9,7 @@ export interface PlayerTrack {
   versionType: VersionType;
   versionLabel: string | null;
   bpm: number | null;
-  musicalKey: string | null;
+  camelotKey: string | null;
   durationSeconds: number | null;
   hasWaveform: boolean;
 }

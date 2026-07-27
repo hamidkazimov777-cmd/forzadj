@@ -183,7 +183,7 @@ export function TrackList({
                 {def?.bpm ? `${def.bpm} BPM` : "—"}
               </span>
               <span aria-hidden className="text-muted-foreground/40">•</span>
-              <span className="tabular-nums">{def?.musicalKey ?? "—"}</span>
+              <span className="tabular-nums">{def?.camelotKey ?? "—"}</span>
               {def?.energy != null && (
                 <>
                   <span aria-hidden className="text-muted-foreground/40">•</span>

@@ -83,7 +83,7 @@ export function MiniPlayer() {
           <p className="truncate text-xs text-muted-foreground">
             {current.artistLine} · {current.versionType}
             {current.bpm ? ` · ${current.bpm} BPM` : ""}
-            {current.musicalKey ? ` · ${current.musicalKey}` : ""}
+            {current.camelotKey ? ` · ${current.camelotKey}` : ""}
           </p>
         </div>
 

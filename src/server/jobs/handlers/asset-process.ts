@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseBuffer } from "music-metadata";
 import { registerJobHandler } from "../registry";
+import { getJobQueue } from "@/server/jobs";
 import { getStorage } from "@/server/storage";
 import { assetRepository } from "@/server/repositories/asset.repository";
 import {
@@ -208,6 +209,10 @@ registerJobHandler("asset.process", async ({ assetId }) => {
       versionId: version.id,
       ok: true,
     });
+
+    // Авто-анализ (BPM/Key/Camelot) — отдельной задачей, не блокируя загрузку.
+    // Ошибка анализа не влияет на статус ассета: трек уже готов к публикации.
+    void getJobQueue().enqueue("audio.analyze", { versionId: version.id });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[asset.process] failed for ${assetId}:`, message);

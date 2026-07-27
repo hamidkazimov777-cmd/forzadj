@@ -14,6 +14,12 @@ export interface JobPayloads {
    * превью 128k и waveform peaks (при наличии ffmpeg).
    */
   "asset.process": { assetId: string };
+  /**
+   * Авто-анализ аудио версии: BPM, тональность, Camelot (и будущие фичи).
+   * Ставится после успешной обработки оригинала; при сбое повторяется (retry),
+   * чтобы не блокировать публикацию.
+   */
+  "audio.analyze": { versionId: string };
 }
 
 export type JobName = keyof JobPayloads;

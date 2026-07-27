@@ -23,7 +23,7 @@ export function toPlayerTrack(
     versionType: version.type,
     versionLabel: version.versionLabel,
     bpm: version.bpm,
-    musicalKey: version.musicalKey,
+    camelotKey: version.camelotKey,
     durationSeconds: version.durationSeconds,
     hasWaveform: version.hasWaveform,
   };

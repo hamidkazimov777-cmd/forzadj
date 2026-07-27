@@ -10,7 +10,8 @@ export interface VersionCardDto {
   type: VersionType;
   versionLabel: string | null;
   bpm: number | null;
-  musicalKey: string | null;
+  /** Camelot-нотация ("8A") — единственное, что показываем пользователю. */
+  camelotKey: string | null;
   energy: number | null;
   durationSeconds: number | null;
   introSeconds: number | null;

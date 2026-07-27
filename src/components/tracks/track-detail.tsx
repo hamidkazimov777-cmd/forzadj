@@ -7,7 +7,6 @@ import { usePlayer } from "@/components/player/player-provider";
 import { Waveform } from "@/components/player/waveform";
 import { DownloadButton } from "@/components/tracks/download-button";
 import { EnergyRating } from "@/components/tracks/energy-rating";
-import { classicKeyOf } from "@/lib/camelot";
 import { toPlayerTrack } from "@/lib/player-track";
 import type { TrackCardDto } from "@/types/catalog";
 import type { RequestDownloadFn } from "@/types/download";
@@ -71,7 +70,7 @@ export function TrackDetail({
             <tr>
               <th className="px-3 py-2 font-medium">Версия</th>
               <th className="px-3 py-2 font-medium">BPM</th>
-              <th className="px-3 py-2 font-medium">Key</th>
+              <th className="px-3 py-2 font-medium">Camelot</th>
               <th className="px-3 py-2 font-medium">Energy</th>
               <th className="px-3 py-2 font-medium">Время</th>
               <th className="px-3 py-2" />
@@ -96,11 +95,7 @@ export function TrackDetail({
                   )}
                 </td>
                 <td className="px-3 py-2 tabular-nums">{v.bpm ?? "—"}</td>
-                <td className="px-3 py-2">
-                  {v.musicalKey
-                    ? `${v.musicalKey} (${classicKeyOf(v.musicalKey) ?? "?"})`
-                    : "—"}
-                </td>
+                <td className="px-3 py-2 tabular-nums">{v.camelotKey ?? "—"}</td>
                 <td className="px-3 py-2">
                   <EnergyRating value={v.energy} />
                 </td>

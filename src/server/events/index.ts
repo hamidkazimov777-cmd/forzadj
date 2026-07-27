@@ -10,6 +10,8 @@
 export interface DomainEvents {
   /** Оригинал обработан (успешно или нет) — сигнал для UI/уведомлений. */
   "asset.processed": { assetId: string; versionId: string; ok: boolean };
+  /** Авто-анализ аудио завершён (успешно или нет). */
+  "audio.analyzed": { versionId: string; ok: boolean };
   /** Трек опубликован — инвалидация каталога, чарты (Этап 3+). */
   "track.published": { trackId: string };
 }

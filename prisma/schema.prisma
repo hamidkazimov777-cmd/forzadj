@@ -287,9 +287,12 @@ model TrackVersion {
   status       ContentStatus @default(DRAFT)
 
   bpm             Float?
-  /// Camelot-нотация: "8A".."12B". Каноничное хранение; отображение
-  /// (классическая нотация) — забота UI.
-  musicalKey      String?   @map("musical_key") @db.VarChar(3)
+  /// Реальная тональность (напр. "A minor") — служебное, НЕ отображается
+  /// пользователю. Заполняется авто-анализом; UI показывает только camelotKey.
+  musicalKey      String?   @map("musical_key") @db.VarChar(20)
+  /// Camelot-нотация: "8A".."12B" — то, что видит пользователь и по чему
+  /// фильтрует. Выводится из musicalKey анализатором.
+  camelotKey      String?   @map("camelot_key") @db.VarChar(3)
   /// Субъективная энергия 1–10 (проставляет редактор).
   energy          Int?
   durationSeconds Int?      @map("duration_seconds")
@@ -299,6 +302,15 @@ model TrackVersion {
   isExplicit      Boolean   @default(false) @map("is_explicit")
   releaseDate     DateTime? @map("release_date") @db.Date
   downloadCount   Int       @default(0) @map("download_count")
+
+  /// Автоанализ аудио (BPM/Key/Camelot и будущие фичи). Статус — для retry
+  /// через очередь: публикация трека не блокируется анализом.
+  analysisStatus   AudioAnalysisStatus @default(PENDING) @map("analysis_status")
+  analysisAttempts Int                 @default(0) @map("analysis_attempts")
+  analyzedAt       DateTime?           @map("analyzed_at")
+  /// Сырые/расширяемые признаки анализа (energy, LUFS, danceability и др.)
+  /// без миграций схемы. Индексируемые значения дублируются в столбцы выше.
+  audioFeatures    Json?               @map("audio_features")
 
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
@@ -312,7 +324,8 @@ model TrackVersion {
 
   @@index([trackId])
   @@index([bpm])
-  @@index([musicalKey])
+  @@index([camelotKey])
+  @@index([analysisStatus])
   @@index([status, releaseDate])
   @@map("track_versions")
 }
@@ -329,6 +342,14 @@ enum AssetStatus {
   PROCESSING
   READY
   FAILED
+}
+
+/// Статус автоматического анализа аудио версии.
+enum AudioAnalysisStatus {
+  PENDING
+  DONE
+  FAILED
+  SKIPPED
 }
 
 /// Файл в Storage. Никогда не является источником метаданных —

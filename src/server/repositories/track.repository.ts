@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { uniqueSlug } from "@/lib/slug";
+import type { Prisma } from "@/generated/prisma/client";
 import type {
   ArtistRole,
   ContentStatus,
@@ -151,6 +152,7 @@ export const trackVersionRepository = {
       status?: ContentStatus;
       bpm?: number | null;
       musicalKey?: string | null;
+      camelotKey?: string | null;
       energy?: number | null;
       durationSeconds?: number | null;
       introSeconds?: number | null;
@@ -160,6 +162,55 @@ export const trackVersionRepository = {
     },
   ) {
     return prisma.trackVersion.update({ where: { id }, data });
+  },
+
+  /**
+   * Записать результат авто-анализа. Доменные поля (bpm/musicalKey/camelotKey)
+   * передаются только если их надо заполнить (undefined = не трогать — правка
+   * редактора важнее машины). audioFeatures/status/analyzedAt пишутся всегда.
+   */
+  setAnalysisResult(
+    id: string,
+    data: {
+      bpm?: number;
+      musicalKey?: string;
+      camelotKey?: string;
+      audioFeatures: Record<string, unknown>;
+      analyzedAt: Date;
+    },
+  ) {
+    return prisma.trackVersion.update({
+      where: { id },
+      data: {
+        ...(data.bpm !== undefined ? { bpm: data.bpm } : {}),
+        ...(data.musicalKey !== undefined ? { musicalKey: data.musicalKey } : {}),
+        ...(data.camelotKey !== undefined ? { camelotKey: data.camelotKey } : {}),
+        audioFeatures: data.audioFeatures as Prisma.InputJsonValue,
+        analysisStatus: "DONE",
+        analyzedAt: data.analyzedAt,
+      },
+    });
+  },
+
+  /**
+   * Зафиксировать неуспешную попытку анализа: +1 к счётчику, статус PENDING
+   * (будет retry) пока не достигнут предел попыток, затем FAILED.
+   */
+  async recordAnalysisFailure(
+    id: string,
+    maxAttempts: number,
+  ): Promise<{ attempts: number; willRetry: boolean }> {
+    const v = await prisma.trackVersion.update({
+      where: { id },
+      data: { analysisAttempts: { increment: 1 } },
+      select: { analysisAttempts: true },
+    });
+    const willRetry = v.analysisAttempts < maxAttempts;
+    await prisma.trackVersion.update({
+      where: { id },
+      data: { analysisStatus: willRetry ? "PENDING" : "FAILED" },
+    });
+    return { attempts: v.analysisAttempts, willRetry };
   },
 
   softDelete(id: string, deletedById: string) {

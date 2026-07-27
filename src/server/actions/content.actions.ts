@@ -71,7 +71,7 @@ export async function saveVersionAndPublishAction(
   await contentService.updateVersion(user.id, versionId, {
     type: parsed.type,
     bpm: parsed.bpm ?? null,
-    musicalKey: parsed.musicalKey ?? null,
+    camelotKey: parsed.camelotKey ?? null,
     energy: parsed.energy ?? null,
     isExplicit: parsed.isExplicit,
   });
