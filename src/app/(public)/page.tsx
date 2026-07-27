@@ -46,7 +46,7 @@ export default async function HomePage({
     <section className="mx-auto flex min-h-[calc(100vh-3.5rem-1px)] max-w-3xl flex-col items-center justify-center gap-10 px-6 py-20 text-center">
       <div className="flex flex-col gap-6">
         <h1 className="text-balance text-4xl font-bold leading-[1.08] tracking-tight sm:text-6xl">
-          Музыка должна быть доступной каждому&nbsp;DJ.
+          Музыка должна быть доступной каждому.
         </h1>
         <p className="mx-auto max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl">
           ForzaDJ — полностью бесплатный DJ-пул. Качественная музыка не должна
@@ -68,7 +68,7 @@ export default async function HomePage({
           </p>
         )}
         <p className="text-sm text-muted-foreground">
-          Бесплатно навсегда · вход через Telegram, без паролей
+          Быстрый вход через Telegram без паролей
         </p>
         {error && (
           <p className="text-sm text-destructive">
