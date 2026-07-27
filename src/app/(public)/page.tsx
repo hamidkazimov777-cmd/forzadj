@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
-import { TelegramLoginButton } from "@/components/auth/telegram-login-button";
+import { TelegramBotLogin } from "@/components/auth/telegram-bot-login";
 import { getCurrentUser } from "@/server/auth/core/session";
+import {
+  startTelegramBotLogin,
+  pollTelegramBotLogin,
+} from "@/server/actions/telegram-login.actions";
 
 export const metadata = {
   title: { absolute: "ForzaDJ — бесплатный DJ-пул" },
@@ -57,9 +61,12 @@ export default async function HomePage({
 
       <div className="flex flex-col items-center gap-3">
         {botUsername ? (
-          <TelegramLoginButton
-            botUsername={botUsername}
-            authUrl={callbackUrl.toString()}
+          <TelegramBotLogin
+            next={safeNextPath ?? undefined}
+            start={startTelegramBotLogin}
+            poll={pollTelegramBotLogin}
+            fallbackBotUsername={botUsername}
+            fallbackAuthUrl={callbackUrl.toString()}
           />
         ) : (
           <p className="text-sm text-muted-foreground">
@@ -67,9 +74,6 @@ export default async function HomePage({
             NEXT_PUBLIC_TELEGRAM_BOT_USERNAME в .env.
           </p>
         )}
-        <p className="text-sm text-muted-foreground">
-          Быстрый вход через Telegram без паролей
-        </p>
         {error && (
           <p className="text-sm text-destructive">
             {ERROR_MESSAGES[error] ?? ERROR_MESSAGES.internal}

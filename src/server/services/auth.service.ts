@@ -1,7 +1,4 @@
-import {
-  verifyTelegramLogin,
-  type TelegramProfile,
-} from "@/server/auth/providers/telegram";
+import { verifyTelegramLogin } from "@/server/auth/providers/telegram";
 import {
   createSessionTokenHash,
   ensureSupabaseUser,
@@ -18,7 +15,7 @@ import { isOwnerTelegramId } from "@/lib/config/owner";
  *    route handler на cookie-привязанном клиенте.
  */
 
-function displayNameOf(profile: TelegramProfile): string {
+function displayNameOf(profile: VerifiedTelegramUser): string {
   const full = [profile.first_name, profile.last_name]
     .filter(Boolean)
     .join(" ");
@@ -32,7 +29,26 @@ export async function loginWithTelegram(
 > {
   const profile = verifyTelegramLogin(params);
   if (!profile) return { error: "invalid_signature" };
+  return issueTelegramSession(profile);
+}
 
+/** Данные Telegram-пользователя, достаточные для выпуска сессии. */
+export interface VerifiedTelegramUser {
+  id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  username?: string | null;
+  photo_url?: string | null;
+}
+
+/**
+ * Выпуск сессии для УЖЕ доверенного Telegram-пользователя (личность
+ * подтверждена — HMAC виджета или сообщение боту). upsert User + Supabase
+ * Auth + одноразовый token_hash. Общая часть для виджета и bot deep-link.
+ */
+export async function issueTelegramSession(
+  profile: VerifiedTelegramUser,
+): Promise<{ tokenHash: string; isNew: boolean }> {
   const email = telegramSyntheticEmail(profile.id);
   // null вместо undefined: JSON-снапшот в БД не хранит undefined-полей.
   const profileSnapshot = {

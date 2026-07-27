@@ -352,6 +352,31 @@ enum AudioAnalysisStatus {
   SKIPPED
 }
 
+/// Статус одноразового токена входа через бота (deep-link).
+enum TelegramLoginStatus {
+  PENDING
+  CONFIRMED
+  CONSUMED
+}
+
+/// Одноразовый токен входа через Telegram-бота (deep-link login).
+/// nonce уходит в ссылку t.me/<bot>?start=<nonce>; браузер подтверждает
+/// владение через browserToken в httpOnly-cookie. Короткоживущий, single-use.
+model TelegramLoginToken {
+  id             String              @id @default(uuid(7)) @db.Uuid
+  nonce          String              @unique
+  browserToken   String              @map("browser_token")
+  status         TelegramLoginStatus @default(PENDING)
+  telegramUserId String?             @map("telegram_user_id")
+  telegramData   Json?               @map("telegram_data")
+  nextPath       String?             @map("next_path")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  expiresAt      DateTime            @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("telegram_login_tokens")
+}
+
 /// Файл в Storage. Никогда не является источником метаданных —
 /// метаданные живут в Track/TrackVersion; файл заменяем без потери истории.
 model Asset {
