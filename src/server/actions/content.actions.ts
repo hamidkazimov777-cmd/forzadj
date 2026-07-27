@@ -53,7 +53,13 @@ export async function updateTrackAction(
   revalidateTag(CATALOG_CACHE_TAG);
 }
 
-export async function updateVersionAction(
+/**
+ * Сохранить метаданные версии И опубликовать трек одним действием.
+ * Композиция существующих сервисных методов (updateVersion + setTrackStatus) —
+ * убирает лишний шаг «Сохранить версию» перед публикацией. Суффикс/Intro/Outro
+ * намеренно не передаются: они убраны из UI, а их прежние значения не трогаем.
+ */
+export async function saveVersionAndPublishAction(
   versionId: string,
   trackId: string,
   formData: FormData,
@@ -64,21 +70,11 @@ export async function updateVersionAction(
   );
   await contentService.updateVersion(user.id, versionId, {
     type: parsed.type,
-    versionLabel: parsed.versionLabel ?? null,
     bpm: parsed.bpm ?? null,
     musicalKey: parsed.musicalKey ?? null,
     energy: parsed.energy ?? null,
-    introSeconds: parsed.introSeconds ?? null,
-    outroSeconds: parsed.outroSeconds ?? null,
     isExplicit: parsed.isExplicit,
   });
-  revalidatePath(`/studio/tracks/${trackId}`);
-  // BPM/Key/Energy версии отображаются в каталоге — сбрасываем кэш.
-  revalidateTag(CATALOG_CACHE_TAG);
-}
-
-export async function publishTrackAction(trackId: string): Promise<void> {
-  const user = await requirePermission("content.manage");
   await contentService.setTrackStatus(user.id, trackId, "PUBLISHED");
   revalidatePath(`/studio/tracks/${trackId}`);
   revalidatePath("/studio/tracks");

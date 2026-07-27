@@ -73,7 +73,6 @@ export function TrackDetail({
               <th className="px-3 py-2 font-medium">BPM</th>
               <th className="px-3 py-2 font-medium">Key</th>
               <th className="px-3 py-2 font-medium">Energy</th>
-              <th className="px-3 py-2 font-medium">Intro/Outro</th>
               <th className="px-3 py-2 font-medium">Время</th>
               <th className="px-3 py-2" />
             </tr>
@@ -104,11 +103,6 @@ export function TrackDetail({
                 </td>
                 <td className="px-3 py-2">
                   <EnergyRating value={v.energy} />
-                </td>
-                <td className="px-3 py-2 tabular-nums">
-                  {v.introSeconds != null || v.outroSeconds != null
-                    ? `${v.introSeconds ?? 0}s / ${v.outroSeconds ?? 0}s`
-                    : "—"}
                 </td>
                 <td className="px-3 py-2 tabular-nums">{fmt(v.durationSeconds)}</td>
                 <td className="px-3 py-2 text-right">

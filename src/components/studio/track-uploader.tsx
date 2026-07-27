@@ -19,6 +19,17 @@ interface UploadTicket {
   headers: Record<string, string>;
 }
 
+/**
+ * Лимит размера файла в хранилище Supabase. По умолчанию 50 МБ — это
+ * дефолтный глобальный лимит проекта Supabase (на free-тарифе потолок).
+ * Крупные AIFF/WAV его превышают. Чтобы грузить больше — поднимите лимит в
+ * Supabase (Project Settings → Storage → Upload file size limit; нужен Pro)
+ * и выставьте NEXT_PUBLIC_STORAGE_UPLOAD_LIMIT_MB в то же значение.
+ */
+const STORAGE_LIMIT_MB =
+  Number(process.env.NEXT_PUBLIC_STORAGE_UPLOAD_LIMIT_MB) || 50;
+const STORAGE_LIMIT_BYTES = STORAGE_LIMIT_MB * 1024 * 1024;
+
 type FileState =
   | { phase: "queued" }
   | { phase: "uploading" }
@@ -54,6 +65,15 @@ export function TrackUploader({
     // Последовательно: inline-обработка тяжёлая, не душим сервер.
     for (const file of Array.from(files)) {
       try {
+        // Ранняя проверка размера — не тратим загрузку впустую и даём
+        // понятное сообщение вместо непрозрачного HTTP 400 от Storage.
+        if (file.size > STORAGE_LIMIT_BYTES) {
+          const mb = Math.round(file.size / (1024 * 1024));
+          throw new Error(
+            `Файл ${mb} МБ превышает лимит хранилища ${STORAGE_LIMIT_MB} МБ. ` +
+              `AIFF/WAV обычно большие — увеличьте лимит в Supabase или сожмите файл.`,
+          );
+        }
         setState(file.name, { phase: "uploading" });
         const ticket = await requestUpload({
           name: file.name,
@@ -66,7 +86,16 @@ export function TrackUploader({
           body: file,
         });
         if (!res.ok) {
-          throw new Error(`Загрузка в Storage: HTTP ${res.status}`);
+          const body = await res.text().catch(() => "");
+          if (res.status === 413 || /exceeded the maximum allowed size/i.test(body)) {
+            throw new Error(
+              `Файл превышает лимит хранилища Supabase (${STORAGE_LIMIT_MB} МБ). ` +
+                `Поднимите лимит в Supabase (Project Settings → Storage) или сожмите файл.`,
+            );
+          }
+          throw new Error(
+            `Загрузка в Storage: HTTP ${res.status}${body ? ` — ${body.slice(0, 120)}` : ""}`,
+          );
         }
         setState(file.name, { phase: "processing" });
         await finalizeUpload(ticket.assetId);
@@ -104,8 +133,8 @@ export function TrackUploader({
           Выбрать файлы
         </Button>
         <p className="text-xs text-muted-foreground">
-          MP3 / WAV / FLAC / AIFF / M4A, до 300 МБ. Название, артист и тип
-          версии распознаются из имени файла и ID3.
+          MP3 / WAV / FLAC / AIFF / M4A, до {STORAGE_LIMIT_MB} МБ. Название,
+          артист и тип версии распознаются из имени файла и ID3.
         </p>
         <input
           ref={inputRef}

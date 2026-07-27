@@ -39,7 +39,6 @@ export const trackMetadataSchema = z.object({
   artistNames: z.string().default(""),
   featuredNames: z.string().default(""),
   genreNames: z.string().default(""),
-  tagNames: z.string().default(""),
 });
 
 export const versionMetadataSchema = z.object({

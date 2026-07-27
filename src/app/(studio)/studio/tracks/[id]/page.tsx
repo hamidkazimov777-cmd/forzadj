@@ -5,13 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { GenrePicker } from "@/components/studio/genre-picker";
 import { requireStudioPermission } from "@/server/auth/core/session";
 import { trackRepository } from "@/server/repositories/track.repository";
+import { taxonomyRepository } from "@/server/repositories/taxonomy.repository";
 import { revisionRepository } from "@/server/repositories/revision.repository";
 import {
   updateTrackAction,
-  updateVersionAction,
-  publishTrackAction,
+  saveVersionAndPublishAction,
   archiveTrackAction,
   deleteTrackAction,
   reprocessVersionAction,
@@ -44,7 +45,10 @@ export default async function TrackEditPage({
   const track = await trackRepository.findById(id);
   if (!track) notFound();
 
-  const revisions = await revisionRepository.listForEntity("TRACK", id, 10);
+  const [revisions, allGenres] = await Promise.all([
+    revisionRepository.listForEntity("TRACK", id, 10),
+    taxonomyRepository.listGenres(),
+  ]);
 
   const mains = track.artists
     .filter((a) => a.role === "MAIN")
@@ -61,12 +65,10 @@ export default async function TrackEditPage({
         <h1 className="truncate text-2xl font-bold tracking-tight">
           {track.title}
         </h1>
-        <div className="flex gap-2">
-          {track.status !== "PUBLISHED" && (
-            <form action={publishTrackAction.bind(null, track.id)}>
-              <Button type="submit">Опубликовать</Button>
-            </form>
-          )}
+        <div className="flex items-center gap-2">
+          <Badge variant={track.status === "PUBLISHED" ? "default" : "outline"}>
+            {track.status === "PUBLISHED" ? "опубликован" : "черновик"}
+          </Badge>
           {track.status === "PUBLISHED" && (
             <form action={archiveTrackAction.bind(null, track.id)}>
               <Button type="submit" variant="secondary">В архив</Button>
@@ -100,20 +102,11 @@ export default async function TrackEditPage({
               <Label htmlFor="featuredNames">Featured</Label>
               <Input id="featuredNames" name="featuredNames" defaultValue={feats} />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="genreNames">Жанры (через запятую)</Label>
-              <Input
-                id="genreNames"
-                name="genreNames"
-                defaultValue={track.genres.map((g) => g.genre.name).join(", ")}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tagNames">Теги / mood</Label>
-              <Input
-                id="tagNames"
-                name="tagNames"
-                defaultValue={track.tags.map((t) => t.tag.name).join(", ")}
+            <div className="col-span-2 flex flex-col gap-1.5">
+              <Label>Жанры</Label>
+              <GenrePicker
+                all={allGenres.map((g) => g.name)}
+                initial={track.genres.map((g) => g.genre.name)}
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -152,7 +145,7 @@ export default async function TrackEditPage({
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <form
-              action={updateVersionAction.bind(null, version.id, track.id)}
+              action={saveVersionAndPublishAction.bind(null, version.id, track.id)}
               className="grid grid-cols-3 gap-4"
             >
               <div className="flex flex-col gap-1.5">
@@ -166,14 +159,6 @@ export default async function TrackEditPage({
                     <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={`vl-${version.id}`}>Суффикс (VIP Mix…)</Label>
-                <Input
-                  id={`vl-${version.id}`}
-                  name="versionLabel"
-                  defaultValue={version.versionLabel ?? ""}
-                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor={`bpm-${version.id}`}>BPM</Label>
@@ -209,27 +194,7 @@ export default async function TrackEditPage({
                   defaultValue={version.energy ?? ""}
                 />
               </div>
-              <div className="flex gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={`in-${version.id}`}>Intro, сек</Label>
-                  <Input
-                    id={`in-${version.id}`}
-                    name="introSeconds"
-                    type="number"
-                    defaultValue={version.introSeconds ?? ""}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={`out-${version.id}`}>Outro, сек</Label>
-                  <Input
-                    id={`out-${version.id}`}
-                    name="outroSeconds"
-                    type="number"
-                    defaultValue={version.outroSeconds ?? ""}
-                  />
-                </div>
-              </div>
-              <label className="col-span-2 flex items-center gap-2 text-sm">
+              <label className="col-span-3 flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   name="isExplicit"
@@ -238,8 +203,12 @@ export default async function TrackEditPage({
                 />
                 Explicit-версия (Dirty)
               </label>
-              <div className="col-span-3 flex items-center gap-4">
-                <Button type="submit" variant="secondary">Сохранить версию</Button>
+              <div className="col-span-3 flex flex-wrap items-center gap-4">
+                <Button type="submit">
+                  {track.status === "PUBLISHED"
+                    ? "Сохранить изменения"
+                    : "Сохранить и опубликовать"}
+                </Button>
                 <span className="text-sm text-muted-foreground">
                   {version.durationSeconds
                     ? `${Math.floor(version.durationSeconds / 60)}:${String(version.durationSeconds % 60).padStart(2, "0")}`
