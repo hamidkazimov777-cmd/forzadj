@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, type CSSProperties } from "react";
 import Link from "next/link";
 import { Heart, Pause, Play, X } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +16,8 @@ import {
   defaultVersionOf,
   toPlayerTrack,
 } from "@/lib/player-track";
+import { camelotColor } from "@/lib/camelot";
+import { cn } from "@/lib/utils";
 import type { TrackCardDto, VersionCardDto } from "@/types/catalog";
 import type { RequestDownloadFn } from "@/types/download";
 import type { ToggleFavoriteFn } from "@/types/favorite";
@@ -24,6 +26,17 @@ import type { CrateSummary, CrateActionFns } from "@/types/collection";
 function fmt(sec: number | null): string {
   if (sec == null) return "--:--";
   return `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
+}
+
+/** Детерминированная «обложка»-градиент по id трека (пока нет артворка). */
+function coverStyle(id: string): CSSProperties {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  const h1 = h % 360;
+  const h2 = (h1 + 40 + ((h >> 3) % 90)) % 360;
+  return {
+    backgroundImage: `linear-gradient(135deg, oklch(0.6 0.16 ${h1}), oklch(0.42 0.13 ${h2}))`,
+  };
 }
 
 function RemoveButton({
@@ -115,50 +128,90 @@ export function TrackList({
   }
 
   return (
-    <ul className="divide-y rounded-md border">
+    <ul className="overflow-hidden rounded-xl border">
       {items.map((track) => {
         const def = defaultVersionOf(track);
         const isCurrentTrack = track.versions.some(
           (v) => v.id === player.current?.versionId,
         );
+        const isPlaying = isCurrentTrack && player.status === "playing";
         return (
           <li
             key={track.id}
-            className="flex items-center gap-3 px-3 py-2 hover:bg-accent/40"
+            className={cn(
+              "group relative flex items-center gap-3 border-b border-border/60 px-2 py-2 transition-colors last:border-0 sm:px-3",
+              isCurrentTrack ? "bg-primary/[0.07]" : "hover:bg-accent/40",
+            )}
           >
-            <Button
-              size="icon"
-              variant={isCurrentTrack ? "default" : "secondary"}
+            {isCurrentTrack && (
+              <span aria-hidden className="absolute inset-y-0 left-0 w-0.5 bg-primary" />
+            )}
+
+            {/* Обложка = кнопка play */}
+            <button
+              type="button"
               disabled={!def}
               onClick={() => {
                 if (isCurrentTrack) player.toggle();
                 else if (def) playVersion(track, def);
               }}
-              aria-label="Играть"
+              aria-label={isPlaying ? "Пауза" : "Играть"}
+              style={coverStyle(track.id)}
+              className="relative size-11 shrink-0 overflow-hidden rounded-md ring-1 ring-inset ring-white/10 disabled:opacity-50"
             >
-              {isCurrentTrack && player.status === "playing" ? (
-                <Pause className="size-4 fill-current" />
-              ) : (
-                <Play className="size-4 fill-current" />
-              )}
-            </Button>
+              <span
+                className={cn(
+                  "absolute inset-0 flex items-center justify-center bg-black/45 text-white transition-opacity",
+                  isCurrentTrack ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                )}
+              >
+                {isPlaying ? (
+                  <Pause className="size-4 fill-current" />
+                ) : (
+                  <Play className="size-4 fill-current" />
+                )}
+              </span>
+            </button>
 
+            {/* Название + артист (+ приборные данные на мобиле) */}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <Link
                   href={`/pool/track/${track.slug}`}
-                  className="truncate font-medium hover:underline"
+                  className={cn(
+                    "truncate font-medium hover:underline",
+                    isCurrentTrack && "text-primary",
+                  )}
                 >
                   {track.title}
                 </Link>
-                {track.isExplicit && <Badge variant="destructive">E</Badge>}
+                {track.isExplicit && (
+                  <Badge variant="destructive" className="h-4 px-1 text-[10px]">
+                    E
+                  </Badge>
+                )}
               </div>
               <p className="truncate text-sm text-muted-foreground">
                 {artistLineOf(track)}
               </p>
+              <p className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground sm:hidden">
+                {def?.bpm != null && <span className="tabular-nums">{def.bpm} BPM</span>}
+                {def?.camelotKey && (
+                  <span
+                    className="font-semibold tabular-nums"
+                    style={{ color: camelotColor(def.camelotKey) }}
+                  >
+                    {def.camelotKey}
+                  </span>
+                )}
+                {def?.durationSeconds != null && (
+                  <span className="tabular-nums">{fmt(def.durationSeconds)}</span>
+                )}
+              </p>
             </div>
 
-            <div className="hidden flex-wrap justify-end gap-1 md:flex">
+            {/* Версии-чипы */}
+            <div className="hidden flex-wrap justify-end gap-1 xl:flex">
               {track.versions.map((v) => (
                 <button
                   key={v.id}
@@ -166,9 +219,8 @@ export function TrackList({
                   title={`${v.type}${v.versionLabel ? ` (${v.versionLabel})` : ""} — играть`}
                 >
                   <Badge
-                    variant={
-                      v.id === player.current?.versionId ? "default" : "outline"
-                    }
+                    variant={v.id === player.current?.versionId ? "default" : "outline"}
+                    className="text-[10px]"
                   >
                     {v.type}
                   </Badge>
@@ -176,39 +228,38 @@ export function TrackList({
               ))}
             </div>
 
-            {/* Единый техблок: жанр, BPM, тональность, энергия, длительность. */}
-            <div className="hidden shrink-0 items-center justify-end gap-1.5 whitespace-nowrap text-sm text-muted-foreground sm:flex">
-              {track.genres[0] && (
-                <>
-                  <span className="max-w-[7rem] truncate">{track.genres[0]}</span>
-                  <span aria-hidden className="text-muted-foreground/40">•</span>
-                </>
+            {/* Приборные колонки (выровнены по всей таблице) */}
+            <span className="hidden w-24 shrink-0 truncate text-right text-sm text-muted-foreground lg:block">
+              {track.genres[0] ?? "—"}
+            </span>
+            <span className="hidden w-14 shrink-0 text-right text-sm tabular-nums text-muted-foreground sm:block">
+              {def?.bpm ?? "—"}
+            </span>
+            <span
+              className="hidden w-10 shrink-0 text-center text-sm font-semibold tabular-nums sm:block"
+              style={{ color: camelotColor(def?.camelotKey) }}
+            >
+              {def?.camelotKey ?? "—"}
+            </span>
+            <span className="hidden w-[92px] shrink-0 justify-center sm:flex">
+              {def?.energy != null ? (
+                <EnergyRating value={def.energy} />
+              ) : (
+                <span className="text-sm text-muted-foreground">—</span>
               )}
-              <span className="tabular-nums">
-                {def?.bpm ? `${def.bpm} BPM` : "—"}
-              </span>
-              <span aria-hidden className="text-muted-foreground/40">•</span>
-              <span className="tabular-nums">{def?.camelotKey ?? "—"}</span>
-              {def?.energy != null && (
-                <>
-                  <span aria-hidden className="text-muted-foreground/40">•</span>
-                  <EnergyRating value={def.energy} />
-                </>
-              )}
-              <span aria-hidden className="text-muted-foreground/40">•</span>
-              <span className="tabular-nums">
-                {fmt(def?.durationSeconds ?? null)}
-              </span>
-            </div>
+            </span>
+            <span className="hidden w-14 shrink-0 text-right text-sm tabular-nums text-muted-foreground sm:block">
+              {fmt(def?.durationSeconds ?? null)}
+            </span>
 
-            <div className="flex shrink-0 items-center gap-2">
+            {/* Действия (на десктопе проявляются при наведении) */}
+            <div className="flex shrink-0 items-center gap-0.5 sm:opacity-60 sm:transition-opacity sm:group-hover:opacity-100">
               {guest && def ? (
                 <>
                   <button
                     type="button"
                     onClick={promptLogin}
                     aria-label="Войдите, чтобы добавить в избранное"
-                    title="Войдите, чтобы добавить в избранное"
                     className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-red-500"
                   >
                     <Heart className="size-[18px]" />
@@ -237,6 +288,7 @@ export function TrackList({
                     <DownloadButton
                       versionId={def.id}
                       requestDownload={requestDownload}
+                      size="icon"
                     />
                   )}
                   {removeVersion && def && (

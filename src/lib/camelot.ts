@@ -28,6 +28,21 @@ export function classicKeyOf(camelot: string): string | null {
   return CAMELOT_TO_CLASSIC[camelot.toUpperCase()] ?? null;
 }
 
+/**
+ * Цвет Camelot-ключа (по номеру 1–12) — радуга по кругу совместимости:
+ * соседние (гармонически совместимые) ключи получают близкие оттенки, что
+ * помогает диджею видеть совместимость по цвету. A/B одного номера — один цвет.
+ * Возвращает CSS-цвет (oklch) или undefined, если ключ не распознан.
+ */
+export function camelotColor(key: string | null | undefined): string | undefined {
+  const m = key?.toUpperCase().match(/^(\d{1,2})([AB])$/);
+  if (!m) return undefined;
+  const n = Number(m[1]);
+  if (n < 1 || n > 12) return undefined;
+  const hue = ((n - 1) * 30) % 360;
+  return `oklch(0.74 0.15 ${hue})`;
+}
+
 /** Нота → класс высоты (0–11), с учётом энгармоний (бемоли/диезы). */
 const PITCH_CLASS: Record<string, number> = {
   C: 0, "B#": 0,
