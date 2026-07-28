@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -41,7 +42,8 @@ export function CopyButton({
         className,
       )}
     >
-      {copied ? "✓ Скопировано" : label}
+      {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+      {copied ? "Скопировано" : label}
     </button>
   );
 }

@@ -73,7 +73,7 @@ export default async function PackDetailPage({
             <ZipDownloadButton
               preflight={preflightPackDownloadAction.bind(null, pack.slug)}
               href={`/api/packs/${pack.slug}/download`}
-              idleLabel="⬇ Скачать пак (ZIP)"
+              idleLabel="Скачать пак (ZIP)"
             />
           ) : (
             <Button asChild size="lg">

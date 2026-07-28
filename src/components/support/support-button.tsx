@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check, ChevronDown, ChevronUp, Heart } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -44,7 +45,12 @@ export function SupportButton({
     <Dialog>
       <DialogTrigger asChild>
         <Button variant={variant} className={className}>
-          {label ?? "❤️ Поддержать ForzaDJ"}
+          {label ?? (
+            <>
+              <Heart className="size-4 fill-current" />
+              Поддержать ForzaDJ
+            </>
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
@@ -65,7 +71,7 @@ export function SupportButton({
                 <p className="font-mono text-base tracking-wide">{domesticMethod.card.number}</p>
                 <CopyButton
                   value={domesticMethod.card.copyValue}
-                  label="📋 Скопировать номер карты"
+                  label="Скопировать номер карты"
                   className="mt-2 w-full sm:w-auto"
                 />
               </div>
@@ -74,7 +80,7 @@ export function SupportButton({
                 <p className="font-mono text-base">{domesticMethod.sbp.phone}</p>
                 <CopyButton
                   value={domesticMethod.sbp.copyValue}
-                  label="📋 Скопировать номер телефона"
+                  label="Скопировать номер телефона"
                   className="mt-2 w-full sm:w-auto"
                 />
               </div>
@@ -94,7 +100,7 @@ export function SupportButton({
                 <p className="font-mono text-base tracking-wide">{internationalMethod.card.number}</p>
                 <CopyButton
                   value={internationalMethod.card.copyValue}
-                  label="📋 Скопировать номер карты"
+                  label="Скопировать номер карты"
                   className="mt-2 w-full sm:w-auto"
                 />
               </div>
@@ -108,7 +114,11 @@ export function SupportButton({
                 >
                   Показать SWIFT-реквизиты
                   <span aria-hidden className="text-muted-foreground">
-                    {swiftOpen ? "▲" : "▼"}
+                    {swiftOpen ? (
+                      <ChevronUp className="size-4" />
+                    ) : (
+                      <ChevronDown className="size-4" />
+                    )}
                   </span>
                 </button>
                 {swiftOpen && (
@@ -123,7 +133,7 @@ export function SupportButton({
                     </dl>
                     <CopyButton
                       value={fullSwiftText()}
-                      label="📋 Скопировать все реквизиты"
+                      label="Скопировать все реквизиты"
                       className="w-full"
                     />
                   </div>
@@ -140,7 +150,8 @@ export function SupportButton({
                 className="w-full"
                 onClick={() => setFormOpen(true)}
               >
-                ✅ Я уже поддержал проект
+                <Check className="size-4" />
+                Я уже поддержал проект
               </Button>
             ) : (
               <SupportForm submit={submit} />

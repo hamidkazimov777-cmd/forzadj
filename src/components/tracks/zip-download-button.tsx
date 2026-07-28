@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -67,6 +68,11 @@ export function ZipDownloadButton({
   return (
     <div className="flex flex-col gap-2">
       <Button onClick={handleClick} disabled={pending} size="lg">
+        {pending ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <Download className="size-4" />
+        )}
         {pending ? "Проверяем лимит…" : idleLabel}
       </Button>
       {warning && <p className="max-w-md text-sm text-destructive">{warning}</p>}

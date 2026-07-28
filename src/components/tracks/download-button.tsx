@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Check, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { RequestDownloadFn } from "@/types/download";
@@ -78,7 +79,14 @@ export function DownloadButton({
       onClick={handleClick}
       title="Скачать оригинал"
     >
-      {pending ? "…" : done ? "✓ " + label : label}
+      {pending ? (
+        <Loader2 className="size-4 animate-spin" />
+      ) : done ? (
+        <Check className="size-4" />
+      ) : (
+        <Download className="size-4" />
+      )}
+      {size !== "icon" && <span>{label}</span>}
     </Button>
   );
 }

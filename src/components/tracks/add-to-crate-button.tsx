@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -59,9 +60,9 @@ export function AddToCrateButton({
         aria-label="Добавить в плейлист"
         title="Добавить в плейлист"
         disabled={pending}
-        className="text-lg leading-none text-muted-foreground hover:text-foreground disabled:opacity-50"
+        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
       >
-        ＋
+        <Plus className="size-[18px]" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>Добавить в плейлист</DropdownMenuLabel>

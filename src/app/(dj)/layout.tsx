@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Heart } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DjNavDesktop, DjNavMobile } from "@/components/layout/dj-nav";
 import { SupportButton } from "@/components/support/support-button";
@@ -34,8 +35,8 @@ export default async function DjLayout({
             className="ml-auto px-2 sm:px-3"
             label={
               <>
-                <span className="hidden sm:inline">❤️ Поддержать</span>
-                <span className="text-base sm:hidden">❤️</span>
+                <Heart className="size-4 fill-current" />
+                <span className="hidden sm:inline">Поддержать</span>
               </>
             }
           />

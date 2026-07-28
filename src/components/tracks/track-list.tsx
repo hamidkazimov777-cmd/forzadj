@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
+import { Heart, Pause, Play, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,9 +41,9 @@ function RemoveButton({
       title="Убрать из плейлиста"
       disabled={pending}
       onClick={() => startTransition(() => onRemove(versionId).then(() => {}))}
-      className="text-muted-foreground hover:text-destructive disabled:opacity-50"
+      className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-destructive disabled:opacity-50"
     >
-      ✕
+      <X className="size-4" />
     </button>
   );
 }
@@ -135,7 +136,11 @@ export function TrackList({
               }}
               aria-label="Играть"
             >
-              {isCurrentTrack && player.status === "playing" ? "⏸" : "▶"}
+              {isCurrentTrack && player.status === "playing" ? (
+                <Pause className="size-4 fill-current" />
+              ) : (
+                <Play className="size-4 fill-current" />
+              )}
             </Button>
 
             <div className="min-w-0 flex-1">
@@ -204,9 +209,9 @@ export function TrackList({
                     onClick={promptLogin}
                     aria-label="Войдите, чтобы добавить в избранное"
                     title="Войдите, чтобы добавить в избранное"
-                    className="text-lg leading-none text-muted-foreground hover:text-red-500"
+                    className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-red-500"
                   >
-                    ♡
+                    <Heart className="size-[18px]" />
                   </button>
                   <Button size="sm" variant="secondary" onClick={promptLogin}>
                     Скачать

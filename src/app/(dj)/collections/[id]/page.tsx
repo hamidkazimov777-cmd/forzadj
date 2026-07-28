@@ -69,7 +69,7 @@ export default async function CrateDetailPage({
           <ZipDownloadButton
             preflight={preflightCrateDownloadAction.bind(null, crate.id)}
             href={`/api/collections/${crate.id}/download`}
-            idleLabel="⬇ Скачать плейлист (ZIP)"
+            idleLabel="Скачать плейлист (ZIP)"
           />
         )}
       </div>

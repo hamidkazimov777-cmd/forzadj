@@ -2,6 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import {
+  ChevronDown,
+  ChevronUp,
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward,
+  Volume2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { usePlayer } from "./player-provider";
@@ -35,7 +44,11 @@ export function MiniPlayer() {
           onClick={player.toggle}
           aria-label={player.status === "playing" ? "Пауза" : "Играть"}
         >
-          {player.status === "playing" ? "⏸" : "▶"}
+          {player.status === "playing" ? (
+            <Pause className="size-4 fill-current" />
+          ) : (
+            <Play className="size-4 fill-current" />
+          )}
         </Button>
         <span className="max-w-[40vw] truncate text-sm font-medium sm:max-w-[16rem]">
           {current.title}
@@ -48,7 +61,7 @@ export function MiniPlayer() {
           aria-label="Развернуть плеер"
           title="Развернуть плеер"
         >
-          ▴
+          <ChevronUp className="size-4" />
         </Button>
       </div>
     );
@@ -59,17 +72,21 @@ export function MiniPlayer() {
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-2">
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon" onClick={player.prev} aria-label="Предыдущий">
-            ⏮
+            <SkipBack className="size-4 fill-current" />
           </Button>
           <Button
             size="icon"
             onClick={player.toggle}
             aria-label={player.status === "playing" ? "Пауза" : "Играть"}
           >
-            {player.status === "playing" ? "⏸" : "▶"}
+            {player.status === "playing" ? (
+              <Pause className="size-4 fill-current" />
+            ) : (
+              <Play className="size-4 fill-current" />
+            )}
           </Button>
           <Button variant="ghost" size="icon" onClick={player.next} aria-label="Следующий">
-            ⏭
+            <SkipForward className="size-4 fill-current" />
           </Button>
         </div>
 
@@ -103,7 +120,7 @@ export function MiniPlayer() {
         </span>
 
         <div className="hidden w-28 items-center gap-2 sm:flex">
-          <span className="text-xs text-muted-foreground">🔊</span>
+          <Volume2 className="size-4 shrink-0 text-muted-foreground" />
           <Slider
             value={[player.volume * 100]}
             max={100}
@@ -120,7 +137,7 @@ export function MiniPlayer() {
           aria-label="Свернуть плеер"
           title="Свернуть плеер"
         >
-          ▾
+          <ChevronDown className="size-4" />
         </Button>
       </div>
     </div>
