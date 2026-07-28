@@ -1,8 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  BarChart3,
+  Download,
+  Heart,
+  Library,
+  ListMusic,
+  Menu,
+  Package,
+  SlidersHorizontal,
+  Sparkles,
+} from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -12,41 +23,108 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-const LINKS = [
-  { href: "/pool", label: "Каталог" },
-  { href: "/new", label: "Новинки" },
-  { href: "/charts", label: "Чарты" },
-  { href: "/packs", label: "Паки" },
-  { href: "/collections", label: "Плейлисты" },
-  { href: "/favorites", label: "Избранное" },
-  { href: "/downloads", label: "Скачивания" },
+interface NavItem {
+  href: string;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+}
+
+const PRIMARY: NavItem[] = [
+  { href: "/pool", label: "Каталог", icon: Library },
+  { href: "/new", label: "Новинки", icon: Sparkles },
+  { href: "/charts", label: "Чарты", icon: BarChart3 },
+  { href: "/packs", label: "Паки", icon: Package },
 ];
+const PERSONAL: NavItem[] = [
+  { href: "/collections", label: "Плейлисты", icon: ListMusic },
+  { href: "/favorites", label: "Избранное", icon: Heart },
+  { href: "/downloads", label: "Скачивания", icon: Download },
+];
+const STUDIO: NavItem = {
+  href: "/studio",
+  label: "Studio",
+  icon: SlidersHorizontal,
+};
 
 function useIsActive() {
   const pathname = usePathname();
-  return (href: string) =>
-    pathname === href || pathname.startsWith(`${href}/`);
+  return (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function NavRow({
+  item,
+  active,
+  onClick,
+}: {
+  item: NavItem;
+  active: boolean;
+  onClick?: () => void;
+}) {
+  const Icon = item.icon;
+  return (
+    <Link
+      href={item.href}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+        active
+          ? "bg-sidebar-accent font-medium text-foreground"
+          : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
+      )}
+    >
+      <Icon className="size-[18px] shrink-0" />
+      {item.label}
+    </Link>
+  );
+}
+
+function NavSections({
+  showStudio,
+  onNavigate,
+}: {
+  showStudio: boolean;
+  onNavigate?: () => void;
+}) {
+  const isActive = useIsActive();
+  return (
+    <nav className="flex flex-1 flex-col gap-6">
+      <div className="flex flex-col gap-0.5">
+        {PRIMARY.map((i) => (
+          <NavRow key={i.href} item={i} active={isActive(i.href)} onClick={onNavigate} />
+        ))}
+      </div>
+      <div className="flex flex-col gap-0.5">
+        <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70">
+          Моё
+        </p>
+        {PERSONAL.map((i) => (
+          <NavRow key={i.href} item={i} active={isActive(i.href)} onClick={onNavigate} />
+        ))}
+      </div>
+      {showStudio && (
+        <div className="mt-auto flex flex-col gap-0.5">
+          <NavRow item={STUDIO} active={isActive(STUDIO.href)} onClick={onNavigate} />
+        </div>
+      )}
+    </nav>
+  );
 }
 
 /**
- * Ссылки навигации. Studio добавляется ТОЛЬКО для персонала (showStudio) —
- * обычные пользователи вообще не видят пункт и не знают о зоне.
+ * Горизонтальная навигация для верхней шапки публичной витрины (shared).
+ * DJ-зона использует сайдбар (DjSidebar), а публичные паки/крейты — эту шапку.
  */
-function linksFor(showStudio: boolean) {
-  return showStudio ? [...LINKS, { href: "/studio", label: "Studio" }] : LINKS;
-}
-
-/** Десктоп: горизонтальные ссылки (скрыты на мобайле). */
 export function DjNavDesktop({ showStudio = false }: { showStudio?: boolean }) {
   const isActive = useIsActive();
+  const items = showStudio ? [...PRIMARY, ...PERSONAL, STUDIO] : [...PRIMARY, ...PERSONAL];
   return (
     <nav className="hidden items-center gap-5 text-sm text-muted-foreground md:flex">
-      {linksFor(showStudio).map((l) => (
+      {items.map((l) => (
         <Link
           key={l.href}
           href={l.href}
           className={cn(
-            "hover:text-foreground",
+            "transition-colors hover:text-foreground",
             isActive(l.href) && "font-medium text-foreground",
           )}
         >
@@ -57,41 +135,41 @@ export function DjNavDesktop({ showStudio = false }: { showStudio?: boolean }) {
   );
 }
 
-/** Мобайл: бургер + выезжающее меню (скрыт на десктопе). */
+/** Десктопный сайдбар (скрыт на мобайле). */
+export function DjSidebar({ showStudio = false }: { showStudio?: boolean }) {
+  return (
+    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r bg-sidebar px-3 pb-24 pt-4 md:flex">
+      <Link
+        href="/pool"
+        className="mb-5 px-3 text-lg font-bold tracking-tight"
+      >
+        ForzaDJ
+      </Link>
+      <NavSections showStudio={showStudio} />
+    </aside>
+  );
+}
+
+/** Мобильная навигация: бургер + выезжающий сайдбар (скрыт на десктопе). */
 export function DjNavMobile({ showStudio = false }: { showStudio?: boolean }) {
-  const isActive = useIsActive();
   const [open, setOpen] = useState(false);
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         aria-label="Меню"
-        className="inline-flex size-9 items-center justify-center rounded-md border md:hidden"
+        className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
+        <Menu className="size-5" />
       </SheetTrigger>
-      <SheetContent side="left" className="w-64">
-        <SheetHeader>
-          <SheetTitle>ForzaDJ</SheetTitle>
+      <SheetContent side="left" className="flex w-64 flex-col px-3 py-4">
+        <SheetHeader className="p-0">
+          <SheetTitle className="px-3 text-lg font-bold tracking-tight">
+            ForzaDJ
+          </SheetTitle>
         </SheetHeader>
-        <nav className="mt-4 flex flex-col gap-1">
-          {linksFor(showStudio).map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              onClick={() => setOpen(false)}
-              className={cn(
-                "rounded-md px-3 py-2 text-sm hover:bg-accent",
-                isActive(l.href) && "bg-accent font-medium",
-              )}
-            >
-              {l.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="mt-5 flex flex-1 flex-col">
+          <NavSections showStudio={showStudio} onNavigate={() => setOpen(false)} />
+        </div>
       </SheetContent>
     </Sheet>
   );
