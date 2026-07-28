@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Pause, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePlayer } from "@/components/player/player-provider";
@@ -47,7 +48,17 @@ export function TrackDetail({
             else player.play(toPlayerTrack(track, selected));
           }}
         >
-          {isCurrent && player.status === "playing" ? "⏸ Пауза" : "▶ Играть"}
+          {isCurrent && player.status === "playing" ? (
+            <>
+              <Pause className="size-4 fill-current" />
+              Пауза
+            </>
+          ) : (
+            <>
+              <Play className="size-4 fill-current" />
+              Играть
+            </>
+          )}
         </Button>
         <div className="min-w-0 flex-1">
           <Waveform
@@ -103,15 +114,16 @@ export function TrackDetail({
                 <td className="px-3 py-2 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <Button
-                      size="sm"
+                      size="icon"
                       variant="secondary"
+                      aria-label="Играть версию"
                       onClick={(e) => {
                         e.stopPropagation();
                         player.play(toPlayerTrack(track, v));
                         setSelectedId(v.id);
                       }}
                     >
-                      ▶
+                      <Play className="size-4 fill-current" />
                     </Button>
                     <span onClick={(e) => e.stopPropagation()}>
                       <DownloadButton

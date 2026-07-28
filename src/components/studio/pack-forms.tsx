@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,8 +121,8 @@ export function PackPublishControls({
         )}
         <Button
           size="sm"
-          variant="ghost"
-          className="ml-auto text-muted-foreground"
+          variant="outline"
+          className="ml-auto border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
           disabled={pending}
           onClick={() => {
             if (!confirm("Удалить пак?")) return;
@@ -132,7 +133,8 @@ export function PackPublishControls({
             });
           }}
         >
-          Удалить
+          <Trash2 className="size-4" />
+          Удалить пак
         </Button>
       </div>
     </div>
@@ -153,8 +155,9 @@ export function RemovePackTrackButton({
   const [pending, startTransition] = useTransition();
   return (
     <Button
-      size="sm"
+      size="icon"
       variant="ghost"
+      aria-label="Убрать из пака"
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
@@ -163,7 +166,7 @@ export function RemovePackTrackButton({
         })
       }
     >
-      ✕
+      <X className="size-4" />
     </Button>
   );
 }

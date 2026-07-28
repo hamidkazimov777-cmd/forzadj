@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,12 +62,13 @@ export function PackTrackPicker({
             >
               <span className="min-w-0 truncate">{r.label}</span>
               <Button
-                size="sm"
+                size="icon"
                 variant="outline"
+                aria-label="Добавить в пак"
                 disabled={pending}
                 onClick={() => add(r.versionId, r.label)}
               >
-                ＋
+                <Plus className="size-4" />
               </Button>
             </li>
           ))}
