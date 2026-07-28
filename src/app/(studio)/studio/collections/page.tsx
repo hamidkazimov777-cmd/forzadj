@@ -2,9 +2,10 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { CreatePackForm } from "@/components/studio/pack-forms";
+import { DeletePackButton } from "@/components/studio/delete-pack-button";
 import { requireStudioPermission } from "@/server/auth/core/session";
 import { collectionRepository } from "@/server/repositories/collection.repository";
-import { createPackAction } from "@/server/actions/pack.actions";
+import { createPackAction, deletePackAction } from "@/server/actions/pack.actions";
 
 export const metadata = { title: "Редакционные паки" };
 
@@ -40,6 +41,11 @@ export default async function AdminCollectionsPage() {
               <Badge variant={p.visibility === "PUBLIC" ? "default" : "outline"}>
                 {p.visibility === "PUBLIC" ? "опубликован" : "черновик"}
               </Badge>
+              <DeletePackButton
+                packId={p.id}
+                title={p.title}
+                onDelete={deletePackAction}
+              />
             </div>
             {p.description && (
               <p className="line-clamp-2 text-sm text-muted-foreground">
