@@ -62,14 +62,15 @@ export function Waveform({
 
     const barW = width / peaks.length;
     const played = Math.floor(progress * peaks.length);
-    const styles = getComputedStyle(canvas);
-    const playedColor = styles.getPropertyValue("--primary") || "#111";
-    const restColor = styles.getPropertyValue("--muted-foreground") || "#999";
 
+    // RGB-волна: оттенок «радугой» по ширине трека. Проигранная часть —
+    // насыщенная, оставшаяся — тот же спектр, но приглушённый.
     for (let i = 0; i < peaks.length; i++) {
       const h = Math.max(2, peaks[i] * height);
-      ctx.fillStyle = i <= played ? playedColor : restColor;
-      ctx.globalAlpha = i <= played ? 1 : 0.45;
+      const hue = Math.round((i / peaks.length) * 340);
+      const isPlayed = i <= played;
+      ctx.fillStyle = `hsl(${hue} 80% ${isPlayed ? 58 : 62}%)`;
+      ctx.globalAlpha = isPlayed ? 1 : 0.28;
       ctx.fillRect(i * barW, (height - h) / 2, Math.max(1, barW * 0.7), h);
     }
     ctx.globalAlpha = 1;
@@ -86,8 +87,12 @@ export function Waveform({
         }}
       >
         <div
-          className="absolute inset-y-0 left-0 rounded bg-primary"
-          style={{ width: `${progress * 100}%` }}
+          className="absolute inset-y-0 left-0 rounded"
+          style={{
+            width: `${progress * 100}%`,
+            backgroundImage:
+              "linear-gradient(90deg, hsl(0 80% 60%), hsl(60 80% 60%), hsl(140 75% 55%), hsl(210 80% 60%), hsl(280 75% 62%))",
+          }}
         />
       </div>
     );

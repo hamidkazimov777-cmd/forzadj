@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, type CSSProperties } from "react";
+import { useTransition } from "react";
 import Link from "next/link";
 import { Heart, Pause, Play, X } from "lucide-react";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ import {
   toPlayerTrack,
 } from "@/lib/player-track";
 import { camelotColor } from "@/lib/camelot";
+import { genreGradient } from "@/lib/genre-color";
 import { cn } from "@/lib/utils";
 import type { TrackCardDto, VersionCardDto } from "@/types/catalog";
 import type { RequestDownloadFn } from "@/types/download";
@@ -26,17 +27,6 @@ import type { CrateSummary, CrateActionFns } from "@/types/collection";
 function fmt(sec: number | null): string {
   if (sec == null) return "--:--";
   return `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
-}
-
-/** Детерминированная «обложка»-градиент по id трека (пока нет артворка). */
-function coverStyle(id: string): CSSProperties {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  const h1 = h % 360;
-  const h2 = (h1 + 40 + ((h >> 3) % 90)) % 360;
-  return {
-    backgroundImage: `linear-gradient(135deg, oklch(0.6 0.16 ${h1}), oklch(0.42 0.13 ${h2}))`,
-  };
 }
 
 function RemoveButton({
@@ -156,7 +146,7 @@ export function TrackList({
                 else if (def) playVersion(track, def);
               }}
               aria-label={isPlaying ? "Пауза" : "Играть"}
-              style={coverStyle(track.id)}
+              style={{ backgroundImage: genreGradient(track.genres[0], track.id) }}
               className="relative size-11 shrink-0 overflow-hidden rounded-md ring-1 ring-inset ring-white/10 disabled:opacity-50"
             >
               <span
