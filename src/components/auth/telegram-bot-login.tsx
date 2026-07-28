@@ -33,38 +33,42 @@ export function TelegramBotLogin({
 }) {
   const [deepLink, setDeepLink] = useState<string | null>(null);
   const [waiting, setWaiting] = useState(false);
+  const [expired, setExpired] = useState(false);
   const [showFallback, setShowFallback] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startedRef = useRef(false);
 
   const begin = useCallback(async () => {
     setError(null);
+    setExpired(false);
+    setDeepLink(null);
     const res = await start(next);
     if (res.ok && res.deepLink) setDeepLink(res.deepLink);
     else setError("Не удалось подготовить вход. Обновите страницу.");
   }, [next, start]);
 
-  // Готовим ссылку сразу — кнопка нативно открывает Telegram по клику.
+  // Ровно один nonce на попытку (без «шторма» токенов).
   useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
     void begin();
   }, [begin]);
 
-  // Поллинг статуса подтверждения.
+  // Поллинг статуса подтверждения по текущему nonce.
   useEffect(() => {
     if (!deepLink) return;
-    pollRef.current = setInterval(async () => {
+    const id = setInterval(async () => {
       const res = await poll();
       if (res.status === "authenticated") {
-        if (pollRef.current) clearInterval(pollRef.current);
+        clearInterval(id);
         window.location.href = res.next ?? "/pool";
       } else if (res.status === "expired") {
-        void begin(); // токен протух — тихо перевыпускаем ссылку
+        clearInterval(id);
+        setExpired(true); // не перевыпускаем автоматически — покажем кнопку
       }
     }, 2500);
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [deepLink, poll, begin]);
+    return () => clearInterval(id);
+  }, [deepLink, poll]);
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -81,10 +85,24 @@ export function TelegramBotLogin({
       </Button>
 
       <p className="text-sm text-muted-foreground">
-        {waiting
-          ? "Подтвердите вход в Telegram — вернётесь автоматически."
-          : "Быстрый вход через Telegram без паролей"}
+        {expired
+          ? "Ссылка устарела."
+          : waiting
+            ? "Подтвердите вход в Telegram — вернётесь автоматически."
+            : "Быстрый вход через Telegram без паролей"}
       </p>
+      {expired && (
+        <button
+          type="button"
+          onClick={() => {
+            setWaiting(false);
+            void begin();
+          }}
+          className="text-sm font-medium underline underline-offset-4"
+        >
+          Обновить и войти заново
+        </button>
+      )}
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {fallbackBotUsername && fallbackAuthUrl && (
