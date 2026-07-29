@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { CatalogFilters } from "@/components/tracks/catalog-filters";
 import { TrackList } from "@/components/tracks/track-list";
-import { searchCatalog } from "@/server/services/search.service";
+import { searchCatalog, filtersToQuery } from "@/server/services/search.service";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
 import { favoriteRepository } from "@/server/repositories/favorite.repository";
 import { collectionRepository } from "@/server/repositories/collection.repository";
@@ -74,6 +74,7 @@ export async function CatalogView({
       </p>
       <TrackList
         items={page.items}
+        linkQuery={filtersToQuery(filters)}
         requestDownload={requestDownloadAction}
         toggleFavorite={toggleFavoriteAction}
         favoritedVersionIds={[...favoritedSet]}

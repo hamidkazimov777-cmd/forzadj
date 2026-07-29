@@ -64,6 +64,7 @@ export function TrackList({
   crateActions,
   removeVersion,
   guest = false,
+  linkQuery = "",
 }: {
   items: TrackCardDto[];
   /** Если передан — в строках показываются кнопки скачивания версий. */
@@ -81,6 +82,8 @@ export function TrackList({
    * скачивание) вместо выполнения предлагают войти.
    */
   guest?: boolean;
+  /** Query каталога (?q=…&sort=…) — переносит контекст на страницу трека. */
+  linkQuery?: string;
 }) {
   const player = usePlayer();
   const favoritedSet = new Set(favoritedVersionIds ?? []);
@@ -167,7 +170,7 @@ export function TrackList({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <Link
-                  href={`/pool/track/${track.slug}`}
+                  href={`/pool/track/${track.slug}${linkQuery ? `?${linkQuery}` : ""}`}
                   className={cn(
                     "truncate font-medium hover:underline",
                     isCurrentTrack && "text-primary",

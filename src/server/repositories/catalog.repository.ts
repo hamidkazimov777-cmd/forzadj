@@ -81,51 +81,63 @@ function versionWhere(filters: CatalogFilters): Prisma.TrackVersionWhereInput {
   return where;
 }
 
-export const catalogRepository = {
-  async search(filters: CatalogFilters): Promise<CatalogPage> {
-    const page = Math.max(1, filters.page ?? 1);
+/** Жанр включает поджанры (иерархия). undefined — фильтр по жанру не задан. */
+async function resolveGenreIds(
+  filters: CatalogFilters,
+): Promise<string[] | undefined> {
+  if (!filters.genre) return undefined;
+  const genre = await prisma.genre.findFirst({
+    where: { slug: filters.genre },
+    include: { children: true },
+  });
+  return genre ? [genre.id, ...genre.children.map((c) => c.id)] : [];
+}
 
-    // Жанр включает поджанры (иерархия).
-    let genreIds: string[] | undefined;
-    if (filters.genre) {
-      const genre = await prisma.genre.findFirst({
-        where: { slug: filters.genre },
-        include: { children: true },
-      });
-      genreIds = genre
-        ? [genre.id, ...genre.children.map((c) => c.id)]
-        : [];
-    }
-
-    const where: Prisma.TrackWhereInput = {
-      status: "PUBLISHED",
-      versions: { some: versionWhere(filters) },
-      ...(genreIds ? { genres: { some: { genreId: { in: genreIds } } } } : {}),
-      ...(filters.cleanOnly ? { isExplicit: false } : {}),
-      ...(filters.q
-        ? {
-            OR: [
-              { title: { contains: filters.q, mode: "insensitive" } },
-              {
-                artists: {
-                  some: {
-                    artist: {
-                      name: { contains: filters.q, mode: "insensitive" },
-                    },
+/** where уровня трека — общий для выборки и для упорядоченной навигации. */
+function trackWhere(
+  filters: CatalogFilters,
+  genreIds: string[] | undefined,
+): Prisma.TrackWhereInput {
+  return {
+    status: "PUBLISHED",
+    versions: { some: versionWhere(filters) },
+    ...(genreIds ? { genres: { some: { genreId: { in: genreIds } } } } : {}),
+    ...(filters.cleanOnly ? { isExplicit: false } : {}),
+    ...(filters.q
+      ? {
+          OR: [
+            { title: { contains: filters.q, mode: "insensitive" } },
+            {
+              artists: {
+                some: {
+                  artist: {
+                    name: { contains: filters.q, mode: "insensitive" },
                   },
                 },
               },
-            ],
-          }
-        : {}),
-    };
+            },
+          ],
+        }
+      : {}),
+  };
+}
 
-    const orderBy: Prisma.TrackOrderByWithRelationInput =
-      filters.sort === "popular"
-        ? { downloadCount: "desc" }
-        : filters.sort === "title"
-          ? { title: "asc" }
-          : { createdAt: "desc" }; // newest: uuid v7 → createdAt монотонен
+function trackOrderBy(
+  filters: CatalogFilters,
+): Prisma.TrackOrderByWithRelationInput {
+  return filters.sort === "popular"
+    ? { downloadCount: "desc" }
+    : filters.sort === "title"
+      ? { title: "asc" }
+      : { createdAt: "desc" }; // newest: uuid v7 → createdAt монотонен
+}
+
+export const catalogRepository = {
+  async search(filters: CatalogFilters): Promise<CatalogPage> {
+    const page = Math.max(1, filters.page ?? 1);
+    const genreIds = await resolveGenreIds(filters);
+    const where = trackWhere(filters, genreIds);
+    const orderBy = trackOrderBy(filters);
 
     // Без $transaction: строгая согласованность count/списка не нужна,
     // а транзакции через pgbouncer дороги (P2028 при исчерпании пула).
@@ -144,6 +156,22 @@ export const catalogRepository = {
       page,
       pageSize: PAGE_SIZE,
     };
+  },
+
+  /**
+   * Упорядоченная последовательность слагов каталога под теми же фильтрами
+   * и сортировкой, что и search — для навигации next/prev по странице трека.
+   * Только slug (лёгкий запрос); cap ограничивает размер последовательности.
+   */
+  async orderedSlugs(filters: CatalogFilters, limit = 2000): Promise<string[]> {
+    const genreIds = await resolveGenreIds(filters);
+    const rows = await prisma.track.findMany({
+      where: trackWhere(filters, genreIds),
+      orderBy: trackOrderBy(filters),
+      select: { slug: true },
+      take: limit,
+    });
+    return rows.map((r) => r.slug);
   },
 
   async findBySlug(slug: string): Promise<TrackCardDto | null> {

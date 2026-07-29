@@ -9,10 +9,13 @@ import { usePlayer } from "@/components/player/player-provider";
 import { Waveform } from "@/components/player/waveform";
 import { DownloadButton } from "@/components/tracks/download-button";
 import { EnergyRating } from "@/components/tracks/energy-rating";
-import { defaultVersionOf, toPlayerTrack } from "@/lib/player-track";
+import { toPlayerTrack } from "@/lib/player-track";
 import type { TrackCardDto } from "@/types/catalog";
 import type { PlayerTrack } from "@/types/player";
 import type { RequestDownloadFn } from "@/types/download";
+
+/** Сосед по каталогу для навигации next/prev. */
+type NeighborNav = { slug: string; player: PlayerTrack } | null;
 
 function fmt(sec: number | null): string {
   if (sec == null) return "--:--";
@@ -74,12 +77,17 @@ function WaveformSwitcher({
 /** Детали трека: большой waveform выбранной версии + таблица версий. */
 export function TrackDetail({
   track,
-  related = [],
+  prev = null,
+  next = null,
+  contextQuery = "",
   requestDownload,
 }: {
   track: TrackCardDto;
-  /** Похожие треки — образуют очередь для кнопок «следующий/предыдущий». */
-  related?: TrackCardDto[];
+  /** Предыдущий/следующий трек по каталогу (с текущими фильтрами). */
+  prev?: NeighborNav;
+  next?: NeighborNav;
+  /** Фильтры каталога в виде query — переносятся на соседний трек. */
+  contextQuery?: string;
   requestDownload: RequestDownloadFn;
 }) {
   const player = usePlayer();
@@ -96,20 +104,15 @@ export function TrackDetail({
     track.versions.find((v) => v.id === selectedId) ?? track.versions[0];
   const [activeId, setActiveId] = useState<string | undefined>(selected?.id);
 
-  // versionId, «принадлежащие» этой странице (сам трек + похожие): только за
-  // ними волна следует при переключениях плеера — воспроизведение из других
-  // мест приложения страницу не перехватывает.
+  // versionId версий этого трека: только за ними волна следует при
+  // переключениях плеера — воспроизведение из других мест страницу не
+  // перехватывает.
   const ownIds = useRef<Set<string>>(new Set());
   useEffect(() => {
-    const ids = new Set<string>(track.versions.map((v) => v.id));
-    for (const r of related) {
-      const v = defaultVersionOf(r);
-      if (v) ids.add(v.id);
-    }
-    ownIds.current = ids;
-  }, [track, related]);
+    ownIds.current = new Set<string>(track.versions.map((v) => v.id));
+  }, [track]);
 
-  // Волна следует за плеером, когда он играет наш трек/похожие.
+  // Волна следует за плеером, когда он играет версию этого трека.
   const playerVersionId = player.current?.versionId;
   useEffect(() => {
     if (playerVersionId && ownIds.current.has(playerVersionId)) {
@@ -141,43 +144,16 @@ export function TrackDetail({
       ? player.positionSec / activeDuration
       : 0;
 
-  // Очередь для next/prev: выбранная версия + похожие треки.
-  function buildQueue(): PlayerTrack[] {
-    const head = toPlayerTrack(track, selected);
-    const rest = related
-      .map((r) => {
-        const v = defaultVersionOf(r);
-        return v ? toPlayerTrack(r, v) : null;
-      })
-      .filter((x): x is PlayerTrack => x !== null);
-    return [head, ...rest];
-  }
-
-  // Сосед по очереди. Если плеер уже стоит на этом треке (пришли через
-  // next/prev) — берём живую очередь плеера (стабильна между переходами,
-  // поэтому prev корректно возвращает назад). Иначе строим очередь из этой
-  // страницы: [текущий трек, ...похожие].
-  function neighbor(dir: 1 | -1): { track: PlayerTrack; queue: PlayerTrack[] } | null {
-    const cur = player.current;
-    if (cur && cur.trackSlug === track.slug && player.currentIndex >= 0) {
-      const t = player.queue[player.currentIndex + dir];
-      return t ? { track: t, queue: player.queue } : null;
-    }
-    const q = buildQueue();
-    const t = q[0 + dir];
-    return t ? { track: t, queue: q } : null;
-  }
-
-  const prevNav = neighbor(-1);
-  const nextNav = neighbor(1);
-
-  // Полноценный переход к соседнему треку: играем его (стабильная очередь) и
-  // делаем клиентскую навигацию на его страницу — обновляется весь state
-  // (URL, заголовок, версии, BPM, Camelot, Energy, …) без перезагрузки.
-  function go(nav: { track: PlayerTrack; queue: PlayerTrack[] } | null) {
+  // Полноценный переход к соседнему по КАТАЛОГУ треку: играем его и делаем
+  // клиентскую навигацию на его страницу с сохранением фильтров — обновляется
+  // весь state (URL, заголовок, версии, BPM, Camelot, Energy, волна, …) без
+  // перезагрузки. player.play переиспользует текущую очередь, если сосед уже
+  // в ней, иначе ставит его одиночно.
+  function go(nav: NeighborNav) {
     if (!nav) return;
-    player.play(nav.track, nav.queue);
-    router.push(`/pool/track/${nav.track.trackSlug}`);
+    player.play(nav.player);
+    const qs = contextQuery ? `?${contextQuery}` : "";
+    router.push(`/pool/track/${nav.slug}${qs}`);
   }
 
   const selectedIsCurrent = playerVersionId === selected.id;
@@ -187,7 +163,7 @@ export function TrackDetail({
     if (selectedIsCurrent) {
       player.toggle();
     } else {
-      player.play(toPlayerTrack(track, selected), buildQueue());
+      player.play(toPlayerTrack(track, selected));
       setActiveId(selected.id);
     }
   }
@@ -214,8 +190,8 @@ export function TrackDetail({
             size="icon"
             variant="ghost"
             aria-label="Предыдущий трек"
-            disabled={!prevNav}
-            onClick={() => go(prevNav)}
+            disabled={!prev}
+            onClick={() => go(prev)}
           >
             <SkipBack className="size-4 fill-current" />
           </Button>
@@ -223,8 +199,8 @@ export function TrackDetail({
             size="icon"
             variant="ghost"
             aria-label="Следующий трек"
-            disabled={!nextNav}
-            onClick={() => go(nextNav)}
+            disabled={!next}
+            onClick={() => go(next)}
           >
             <SkipForward className="size-4 fill-current" />
           </Button>
