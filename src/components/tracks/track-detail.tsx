@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -82,7 +83,15 @@ export function TrackDetail({
   requestDownload: RequestDownloadFn;
 }) {
   const player = usePlayer();
-  const [selectedId, setSelectedId] = useState(track.versions[0]?.id);
+  const router = useRouter();
+  // Если сюда пришли, уже играя версию этого трека (через next/prev), —
+  // выделяем именно её, чтобы шапка/кнопка совпадали с воспроизведением.
+  const initialPlayingVid = player.current?.versionId;
+  const [selectedId, setSelectedId] = useState(
+    initialPlayingVid && track.versions.some((v) => v.id === initialPlayingVid)
+      ? initialPlayingVid
+      : track.versions[0]?.id,
+  );
   const selected =
     track.versions.find((v) => v.id === selectedId) ?? track.versions[0];
   const [activeId, setActiveId] = useState<string | undefined>(selected?.id);
@@ -144,16 +153,35 @@ export function TrackDetail({
     return [head, ...rest];
   }
 
+  // Сосед по очереди. Если плеер уже стоит на этом треке (пришли через
+  // next/prev) — берём живую очередь плеера (стабильна между переходами,
+  // поэтому prev корректно возвращает назад). Иначе строим очередь из этой
+  // страницы: [текущий трек, ...похожие].
+  function neighbor(dir: 1 | -1): { track: PlayerTrack; queue: PlayerTrack[] } | null {
+    const cur = player.current;
+    if (cur && cur.trackSlug === track.slug && player.currentIndex >= 0) {
+      const t = player.queue[player.currentIndex + dir];
+      return t ? { track: t, queue: player.queue } : null;
+    }
+    const q = buildQueue();
+    const t = q[0 + dir];
+    return t ? { track: t, queue: q } : null;
+  }
+
+  const prevNav = neighbor(-1);
+  const nextNav = neighbor(1);
+
+  // Полноценный переход к соседнему треку: играем его (стабильная очередь) и
+  // делаем клиентскую навигацию на его страницу — обновляется весь state
+  // (URL, заголовок, версии, BPM, Camelot, Energy, …) без перезагрузки.
+  function go(nav: { track: PlayerTrack; queue: PlayerTrack[] } | null) {
+    if (!nav) return;
+    player.play(nav.track, nav.queue);
+    router.push(`/pool/track/${nav.track.trackSlug}`);
+  }
+
   const selectedIsCurrent = playerVersionId === selected.id;
   const bigIsPlaying = selectedIsCurrent && player.status === "playing";
-
-  // next/prev активны, только когда с этой страницы что-то играет (очередь
-  // засеяна). Иначе кнопки неактивны — очередь пуста, листать нечего.
-  const playingOurs =
-    !!playerVersionId && ownIds.current.has(playerVersionId);
-  const canNext =
-    playingOurs && player.currentIndex < player.queue.length - 1;
-  const canPrev = playingOurs;
 
   function playBig() {
     if (selectedIsCurrent) {
@@ -186,8 +214,8 @@ export function TrackDetail({
             size="icon"
             variant="ghost"
             aria-label="Предыдущий трек"
-            disabled={!canPrev}
-            onClick={() => player.prev()}
+            disabled={!prevNav}
+            onClick={() => go(prevNav)}
           >
             <SkipBack className="size-4 fill-current" />
           </Button>
@@ -195,8 +223,8 @@ export function TrackDetail({
             size="icon"
             variant="ghost"
             aria-label="Следующий трек"
-            disabled={!canNext}
-            onClick={() => player.next()}
+            disabled={!nextNav}
+            onClick={() => go(nextNav)}
           >
             <SkipForward className="size-4 fill-current" />
           </Button>
