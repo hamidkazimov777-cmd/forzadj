@@ -74,7 +74,7 @@ function versionWhere(filters: CatalogFilters): Prisma.TrackVersionWhereInput {
       : filters.key.toUpperCase();
   }
   if (filters.type) where.type = filters.type;
-  if (filters.energyMin != null) where.energy = { gte: filters.energyMin };
+  if (filters.rating != null) where.energy = filters.rating;
   if (filters.cleanOnly) where.isExplicit = false;
   if (filters.releasedWithinDays != null) {
     where.releaseDate = {
@@ -84,16 +84,24 @@ function versionWhere(filters: CatalogFilters): Prisma.TrackVersionWhereInput {
   return where;
 }
 
-/** Жанр включает поджанры (иерархия). undefined — фильтр по жанру не задан. */
+/**
+ * Слаги жанров → id (включая поджанры-иерархию). Мульти-выбор: объединение
+ * всех выбранных. undefined — фильтр по жанрам не задан.
+ */
 async function resolveGenreIds(
   filters: CatalogFilters,
 ): Promise<string[] | undefined> {
-  if (!filters.genre) return undefined;
-  const genre = await prisma.genre.findFirst({
-    where: { slug: filters.genre },
+  if (!filters.genres || filters.genres.length === 0) return undefined;
+  const genres = await prisma.genre.findMany({
+    where: { slug: { in: filters.genres } },
     include: { children: true },
   });
-  return genre ? [genre.id, ...genre.children.map((c) => c.id)] : [];
+  const ids = new Set<string>();
+  for (const g of genres) {
+    ids.add(g.id);
+    for (const c of g.children) ids.add(c.id);
+  }
+  return [...ids];
 }
 
 /** where уровня трека — общий для выборки и для упорядоченной навигации. */

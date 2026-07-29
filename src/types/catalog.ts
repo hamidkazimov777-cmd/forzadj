@@ -35,13 +35,15 @@ export interface TrackCardDto {
 
 export interface CatalogFilters {
   q?: string;
-  genre?: string; // slug
+  /** Слаги жанров (мульти-выбор). Трек матчится, если содержит любой из них. */
+  genres?: string[];
   bpmMin?: number;
   bpmMax?: number;
   key?: string; // Camelot
   keyCompatible?: boolean;
   type?: VersionType;
-  energyMin?: number;
+  /** Точный рейтинг (звёзды energy 1–5). */
+  rating?: number;
   cleanOnly?: boolean;
   /** Версии, вышедшие за последние N дней (пресет /new). */
   releasedWithinDays?: number;

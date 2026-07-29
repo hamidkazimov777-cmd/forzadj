@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DjNavMobile } from "@/components/layout/dj-nav";
-import { TopSearch } from "@/components/layout/top-search";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { SupportButton } from "@/components/support/support-button";
 import type { SupportSubmitFn } from "@/types/donation";
@@ -27,7 +26,6 @@ export function TopBar({
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur md:px-6">
       <DjNavMobile showStudio={showStudio} />
-      <TopSearch />
       <div className="ml-auto flex items-center gap-1 sm:gap-2">
         <ThemeToggle />
         <SupportButton

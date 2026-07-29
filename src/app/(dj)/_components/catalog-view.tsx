@@ -45,10 +45,7 @@ export async function CatalogView({
 
   const totalPages = Math.max(1, Math.ceil(page.total / page.pageSize));
   const pageHref = (p: number) => {
-    const params = new URLSearchParams();
-    for (const [k, v] of Object.entries(filters)) {
-      if (v !== undefined && k !== "page" && v !== false) params.set(k, String(v));
-    }
+    const params = new URLSearchParams(filtersToQuery(filters));
     if (p > 1) params.set("page", String(p));
     const qs = params.toString();
     return qs ? `${basePath}?${qs}` : basePath;

@@ -26,15 +26,26 @@ export function parseCatalogParams(
 
   const type = s(params.type)?.toUpperCase();
   const sort = s(params.sort);
+
+  // genre может прийти повторяющимся (?genre=a&genre=b) или строкой (a,b).
+  const rawGenre = params.genre;
+  const genreList = (
+    Array.isArray(rawGenre) ? rawGenre : rawGenre ? rawGenre.split(",") : []
+  )
+    .map((g) => g.trim())
+    .filter(Boolean);
+
+  const rating = n(params.rating);
+
   return {
     q: s(params.q),
-    genre: s(params.genre),
+    genres: genreList.length ? genreList : undefined,
     bpmMin: n(params.bpmMin),
     bpmMax: n(params.bpmMax),
     key: s(params.key)?.toUpperCase(),
     keyCompatible: s(params.keyCompatible) === "1",
     type: VERSION_TYPES.includes(type as VersionType) ? (type as VersionType) : undefined,
-    energyMin: n(params.energyMin),
+    rating: rating != null && rating >= 1 && rating <= 5 ? rating : undefined,
     cleanOnly: s(params.clean) === "1",
     sort: sort === "popular" || sort === "title" ? sort : "newest",
     page: n(params.page),
@@ -49,13 +60,13 @@ export function parseCatalogParams(
 export function filtersToQuery(f: CatalogFilters): string {
   const p = new URLSearchParams();
   if (f.q) p.set("q", f.q);
-  if (f.genre) p.set("genre", f.genre);
+  for (const g of f.genres ?? []) p.append("genre", g);
   if (f.bpmMin != null) p.set("bpmMin", String(f.bpmMin));
   if (f.bpmMax != null) p.set("bpmMax", String(f.bpmMax));
   if (f.key) p.set("key", f.key);
   if (f.keyCompatible) p.set("keyCompatible", "1");
   if (f.type) p.set("type", f.type);
-  if (f.energyMin != null) p.set("energyMin", String(f.energyMin));
+  if (f.rating != null) p.set("rating", String(f.rating));
   if (f.sort && f.sort !== "newest") p.set("sort", f.sort);
   return p.toString();
 }
