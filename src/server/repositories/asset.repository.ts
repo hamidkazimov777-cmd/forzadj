@@ -14,6 +14,7 @@ export const assetRepository = {
     releaseId?: string;
     type: AssetType;
     storageKey: string;
+    originalName?: string;
     mime?: string;
     sizeBytes?: bigint;
     createdById?: string;

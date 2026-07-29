@@ -387,6 +387,9 @@ model Asset {
   /// (бакет детерминирован типом: ORIGINAL→audio, PREVIEW/WAVEFORM→previews,
   /// ARTWORK→artwork).
   storageKey     String        @map("storage_key")
+  /// Оригинальное имя файла на момент загрузки (для ORIGINAL) — отдаётся
+  /// при скачивании без изменений. null у файлов, загруженных до фиксации имени.
+  originalName   String?       @map("original_name")
   mime           String?
   sizeBytes      BigInt?       @map("size_bytes")
   checksumSha256 String?       @map("checksum_sha256")

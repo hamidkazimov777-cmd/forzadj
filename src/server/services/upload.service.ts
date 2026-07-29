@@ -76,6 +76,8 @@ export const uploadService = {
       versionId: version.id,
       type: "ORIGINAL",
       storageKey,
+      // Оригинальное имя файла сохраняем как есть — отдадим при скачивании.
+      originalName: file.name,
       mime: file.mime,
       sizeBytes: BigInt(file.sizeBytes),
       createdById: actorId,

@@ -1,9 +1,9 @@
-import { getStorage } from "@/server/storage";
 import { trackVersionRepository } from "@/server/repositories/track.repository";
 import { downloadRepository } from "@/server/repositories/download.repository";
 import { can } from "@/server/auth/core/permissions";
 import { downloadLimits } from "@/lib/config/limits";
-import { trackFileName } from "@/lib/filename";
+import { resolveDownloadName } from "@/lib/filename";
+import { signDownloadToken } from "@/server/services/download-token";
 import type { SessionUser } from "@/types/auth";
 
 /**
@@ -98,7 +98,8 @@ export const downloadService = {
       .filter((a) => a.role === "MAIN")
       .map((a) => a.artist.name)
       .join(", ");
-    const fileName = trackFileName({
+    const fileName = resolveDownloadName({
+      originalName: original.originalName,
       title: version.track.title,
       type: version.type,
       versionLabel: version.versionLabel,
@@ -106,15 +107,14 @@ export const downloadService = {
       artistLine: mainArtists,
     });
 
-    const signed = await getStorage().createSignedDownloadUrl(
-      "audio",
-      original.storageKey,
-      { expiresInSeconds: DOWNLOAD_TTL_SECONDS, downloadFileName: fileName },
-    );
+    // Скачивание идёт через собственный роут (/api/download) — он стримит файл
+    // и ставит корректный Content-Disposition. Токен подтверждает списание.
+    const token = signDownloadToken(version.id, DOWNLOAD_TTL_SECONDS * 1000);
+    const url = `/api/download/${version.id}?t=${token}`;
 
     return {
       ok: true,
-      url: signed.url,
+      url,
       fileName,
       quota: {
         usedToday: record.usedToday,

@@ -1,5 +1,5 @@
 import { downloadLimits } from "@/lib/config/limits";
-import { trackFileName } from "@/lib/filename";
+import { resolveDownloadName } from "@/lib/filename";
 import { downloadRepository } from "@/server/repositories/download.repository";
 import { collectionRepository } from "@/server/repositories/collection.repository";
 import { trackVersionRepository } from "@/server/repositories/track.repository";
@@ -73,8 +73,10 @@ async function resolveItems(
       trackId: version.trackId,
       assetId: original.id,
       storageKey: original.storageKey,
-      // Нумерованный префикс для порядка в архиве + читаемое имя трека.
-      fileName: `${nn}. ${trackFileName({
+      // Нумерованный префикс для порядка в архиве + оригинальное имя файла
+      // (или синтетическое, если оригинал не сохранён).
+      fileName: `${nn}. ${resolveDownloadName({
+        originalName: original.originalName,
         title: version.track.title,
         type: version.type,
         ext,
