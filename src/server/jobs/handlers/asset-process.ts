@@ -175,6 +175,28 @@ registerJobHandler("asset.process", async ({ assetId }) => {
       }
     }
 
+    // ── Обложка из ID3 (embedded artwork) ─────────────────────────────────
+    // Переиспользуем ARTWORK-ассет + бакет artwork; ffmpeg не нужен.
+    const pic = meta?.common.picture?.[0];
+    if (pic?.data && pic.data.length > 0) {
+      const fmt = (pic.format ?? "").toLowerCase();
+      const isPng = fmt.includes("png");
+      const ext = isPng ? "png" : "jpg";
+      const artMime = isPng ? "image/png" : "image/jpeg";
+      const artKey = `tracks/${version.trackId}/${version.id}/cover.${ext}`;
+      const artBuf = Buffer.from(pic.data);
+      await storage.put("artwork", artKey, artBuf, { contentType: artMime });
+      await assetRepository.softDeleteByVersionAndType(version.id, "ARTWORK");
+      const artAsset = await assetRepository.create({
+        versionId: version.id,
+        type: "ARTWORK",
+        storageKey: artKey,
+        mime: artMime,
+        sizeBytes: BigInt(artBuf.length),
+      });
+      await assetRepository.setStatus(artAsset.id, "READY");
+    }
+
     // ── Превью + waveform (требуют ffmpeg) ────────────────────────────────
     if (await ffmpegAvailable()) {
       const dir = await mkdtemp(join(tmpdir(), "forzadj-"));

@@ -53,6 +53,7 @@ function toCardDto(track: CatalogTrack): TrackCardDto {
       isExplicit: v.isExplicit,
       hasPreview: v.assets.some((a) => a.type === "PREVIEW"),
       hasWaveform: v.assets.some((a) => a.type === "WAVEFORM"),
+      hasArtwork: v.assets.some((a) => a.type === "ARTWORK"),
     })),
   };
 }

@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { Heart, Pause, Play, X } from "lucide-react";
+import { Heart, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import {
   toPlayerTrack,
 } from "@/lib/player-track";
 import { camelotColor } from "@/lib/camelot";
-import { genreGradient } from "@/lib/genre-color";
+import { TrackCover } from "@/components/tracks/track-cover";
 import { cn } from "@/lib/utils";
 import type { TrackCardDto, VersionCardDto } from "@/types/catalog";
 import type { PlayerTrack } from "@/types/player";
@@ -150,31 +150,20 @@ export function TrackList({
               <span aria-hidden className="absolute inset-y-0 left-0 w-0.5 bg-primary" />
             )}
 
-            {/* Обложка = кнопка play */}
-            <button
-              type="button"
+            {/* Обложка = кнопка play (общий компонент) */}
+            <TrackCover
+              versionId={def?.id}
+              hasArtwork={def?.hasArtwork}
+              genre={track.genres[0]}
+              seed={track.id}
+              isPlaying={isPlaying}
               disabled={!def}
+              size={44}
               onClick={() => {
                 if (isCurrentTrack) player.toggle();
                 else if (def) playVersion(track, def);
               }}
-              aria-label={isPlaying ? "Пауза" : "Играть"}
-              style={{ backgroundImage: genreGradient(track.genres[0], track.id) }}
-              className="relative size-11 shrink-0 overflow-hidden rounded-md ring-1 ring-inset ring-white/10 disabled:opacity-50"
-            >
-              <span
-                className={cn(
-                  "absolute inset-0 flex items-center justify-center bg-black/45 text-white transition-opacity",
-                  isCurrentTrack ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-                )}
-              >
-                {isPlaying ? (
-                  <Pause className="size-4 fill-current" />
-                ) : (
-                  <Play className="size-4 fill-current" />
-                )}
-              </span>
-            </button>
+            />
 
             {/* Название + артист (+ приборные данные на мобиле) */}
             <div className="min-w-0 flex-1">

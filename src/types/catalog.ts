@@ -19,6 +19,8 @@ export interface VersionCardDto {
   isExplicit: boolean;
   hasPreview: boolean;
   hasWaveform: boolean;
+  /** Есть ли обложка (ARTWORK-ассет) — карточка показывает реальную обложку. */
+  hasArtwork: boolean;
 }
 
 export interface TrackCardDto {

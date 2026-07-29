@@ -45,4 +45,11 @@ export const assetRepository = {
       data: { deletedAt: new Date() },
     });
   },
+
+  /** READY-ассет версии заданного типа (для отдачи обложки/waveform). */
+  findReadyByVersionAndType(versionId: string, type: AssetType) {
+    return prisma.asset.findFirst({
+      where: { versionId, type, status: "READY", deletedAt: null },
+    });
+  },
 };
