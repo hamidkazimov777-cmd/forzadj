@@ -77,6 +77,41 @@ function computePeaks(pcm: Buffer): number[] {
   return peaks.slice(0, PEAKS_COUNT);
 }
 
+/**
+ * Частотные полосы для «спектральной» волны: цвет столбика подсказывает,
+ * что звучит в этот момент — низ (бас/кик), середина (вокал/синты), верх
+ * (хэты/воздух). ffmpeg разделяет сигнал фильтрами, дальше считаем RMS.
+ */
+const BANDS: Array<{ name: "low" | "mid" | "high"; filter: string }> = [
+  { name: "low", filter: "lowpass=f=250" },
+  { name: "mid", filter: "highpass=f=250,lowpass=f=4000" },
+  { name: "high", filter: "highpass=f=4000" },
+];
+const BAND_SAMPLE_RATE = 22050;
+
+/** RMS по каждому из `count` бакетов (для одной частотной полосы). */
+function computeBandRms(pcm: Buffer, count: number): number[] {
+  const samples = new Int16Array(
+    pcm.buffer,
+    pcm.byteOffset,
+    Math.floor(pcm.byteLength / 2),
+  );
+  const out: number[] = [];
+  if (samples.length === 0 || count === 0) return new Array(count).fill(0);
+  const bucketSize = Math.max(1, Math.floor(samples.length / count));
+  for (let i = 0; i < samples.length && out.length < count; i += bucketSize) {
+    let sum = 0;
+    const end = Math.min(i + bucketSize, samples.length);
+    for (let j = i; j < end; j++) {
+      const v = samples[j] / 32768;
+      sum += v * v;
+    }
+    out.push(Math.sqrt(sum / Math.max(1, end - i)));
+  }
+  while (out.length < count) out.push(0);
+  return out;
+}
+
 registerJobHandler("asset.process", async ({ assetId }) => {
   const asset = await assetRepository.findById(assetId);
   if (!asset || !asset.versionId || !asset.version) {
@@ -170,12 +205,41 @@ registerJobHandler("asset.process", async ({ assetId }) => {
           "-ac", "1", "-ar", "4000", "-f", "s16le", "pipe:1",
         ]);
         const peaks = computePeaks(pcm);
+
+        // Энергия по частотным полосам → «спектральный» цвет столбиков.
+        // Нормируем все три полосы по общему максимуму, чтобы соотношение
+        // низ/середина/верх было сопоставимым по всему треку.
+        const bandRaw: Record<"low" | "mid" | "high", number[]> = {
+          low: [],
+          mid: [],
+          high: [],
+        };
+        for (const { name, filter } of BANDS) {
+          const bandPcm = await runFfmpeg([
+            "-i", src, "-map", "a:0", "-vn",
+            "-af", filter,
+            "-ac", "1", "-ar", String(BAND_SAMPLE_RATE), "-f", "s16le", "pipe:1",
+          ]);
+          bandRaw[name] = computeBandRms(bandPcm, peaks.length);
+        }
+        let gmax = 0;
+        for (const name of ["low", "mid", "high"] as const)
+          for (const v of bandRaw[name]) if (v > gmax) gmax = v;
+        const norm = (arr: number[]) =>
+          arr.map((v) => (gmax > 0 ? Math.round((v / gmax) * 1000) / 1000 : 0));
+        const bands = {
+          low: norm(bandRaw.low),
+          mid: norm(bandRaw.mid),
+          high: norm(bandRaw.high),
+        };
+
         const peaksJson = Buffer.from(
           JSON.stringify({
-            version: 1,
+            version: 2,
             count: peaks.length,
             durationSeconds,
             peaks,
+            bands,
           }),
         );
         const peaksKey = `tracks/${version.trackId}/${version.id}/peaks.json`;
