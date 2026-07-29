@@ -20,6 +20,7 @@ import { camelotColor } from "@/lib/camelot";
 import { genreGradient } from "@/lib/genre-color";
 import { cn } from "@/lib/utils";
 import type { TrackCardDto, VersionCardDto } from "@/types/catalog";
+import type { PlayerTrack } from "@/types/player";
 import type { RequestDownloadFn } from "@/types/download";
 import type { ToggleFavoriteFn } from "@/types/favorite";
 import type { CrateSummary, CrateActionFns } from "@/types/collection";
@@ -65,6 +66,7 @@ export function TrackList({
   removeVersion,
   guest = false,
   linkQuery = "",
+  queue,
 }: {
   items: TrackCardDto[];
   /** Если передан — в строках показываются кнопки скачивания версий. */
@@ -84,6 +86,12 @@ export function TrackList({
   guest?: boolean;
   /** Query каталога (?q=…&sort=…) — переносит контекст на страницу трека. */
   linkQuery?: string;
+  /**
+   * Единая очередь каталога. Если передана — play из строки ставит её как
+   * очередь плеера (тот же источник, что и на странице трека). Иначе очередь
+   * строится из видимых items.
+   */
+  queue?: PlayerTrack[];
 }) {
   const player = usePlayer();
   const favoritedSet = new Set(favoritedVersionIds ?? []);
@@ -100,6 +108,8 @@ export function TrackList({
   }
 
   function queueFrom(): ReturnType<typeof toPlayerTrack>[] {
+    // Единая очередь каталога в приоритете; иначе — из видимых items.
+    if (queue && queue.length) return queue;
     return items
       .map((t) => {
         const v = defaultVersionOf(t);

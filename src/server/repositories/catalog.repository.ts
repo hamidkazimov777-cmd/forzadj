@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { camelotNeighbors } from "@/lib/camelot";
 import type { CatalogFilters, CatalogPage, TrackCardDto } from "@/types/catalog";
+import type { PlayerTrack } from "@/types/player";
 import type { Prisma } from "@/generated/prisma/client";
 
 /**
@@ -183,6 +184,77 @@ export const catalogRepository = {
       take: limit,
     });
     return rows.map((r) => r.slug);
+  },
+
+  /**
+   * Полная упорядоченная очередь каталога как PlayerTrack[] (та же
+   * сортировка/фильтры, что и выдача) — единый источник для next/prev
+   * плеера и страницы трека. Лёгкий select, cap ограничивает размер.
+   */
+  async orderedQueue(
+    filters: CatalogFilters,
+    limit = 500,
+  ): Promise<PlayerTrack[]> {
+    const genreIds = await resolveGenreIds(filters);
+    const rows = await prisma.track.findMany({
+      where: trackWhere(filters, genreIds),
+      orderBy: trackOrderBy(filters),
+      take: limit,
+      select: {
+        slug: true,
+        title: true,
+        artists: {
+          select: { role: true, artist: { select: { name: true } } },
+          orderBy: { position: "asc" },
+        },
+        versions: {
+          where: { deletedAt: null, status: "PUBLISHED" },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            type: true,
+            versionLabel: true,
+            bpm: true,
+            camelotKey: true,
+            durationSeconds: true,
+            assets: {
+              where: { deletedAt: null, status: "READY" },
+              select: { type: true },
+            },
+          },
+        },
+      },
+    });
+
+    const out: PlayerTrack[] = [];
+    for (const t of rows) {
+      const v =
+        t.versions.find((x) => x.assets.some((a) => a.type === "PREVIEW")) ??
+        t.versions[0];
+      if (!v) continue;
+      const mains = t.artists
+        .filter((a) => a.role === "MAIN")
+        .map((a) => a.artist.name);
+      const feats = t.artists
+        .filter((a) => a.role === "FEATURED")
+        .map((a) => a.artist.name);
+      const artistLine =
+        mains.join(", ") + (feats.length ? ` feat. ${feats.join(", ")}` : "") ||
+        "Unknown";
+      out.push({
+        versionId: v.id,
+        trackSlug: t.slug,
+        title: t.title,
+        artistLine,
+        versionType: v.type,
+        versionLabel: v.versionLabel,
+        bpm: v.bpm,
+        camelotKey: v.camelotKey,
+        durationSeconds: v.durationSeconds,
+        hasWaveform: v.assets.some((a) => a.type === "WAVEFORM"),
+      });
+    }
+    return out;
   },
 
   async findBySlug(slug: string): Promise<TrackCardDto | null> {

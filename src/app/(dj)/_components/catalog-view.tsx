@@ -2,7 +2,11 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { CatalogFilters } from "@/components/tracks/catalog-filters";
 import { TrackList } from "@/components/tracks/track-list";
-import { searchCatalog, filtersToQuery } from "@/server/services/search.service";
+import {
+  searchCatalog,
+  filtersToQuery,
+  catalogQueue,
+} from "@/server/services/search.service";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
 import { favoriteRepository } from "@/server/repositories/favorite.repository";
 import { collectionRepository } from "@/server/repositories/collection.repository";
@@ -28,10 +32,11 @@ export async function CatalogView({
   basePath: string;
   showFilters?: boolean;
 }) {
-  const [page, genres, user] = await Promise.all([
+  const [page, genres, user, queue] = await Promise.all([
     searchCatalog(filters),
     catalogRepository.listGenresWithCounts(),
     getCurrentUser(),
+    catalogQueue(filters),
   ]);
 
   // Персональные данные (избранное, крейты) — вне кэша каталога, батчем.
@@ -71,6 +76,7 @@ export async function CatalogView({
       </p>
       <TrackList
         items={page.items}
+        queue={queue}
         linkQuery={filtersToQuery(filters)}
         requestDownload={requestDownloadAction}
         toggleFavorite={toggleFavoriteAction}

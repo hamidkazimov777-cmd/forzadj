@@ -92,3 +92,16 @@ export function catalogOrderedSlugs(filters: CatalogFilters): Promise<string[]> 
   );
   return cached();
 }
+
+/**
+ * Полная упорядоченная очередь каталога (PlayerTrack[]) — единый источник
+ * для очереди плеера: и на /pool, и на странице трека одна и та же очередь.
+ */
+export function catalogQueue(filters: CatalogFilters) {
+  const cached = unstable_cache(
+    () => catalogRepository.orderedQueue(filters),
+    ["catalog-queue", JSON.stringify(filters)],
+    { tags: [CATALOG_CACHE_TAG], revalidate: 300 },
+  );
+  return cached();
+}
