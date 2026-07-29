@@ -49,7 +49,11 @@ export default async function TrackPage({
         </div>
       </div>
 
-      <TrackDetail track={track} requestDownload={requestDownloadAction} />
+      <TrackDetail
+        track={track}
+        related={related}
+        requestDownload={requestDownloadAction}
+      />
 
       {related.length > 0 && (
         <div>

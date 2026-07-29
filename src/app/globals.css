@@ -136,3 +136,34 @@
     @apply font-sans;
   }
 }
+
+/* Плавная смена волны при переключении трека: уходящая уезжает влево,
+   приходящая въезжает справа — единое непрерывное движение. */
+@keyframes wf-enter {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes wf-exit {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+.wf-enter {
+  animation: wf-enter 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.wf-exit {
+  animation: wf-exit 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wf-enter,
+  .wf-exit {
+    animation: none;
+  }
+}

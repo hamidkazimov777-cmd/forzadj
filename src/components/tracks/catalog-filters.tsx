@@ -61,6 +61,14 @@ export function CatalogFilters({
       <Input
         value={q}
         onChange={(e) => setQ(e.target.value)}
+        onKeyDown={(e) => {
+          // Enter — мгновенный поиск (без ожидания debounce) и без сброса.
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+            setParam("q", q.trim() || null);
+          }
+        }}
         placeholder="Трек или артист…"
         className="w-56"
       />
@@ -136,15 +144,6 @@ export function CatalogFilters({
           <option key={n} value={n}>≥ {n}</option>
         ))}
       </select>
-
-      <label className="flex items-center gap-1 text-sm text-muted-foreground">
-        <input
-          type="checkbox"
-          checked={params.get("clean") === "1"}
-          onChange={(e) => setParam("clean", e.target.checked ? "1" : null)}
-        />
-        только clean
-      </label>
 
       <select
         className={`${selectCls} ml-auto`}
