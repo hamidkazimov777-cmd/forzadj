@@ -220,7 +220,7 @@ export default async function TrackEditPage({
                   value="true"
                   defaultChecked={version.isExplicit}
                 />
-                Explicit-версия (Dirty)
+                Explicit-версия
               </label>
               <div className="col-span-3 flex flex-wrap items-center gap-4">
                 <Button type="submit">

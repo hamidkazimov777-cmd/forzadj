@@ -9,10 +9,7 @@ import { Input } from "@/components/ui/input";
  * шэрабельные ссылки, работает «назад», сервер рендерит по ним выборку.
  */
 
-const VERSION_TYPES = [
-  "ORIGINAL", "CLEAN", "DIRTY", "INTRO", "OUTRO",
-  "EXTENDED", "RADIO_EDIT", "ACAPELLA", "INSTRUMENTAL", "REMIX",
-];
+const VERSION_TYPES = ["ORIGINAL", "EXTENDED", "REMIX"];
 const CAMELOT = Array.from({ length: 12 }, (_, i) => i + 1).flatMap((n) => [
   `${n}A`,
   `${n}B`,

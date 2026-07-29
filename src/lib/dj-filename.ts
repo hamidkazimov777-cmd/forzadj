@@ -4,29 +4,17 @@
  * Заполняют черновик при загрузке; редактор всегда может поправить.
  */
 
-export type GuessedVersionType =
-  | "ORIGINAL"
-  | "CLEAN"
-  | "DIRTY"
-  | "INTRO"
-  | "OUTRO"
-  | "EXTENDED"
-  | "RADIO_EDIT"
-  | "ACAPELLA"
-  | "INSTRUMENTAL"
-  | "REMIX";
+export type GuessedVersionType = "ORIGINAL" | "EXTENDED" | "REMIX";
 
+// Поддерживаются только Original / Extended / Remix — остальные пометки в
+// имени файла (radio/intro/acapella…) игнорируются, тип остаётся ORIGINAL.
 const VERSION_PATTERNS: Array<[RegExp, GuessedVersionType]> = [
-  [/\bacap(pella|ella)?\b/i, "ACAPELLA"],
-  [/\binstrumental\b/i, "INSTRUMENTAL"],
-  [/\bradio\s*(edit|mix)?\b/i, "RADIO_EDIT"],
   [/\bextended\b/i, "EXTENDED"],
-  [/\bintro\b/i, "INTRO"],
-  [/\boutro\b/i, "OUTRO"],
   [/\bremix\b/i, "REMIX"],
-  [/\bdirty\b/i, "DIRTY"],
-  [/\bclean\b/i, "CLEAN"],
 ];
+
+// Explicit определяем по пометке в имени независимо от типа версии.
+const EXPLICIT_PATTERN = /\bdirty\b|\bexplicit\b/i;
 
 export interface FilenameGuess {
   artist: string | null;
@@ -61,6 +49,6 @@ export function guessFromFilename(fileName: string): FilenameGuess {
     artist,
     title,
     versionType,
-    isExplicit: versionType === "DIRTY",
+    isExplicit: EXPLICIT_PATTERN.test(stem),
   };
 }

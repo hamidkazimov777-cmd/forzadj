@@ -12,7 +12,10 @@ const trackInclude = {
     include: { artist: true },
     orderBy: { position: "asc" as const },
   },
-  genres: { include: { genre: true } },
+  genres: {
+    include: { genre: true },
+    orderBy: { position: "asc" as const },
+  },
   tags: { include: { tag: true } },
   versions: {
     where: { deletedAt: null },
@@ -98,10 +101,15 @@ export const trackRepository = {
   },
 
   async setGenres(trackId: string, genreIds: string[]) {
+    // position = порядок выбора редактором: первый жанр (position 0) — основной.
     await prisma.$transaction([
       prisma.trackGenre.deleteMany({ where: { trackId } }),
       prisma.trackGenre.createMany({
-        data: genreIds.map((genreId) => ({ trackId, genreId })),
+        data: genreIds.map((genreId, position) => ({
+          trackId,
+          genreId,
+          position,
+        })),
       }),
     ]);
   },

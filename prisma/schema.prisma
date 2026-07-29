@@ -245,6 +245,8 @@ model TrackGenre {
   track   Track  @relation(fields: [trackId], references: [id])
   genreId String @map("genre_id") @db.Uuid
   genre   Genre  @relation(fields: [genreId], references: [id])
+  /// Порядок выбора жанров редактором: position 0 — основной жанр трека.
+  position Int @default(0)
 
   @@id([trackId, genreId])
   @@index([genreId])
@@ -264,14 +266,7 @@ model TrackTag {
 
 enum VersionType {
   ORIGINAL
-  CLEAN
-  DIRTY
-  INTRO
-  OUTRO
   EXTENDED
-  RADIO_EDIT
-  ACAPELLA
-  INSTRUMENTAL
   REMIX
 }
 

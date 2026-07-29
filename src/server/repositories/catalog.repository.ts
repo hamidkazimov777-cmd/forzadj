@@ -15,7 +15,10 @@ const catalogInclude = {
     include: { artist: true },
     orderBy: { position: "asc" as const },
   },
-  genres: { include: { genre: true } },
+  genres: {
+    include: { genre: true },
+    orderBy: { position: "asc" as const },
+  },
   tags: { include: { tag: true } },
   versions: {
     where: { deletedAt: null, status: "PUBLISHED" as const },

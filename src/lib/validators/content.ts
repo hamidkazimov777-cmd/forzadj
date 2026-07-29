@@ -1,17 +1,6 @@
 import { z } from "zod";
 
-export const VERSION_TYPES = [
-  "ORIGINAL",
-  "CLEAN",
-  "DIRTY",
-  "INTRO",
-  "OUTRO",
-  "EXTENDED",
-  "RADIO_EDIT",
-  "ACAPELLA",
-  "INSTRUMENTAL",
-  "REMIX",
-] as const;
+export const VERSION_TYPES = ["ORIGINAL", "EXTENDED", "REMIX"] as const;
 
 /** Camelot: 1A–12A / 1B–12B. */
 export const CAMELOT_KEYS = Array.from({ length: 12 }, (_, i) => i + 1).flatMap(
