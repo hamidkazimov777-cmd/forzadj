@@ -99,6 +99,11 @@ interface PlayerApi extends PlayerState {
   prev: () => void;
   seek: (sec: number) => void;
   setVolume: (v: number) => void;
+  /**
+   * Живое время воспроизведения (audio.currentTime) для 60-FPS отрисовки
+   * волны без React-перерисовок. Read-only; владение <audio> не передаётся.
+   */
+  getCurrentTime: () => number;
 }
 
 const PlayerContext = createContext<PlayerApi | null>(null);
@@ -219,6 +224,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       },
       seek,
       setVolume: (v) => dispatch({ type: "VOLUME", volume: v }),
+      getCurrentTime: () => audioRef.current?.currentTime ?? 0,
     }),
     [state, current, seek, playSrc],
   );

@@ -5,7 +5,7 @@ import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePlayer } from "@/components/player/player-provider";
-import { Waveform } from "@/components/player/waveform";
+import { ScrollingWaveform } from "@/components/player/scrolling-waveform";
 import { DownloadButton } from "@/components/tracks/download-button";
 import { EnergyRating } from "@/components/tracks/energy-rating";
 import { TrackList } from "@/components/tracks/track-list";
@@ -20,22 +20,27 @@ function fmt(sec: number | null): string {
 }
 
 /**
- * Волна с анимацией смены версии/трека: приходящая въезжает справа, уходящая
- * уезжает влево — единое непрерывное движение. Текущая волна всегда
- * смонтирована (меняется только versionId) — данные не «мигают». Работает
- * потому, что при next/prev страница НЕ перемонтируется (URL меняем через
- * history), а компонент остаётся жив.
+ * Скролл-волна с анимацией смены трека: приходящая въезжает справа, уходящая
+ * уезжает влево. Текущая волна всегда смонтирована (меняется versionId/active)
+ * — данные не «мигают», т.к. при next/prev страница НЕ перемонтируется (URL
+ * через history). Сама волна — ScrollingWaveform (60 FPS, центральный плейхед).
  */
 function WaveformSwitcher({
   versionId,
-  progress,
+  active,
+  playing,
+  getCurrentTime,
+  duration,
   height,
   onSeek,
 }: {
   versionId: string;
-  progress: number;
+  active: boolean;
+  playing: boolean;
+  getCurrentTime: () => number;
+  duration: number;
   height: number;
-  onSeek?: (fraction: number) => void;
+  onSeek?: (seconds: number) => void;
 }) {
   const [current, setCurrent] = useState(versionId);
   const [prev, setPrev] = useState<string | null>(null);
@@ -53,16 +58,26 @@ function WaveformSwitcher({
   return (
     <div className="relative overflow-hidden" style={{ height }}>
       <div key={current} className={prev ? "wf-enter" : ""}>
-        <Waveform
+        <ScrollingWaveform
           versionId={current}
-          progress={progress}
+          active={active}
+          playing={playing}
+          getCurrentTime={getCurrentTime}
+          durationSeconds={duration}
           height={height}
           onSeek={onSeek}
         />
       </div>
       {prev && (
         <div key={prev} className="wf-exit pointer-events-none absolute inset-0">
-          <Waveform versionId={prev} progress={0} height={height} />
+          <ScrollingWaveform
+            versionId={prev}
+            active={false}
+            playing={false}
+            getCurrentTime={getCurrentTime}
+            durationSeconds={null}
+            height={height}
+          />
         </div>
       )}
     </div>
@@ -194,10 +209,6 @@ export function TrackNowPlaying({
   const activeDuration = isActivePlaying
     ? player.current?.durationSeconds ?? 0
     : track.versions.find((v) => v.id === activeVersionId)?.durationSeconds ?? 0;
-  const progress =
-    isActivePlaying && activeDuration > 0
-      ? player.positionSec / activeDuration
-      : 0;
 
   const selectedIsCurrent = playerVersionId === selected.id;
   const bigIsPlaying = selectedIsCurrent && player.status === "playing";
@@ -273,13 +284,12 @@ export function TrackNowPlaying({
           <div className="min-w-0 flex-1">
             <WaveformSwitcher
               versionId={activeVersionId}
-              progress={progress}
+              active={isActivePlaying}
+              playing={isActivePlaying && player.status === "playing"}
+              getCurrentTime={player.getCurrentTime}
+              duration={activeDuration}
               height={72}
-              onSeek={(f) => {
-                if (isActivePlaying && activeDuration > 0) {
-                  player.seek(f * activeDuration);
-                }
-              }}
+              onSeek={(sec) => player.seek(sec)}
             />
           </div>
           <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
