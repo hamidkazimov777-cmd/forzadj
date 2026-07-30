@@ -13,15 +13,15 @@ export type ChartKey = "top" | "trending" | "new";
 
 export const CHART_META: Record<ChartKey, { title: string; description: string }> = {
   top: {
-    title: "Top Downloads",
+    title: "Топ скачиваний",
     description: "Самые скачиваемые треки за всё время",
   },
   trending: {
-    title: "Trending",
+    title: "В тренде",
     description: "Набирают популярность за последние 7 дней",
   },
   new: {
-    title: "New Releases",
+    title: "Новинки",
     description: "Свежие релизы в пуле",
   },
 };
