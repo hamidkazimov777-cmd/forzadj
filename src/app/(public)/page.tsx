@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { KeyRound, Package, Sparkles } from "lucide-react";
 import { TelegramBotLogin } from "@/components/auth/telegram-bot-login";
 import { getCurrentUser } from "@/server/auth/core/session";
 import {
@@ -47,8 +48,21 @@ export default async function HomePage({
   if (safeNextPath) callbackUrl.searchParams.set("next", safeNextPath);
 
   return (
-    <section className="mx-auto flex min-h-[calc(100vh-3.5rem-1px)] max-w-3xl flex-col items-center justify-center gap-10 px-6 py-20 text-center">
-      <div className="flex flex-col gap-6">
+    <section className="relative mx-auto flex min-h-[calc(100vh-3.5rem-1px)] max-w-3xl flex-col items-center justify-center gap-9 overflow-hidden px-6 py-20 text-center">
+      {/* Амбиентное акцентное свечение (бренд-индиго), не перехватывает клики. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-[18%] -z-10 size-[36rem] max-w-[90vw] -translate-x-1/2 rounded-full opacity-30 blur-3xl"
+        style={{
+          background: "radial-gradient(closest-side, var(--primary), transparent)",
+        }}
+      />
+
+      <div className="flex flex-col items-center gap-6">
+        <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-secondary/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+          <span className="size-1.5 rounded-full bg-primary" />
+          Полностью бесплатный DJ-пул
+        </span>
         <h1 className="text-balance text-4xl font-bold leading-[1.08] tracking-tight sm:text-6xl">
           Музыка должна быть доступной каждому.
         </h1>
@@ -79,7 +93,41 @@ export default async function HomePage({
             {ERROR_MESSAGES[error] ?? ERROR_MESSAGES.internal}
           </p>
         )}
+        <p className="text-xs text-muted-foreground">
+          Вход через Telegram — без пароля и email.
+        </p>
       </div>
+
+      <ul className="mt-2 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
+        {[
+          {
+            icon: Sparkles,
+            title: "Эксклюзивные версии",
+            text: "Extended, Remix, Mashup и редкие эдиты.",
+          },
+          {
+            icon: KeyRound,
+            title: "Гармоничное сведение",
+            text: "BPM и Camelot-ключ у каждого трека.",
+          },
+          {
+            icon: Package,
+            title: "Редакторские паки",
+            text: "Готовые подборки — одним архивом.",
+          },
+        ].map(({ icon: Icon, title, text }) => (
+          <li
+            key={title}
+            className="rounded-xl border border-border/70 bg-card/40 p-4"
+          >
+            <Icon className="size-5 text-primary" />
+            <p className="mt-2 text-sm font-medium">{title}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+              {text}
+            </p>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
