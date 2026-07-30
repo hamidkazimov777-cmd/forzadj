@@ -13,7 +13,7 @@ export default function PublicLayout({
       <header className="border-b">
         <div className="mx-auto flex h-14 max-w-6xl items-center px-4">
           <Link href="/" aria-label="ForzaDJ">
-            <Wordmark className="text-xl" />
+            <Wordmark className="h-5" />
           </Link>
         </div>
       </header>

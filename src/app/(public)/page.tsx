@@ -107,7 +107,7 @@ export default async function HomePage({
       >
         <HeroCovers versionIds={heroCoverIds} />
         <div className="relative z-10 flex flex-col items-center gap-6">
-          <Wordmark className="text-6xl drop-shadow-[0_2px_20px_rgba(0,0,0,0.4)] sm:text-8xl" />
+          <Wordmark className="h-12 drop-shadow-[0_2px_20px_rgba(0,0,0,0.4)] sm:h-16" />
           <p className="text-balance text-2xl font-bold tracking-tight sm:text-3xl">
             Музыка должна быть доступной каждому.
           </p>
