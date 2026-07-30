@@ -19,8 +19,16 @@ export default function PublicLayout({
       </header>
       <main className="flex-1">{children}</main>
       <footer className="border-t">
-        <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-muted-foreground">
-          © {new Date().getFullYear()} ForzaDJ
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <span>© {new Date().getFullYear()} ForzaDJ</span>
+          <nav className="flex flex-wrap gap-x-5 gap-y-2">
+            <Link href="/legal/privacy" className="transition-colors hover:text-foreground">
+              Политика конфиденциальности
+            </Link>
+            <Link href="/legal/terms" className="transition-colors hover:text-foreground">
+              Пользовательское соглашение
+            </Link>
+          </nav>
         </div>
       </footer>
     </div>
