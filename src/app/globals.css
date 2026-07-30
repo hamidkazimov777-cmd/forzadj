@@ -50,6 +50,10 @@
 }
 
 :root {
+  /* Нативные контролы (select/option/checkbox/скроллбары) следуют теме.
+     Без этого в тёмной теме браузер (особенно Safari/Edge/Yandex) рендерит
+     их в light-режиме — тёмный текст селекта на тёмном фоне становится не виден. */
+  color-scheme: light;
   --background: oklch(1 0 0);
   --foreground: oklch(0.16 0 0);
   --card: oklch(1 0 0);
@@ -88,6 +92,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   /* Глубокий графит с едва заметным холодным подтоном (не чистый #000). */
   --background: oklch(0.165 0.006 277);
   --foreground: oklch(0.985 0 0);

@@ -391,7 +391,7 @@ export function CatalogFilters({
 
       {/* Сортировка */}
       <select
-        className="ml-auto h-9 rounded-full border bg-transparent px-3 text-sm outline-none"
+        className="ml-auto h-9 rounded-full border border-border bg-background px-3 text-sm text-foreground outline-none"
         value={sortVal}
         onChange={(e) => setParam("sort", e.target.value)}
       >
