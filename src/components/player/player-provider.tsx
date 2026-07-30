@@ -223,7 +223,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: "PREV" });
       },
       seek,
-      setVolume: (v) => dispatch({ type: "VOLUME", volume: v }),
+      setVolume: (v) => {
+        // Применяем к <audio> сразу (без ожидания ре-рендера) — плавно и
+        // предсказуемо; состояние держим для позиции ползунка.
+        const clamped = Math.max(0, Math.min(1, v));
+        if (audioRef.current) audioRef.current.volume = clamped;
+        dispatch({ type: "VOLUME", volume: clamped });
+      },
       getCurrentTime: () => audioRef.current?.currentTime ?? 0,
     }),
     [state, current, seek, playSrc],
