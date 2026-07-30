@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { VERSION_TYPES } from "@/lib/content-metadata";
 
-export const VERSION_TYPES = ["ORIGINAL", "EXTENDED", "REMIX"] as const;
+export { VERSION_TYPES } from "@/lib/content-metadata";
 
 /** Camelot: 1A–12A / 1B–12B. */
 export const CAMELOT_KEYS = Array.from({ length: 12 }, (_, i) => i + 1).flatMap(

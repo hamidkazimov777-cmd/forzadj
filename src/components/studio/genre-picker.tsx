@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { isRetiredGenreName } from "@/lib/content-metadata";
 
 /**
  * Выбор жанров из готового списка (все жанры каталога) вместо ручного ввода.
@@ -17,6 +18,11 @@ export function GenrePicker({
   initial: string[];
 }) {
   const [selected, setSelected] = useState<string[]>(initial);
+  // Исторический Mashup остаётся видимым и сохраняемым у старого трека, но
+  // не предлагается для назначения там, где его раньше не было.
+  const available = all.filter(
+    (name) => !isRetiredGenreName(name) || initial.includes(name),
+  );
 
   function toggle(name: string) {
     setSelected((prev) =>
@@ -29,12 +35,12 @@ export function GenrePicker({
       {/* Значение уходит в существующий server action как CSV. */}
       <input type="hidden" name="genreNames" value={selected.join(", ")} />
       <div className="flex flex-wrap gap-1.5">
-        {all.length === 0 && (
+        {available.length === 0 && (
           <span className="text-sm text-muted-foreground">
             Жанров пока нет — добавьте их в каталоге.
           </span>
         )}
-        {all.map((name) => {
+        {available.map((name) => {
           const on = selected.includes(name);
           return (
             <button

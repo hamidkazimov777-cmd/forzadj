@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
 import type { CatalogFilters, CatalogPage } from "@/types/catalog";
-import { VERSION_TYPES } from "@/lib/validators/content";
+import { VERSION_TYPES } from "@/lib/content-metadata";
 import type { VersionType } from "@/types/db";
 
 /**

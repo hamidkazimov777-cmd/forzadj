@@ -4,13 +4,16 @@
  * Заполняют черновик при загрузке; редактор всегда может поправить.
  */
 
-export type GuessedVersionType = "ORIGINAL" | "EXTENDED" | "REMIX";
+import { VERSION_TYPES } from "@/lib/content-metadata";
 
-// Поддерживаются только Original / Extended / Remix — остальные пометки в
-// имени файла (radio/intro/acapella…) игнорируются, тип остаётся ORIGINAL.
+export type GuessedVersionType = (typeof VERSION_TYPES)[number];
+
+// Поддерживаются только типы, доступные в Studio. Остальные пометки в имени
+// файла (radio/intro/acapella…) игнорируются, тип остаётся ORIGINAL.
 const VERSION_PATTERNS: Array<[RegExp, GuessedVersionType]> = [
   [/\bextended\b/i, "EXTENDED"],
   [/\bremix\b/i, "REMIX"],
+  [/\bmashup\b/i, "MASHUP"],
 ];
 
 // Explicit определяем по пометке в имени независимо от типа версии.

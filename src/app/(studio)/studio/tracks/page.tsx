@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DeleteTrackButton } from "@/components/studio/delete-track-button";
+import { UploadTracksButton } from "@/components/studio/upload-tracks-button";
 import { requireStudioPermission } from "@/server/auth/core/session";
 import { deleteTrackAction } from "@/server/actions/content.actions";
 import { trackRepository } from "@/server/repositories/track.repository";
@@ -44,9 +45,7 @@ export default async function AdminTracksPage({
         <h1 className="text-2xl font-bold tracking-tight">
           Треки <span className="text-base font-normal text-muted-foreground">({total})</span>
         </h1>
-        <Button asChild>
-          <Link href="/studio/tracks/upload">Загрузить треки</Link>
-        </Button>
+        <UploadTracksButton />
       </div>
 
       <form className="mt-4 flex gap-2" action="/studio/tracks">

@@ -42,7 +42,7 @@ function slugify(input) {
 
 const NEW_GENRES = [
   "Afro House",
-  "Mashup",
+  "Hip-Hop",
   "Remix",
   "RUS",
   "Open Format",

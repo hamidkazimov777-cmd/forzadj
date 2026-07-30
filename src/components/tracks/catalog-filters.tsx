@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { camelotColor } from "@/lib/camelot";
+import { VERSION_TYPES } from "@/lib/content-metadata";
 import { cn } from "@/lib/utils";
 
 /**
@@ -19,7 +20,6 @@ import { cn } from "@/lib/utils";
  * Жанры — мульти-выбор; рейтинг — точное число звёзд.
  */
 
-const VERSION_TYPES = ["ORIGINAL", "EXTENDED", "REMIX"] as const;
 const CAMELOT = Array.from({ length: 12 }, (_, i) => i + 1).flatMap((n) => [
   `${n}A`,
   `${n}B`,

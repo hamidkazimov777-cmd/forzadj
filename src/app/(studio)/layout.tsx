@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { UploadTracksButton } from "@/components/studio/upload-tracks-button";
 import { requireStudioPermission } from "@/server/auth/core/session";
 import { can } from "@/server/auth/core/permissions";
 
@@ -24,6 +25,7 @@ export default async function StudioLayout({
         <nav className="flex flex-col gap-1 p-2 text-sm">
           <Link href="/studio" className="rounded-md px-3 py-2 hover:bg-accent">Дашборд</Link>
           <Link href="/studio/tracks" className="rounded-md px-3 py-2 hover:bg-accent">Треки</Link>
+          <UploadTracksButton className="mt-1 w-full justify-start" />
           <Link href="/studio/collections" className="rounded-md px-3 py-2 hover:bg-accent">Паки</Link>
           {canManageUsers && (
             <Link href="/studio/users" className="rounded-md px-3 py-2 hover:bg-accent">

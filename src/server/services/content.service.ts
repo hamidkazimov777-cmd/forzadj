@@ -5,6 +5,8 @@ import {
 import { taxonomyRepository } from "@/server/repositories/taxonomy.repository";
 import { revisionRepository } from "@/server/repositories/revision.repository";
 import { classicKeyOf } from "@/lib/camelot";
+import { isRetiredGenreName } from "@/lib/content-metadata";
+import { slugify } from "@/lib/slug";
 import type {
   ArtistRole,
   ContentStatus,
@@ -81,8 +83,19 @@ export const contentService = {
       await trackRepository.setArtists(trackId, entries);
     }
     if (input.genreNames !== undefined) {
+      const genreNames = splitNames(input.genreNames);
+      const existingGenreSlugs = new Set(
+        before.genres.map(({ genre }) => genre.slug),
+      );
+      const isAddingRetiredGenre = genreNames.some(
+        (name) =>
+          isRetiredGenreName(name) && !existingGenreSlugs.has(slugify(name)),
+      );
+      if (isAddingRetiredGenre) {
+        throw new Error("Жанр Mashup доступен только в метаданных старых треков");
+      }
       const ids: string[] = [];
-      for (const name of splitNames(input.genreNames)) {
+      for (const name of genreNames) {
         ids.push((await taxonomyRepository.upsertGenreByName(name)).id);
       }
       await trackRepository.setGenres(trackId, ids);
