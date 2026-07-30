@@ -142,6 +142,19 @@
   }
 }
 
+/* Единый плоский вид нативных <select> во всех браузерах: без глянца Safari,
+   с общим шевроном. Вне @layer — чтобы правый отступ под шеврон выигрывал у
+   утилит (px-*). color-scheme отвечает за тему опций/скроллбара. */
+select:not([multiple]):not([size]) {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23888888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 0.85rem;
+  padding-right: 1.9rem;
+}
+
 /* Плавная смена волны при переключении трека: уходящая уезжает влево,
    приходящая въезжает справа — единое непрерывное движение. */
 @keyframes wf-enter {
