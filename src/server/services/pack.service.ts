@@ -19,7 +19,7 @@ export interface PackSummary {
   trackCount: number;
 }
 
-async function coverUrl(coverKey: string | null): Promise<string | null> {
+export async function packCoverUrl(coverKey: string | null): Promise<string | null> {
   if (!coverKey) return null;
   const signed = await getStorage().createSignedDownloadUrl("artwork", coverKey, {
     expiresInSeconds: 3600,
@@ -37,7 +37,7 @@ export function getPublishedPacks(): Promise<PackSummary[]> {
           title: p.title,
           slug: p.slug ?? "",
           description: p.description,
-          coverUrl: await coverUrl(p.coverKey),
+          coverUrl: await packCoverUrl(p.coverKey),
           trackCount: p._count.items,
         })),
       );
@@ -64,7 +64,7 @@ export async function getPublishedPackBySlug(
     title: pack.title,
     slug: pack.slug ?? slug,
     description: pack.description,
-    coverUrl: await coverUrl(pack.coverKey),
+    coverUrl: await packCoverUrl(pack.coverKey),
     trackCount: versionIds.length,
     tracks,
   };

@@ -10,10 +10,12 @@ import {
   RemovePackTrackButton,
 } from "@/components/studio/pack-forms";
 import { PackTrackPicker } from "@/components/studio/pack-track-picker";
+import { PackCoverUploader } from "@/components/studio/pack-cover-uploader";
 import { requireStudioPermission } from "@/server/auth/core/session";
 import { collectionRepository } from "@/server/repositories/collection.repository";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
 import { searchCatalog } from "@/server/services/search.service";
+import { packCoverUrl } from "@/server/services/pack.service";
 import { artistLineOf } from "@/lib/player-track";
 import {
   updatePackMetaAction,
@@ -22,6 +24,9 @@ import {
   addTrackToPackAction,
   removeTrackFromPackAction,
   packCatalogAction,
+  requestPackCoverUploadAction,
+  confirmPackCoverAction,
+  removePackCoverAction,
 } from "@/server/actions/pack.actions";
 
 export const metadata = { title: "Редактирование пака" };
@@ -38,9 +43,10 @@ export default async function PackEditPage({
   if (!pack) notFound();
 
   const versionIds = pack.items.map((i) => i.versionId);
-  const [tracks, initialCatalog] = await Promise.all([
+  const [tracks, initialCatalog, coverUrl] = await Promise.all([
     catalogRepository.findByVersionIds(versionIds),
     searchCatalog({ sort: "newest" }),
+    packCoverUrl(pack.coverKey),
   ]);
   // Карта versionId → карточка (для порядка и подписи).
   const versionToTrack = new Map(
@@ -92,6 +98,21 @@ export default async function PackEditPage({
               Сохранить
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Обложка</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PackCoverUploader
+            packId={pack.id}
+            coverUrl={coverUrl}
+            requestUpload={requestPackCoverUploadAction}
+            confirm={confirmPackCoverAction}
+            remove={removePackCoverAction}
+          />
         </CardContent>
       </Card>
 

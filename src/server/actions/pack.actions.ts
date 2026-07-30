@@ -6,6 +6,7 @@ import { requirePermission } from "@/server/auth/core/session";
 import { collectionRepository } from "@/server/repositories/collection.repository";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
 import { searchCatalog } from "@/server/services/search.service";
+import { getStorage } from "@/server/storage";
 import type { CatalogPage } from "@/types/catalog";
 import { revisionRepository } from "@/server/repositories/revision.repository";
 import { PACKS_CACHE_TAG } from "@/server/services/pack.service";
@@ -153,6 +154,79 @@ export async function preflightPackDownloadAction(
   );
   if (!pre) return { error: "not_found" };
   return pre;
+}
+
+// ── Обложка пака (бакет artwork, существующая система хранения) ────────────
+
+const COVER_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+const COVER_MAX_BYTES = 5 * 1024 * 1024; // 5 МБ
+
+/** Signed upload URL для обложки пака (клиент грузит напрямую в Storage). */
+export async function requestPackCoverUploadAction(
+  packId: string,
+  file: { mime: string; sizeBytes: number },
+): Promise<{
+  uploadUrl: string;
+  headers: Record<string, string>;
+  storageKey: string;
+}> {
+  await requirePermission("collections.manage");
+  if (!COVER_MIME.has(file.mime)) throw new Error("Только JPG, PNG или WEBP");
+  if (file.sizeBytes > COVER_MAX_BYTES) throw new Error("Файл больше 5 МБ");
+  const ext =
+    file.mime === "image/png" ? "png" : file.mime === "image/webp" ? "webp" : "jpg";
+  const storageKey = `packs/${packId}/cover-${Date.now()}.${ext}`;
+  const signed = await getStorage().createSignedUploadUrl("artwork", storageKey);
+  return {
+    uploadUrl: signed.url,
+    storageKey: signed.storageKey,
+    headers: {
+      ...(signed.token ? { authorization: `Bearer ${signed.token}` } : {}),
+      "content-type": file.mime,
+      "x-upsert": "true",
+    },
+  };
+}
+
+/** Подтвердить загруженную обложку: coverKey + удалить старый файл. */
+export async function confirmPackCoverAction(
+  packId: string,
+  storageKey: string,
+): Promise<void> {
+  const user = await requirePermission("collections.manage");
+  const pack = await collectionRepository.findPackById(packId);
+  const oldKey = pack?.coverKey ?? null;
+  await collectionRepository.updatePackMeta(packId, { coverKey: storageKey });
+  if (oldKey && oldKey !== storageKey) {
+    await getStorage().delete("artwork", oldKey).catch(() => {});
+  }
+  await revisionRepository.record({
+    entityType: "COLLECTION",
+    entityId: packId,
+    action: "UPDATE",
+    changedFields: ["coverKey"],
+    actorId: user.id,
+  });
+  revalidatePath(`/studio/collections/${packId}`);
+  revalidateTag(PACKS_CACHE_TAG);
+}
+
+/** Удалить обложку пака. */
+export async function removePackCoverAction(packId: string): Promise<void> {
+  const user = await requirePermission("collections.manage");
+  const pack = await collectionRepository.findPackById(packId);
+  const oldKey = pack?.coverKey ?? null;
+  await collectionRepository.updatePackMeta(packId, { coverKey: null });
+  if (oldKey) await getStorage().delete("artwork", oldKey).catch(() => {});
+  await revisionRepository.record({
+    entityType: "COLLECTION",
+    entityId: packId,
+    action: "UPDATE",
+    changedFields: ["coverKey"],
+    actorId: user.id,
+  });
+  revalidatePath(`/studio/collections/${packId}`);
+  revalidateTag(PACKS_CACHE_TAG);
 }
 
 export async function deletePackAction(packId: string): Promise<void> {
