@@ -19,7 +19,7 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:
-          "bg-[color-mix(in_oklab,var(--destructive)_14%,var(--background))] text-destructive hover:bg-[color-mix(in_oklab,var(--destructive)_24%,var(--background))] focus-visible:border-destructive/40 focus-visible:ring-destructive/20",
+          "bg-[var(--destructive-soft)] text-destructive hover:bg-[var(--destructive-soft-hover)] focus-visible:border-destructive/40 focus-visible:ring-destructive/20",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

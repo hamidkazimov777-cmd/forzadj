@@ -73,6 +73,10 @@
   --border: oklch(0.92 0 0);
   --input: oklch(0.92 0 0);
   --ring: oklch(0.55 0.21 277);
+  /* Готовые непрозрачные «мягкие» фоны destructive (без color-mix — Safari
+     некорректно рендерит color-mix, из-за чего фон становился сплошным). */
+  --destructive-soft: oklch(0.95 0.035 25);
+  --destructive-soft-hover: oklch(0.92 0.055 25);
   /* Данные: энергия трека — тёплая шкала (amber). */
   --energy: oklch(0.72 0.15 70);
   --chart-1: oklch(0.87 0 0);
@@ -109,6 +113,8 @@
   --accent: oklch(0.27 0.008 277);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
+  --destructive-soft: oklch(0.3 0.075 22);
+  --destructive-soft-hover: oklch(0.35 0.09 22);
   /* Hairline-границы — интерфейс «шепчет» линиями. */
   --border: oklch(1 0 0 / 8%);
   --input: oklch(1 0 0 / 12%);

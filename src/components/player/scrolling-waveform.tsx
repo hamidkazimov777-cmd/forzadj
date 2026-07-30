@@ -204,12 +204,12 @@ export function ScrollingWaveform({
     if (!wrap || !canvas) return;
     dprRef.current = window.devicePixelRatio || 1;
     cssWRef.current = wrap.clientWidth;
-    // Читаем фон как rgb() (canvas-safe в любом браузере; oklch не везде
-    // поддержан в canvas). Плейхед — белый.
-    const bg = getComputedStyle(document.body).backgroundColor;
+    // Цвета для canvas — только rgba (Safari-canvas не парсит lab()/oklch(),
+    // из-за чего getComputedStyle().backgroundColor давал серый блок).
+    const isDark = document.documentElement.classList.contains("dark");
     themeRef.current = {
-      bg: bg && bg !== "rgba(0, 0, 0, 0)" ? bg : "#0a0a0e",
-      accent: "rgba(255,255,255,0.92)",
+      bg: isDark ? "rgba(12,12,16,0.55)" : "rgba(250,250,252,0.6)",
+      accent: isDark ? "rgba(255,255,255,0.92)" : "rgba(18,18,26,0.9)",
     };
     buildStrip();
     drawFrame();
