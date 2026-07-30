@@ -191,3 +191,33 @@ select:not([multiple]):not([size]) {
     animation: none;
   }
 }
+
+/* Бесшовная «стена обложек» на главной: ряд дублируется 2× и едет на -50%. */
+@keyframes marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes marquee-right {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.animate-marquee-left {
+  animation: marquee-left 60s linear infinite;
+}
+.animate-marquee-right {
+  animation: marquee-right 75s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee-left,
+  .animate-marquee-right {
+    animation: none;
+  }
+}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Wordmark } from "@/components/brand/wordmark";
 
 /**
  * Публичная зона: лендинг, тарифы, логин, публичные чарты.
@@ -11,8 +12,8 @@ export default function PublicLayout({
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
         <div className="mx-auto flex h-14 max-w-6xl items-center px-4">
-          <Link href="/" className="text-lg font-bold tracking-tight">
-            ForzaDJ
+          <Link href="/" aria-label="ForzaDJ">
+            <Wordmark className="text-xl" />
           </Link>
         </div>
       </header>
