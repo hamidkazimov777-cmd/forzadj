@@ -13,6 +13,7 @@ import { PackTrackPicker } from "@/components/studio/pack-track-picker";
 import { requireStudioPermission } from "@/server/auth/core/session";
 import { collectionRepository } from "@/server/repositories/collection.repository";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
+import { searchCatalog } from "@/server/services/search.service";
 import { artistLineOf } from "@/lib/player-track";
 import {
   updatePackMetaAction,
@@ -20,7 +21,7 @@ import {
   deletePackAction,
   addTrackToPackAction,
   removeTrackFromPackAction,
-  searchVersionsAction,
+  packCatalogAction,
 } from "@/server/actions/pack.actions";
 
 export const metadata = { title: "Редактирование пака" };
@@ -37,7 +38,10 @@ export default async function PackEditPage({
   if (!pack) notFound();
 
   const versionIds = pack.items.map((i) => i.versionId);
-  const tracks = await catalogRepository.findByVersionIds(versionIds);
+  const [tracks, initialCatalog] = await Promise.all([
+    catalogRepository.findByVersionIds(versionIds),
+    searchCatalog({ sort: "newest" }),
+  ]);
   // Карта versionId → карточка (для порядка и подписи).
   const versionToTrack = new Map(
     tracks.flatMap((t) => t.versions.map((v) => [v.id, { track: t, version: v }])),
@@ -93,7 +97,9 @@ export default async function PackEditPage({
 
       <PackTrackPicker
         packId={pack.id}
-        search={searchVersionsAction}
+        initial={initialCatalog}
+        addedVersionIds={versionIds}
+        loadCatalog={packCatalogAction}
         addTrack={addTrackToPackAction}
       />
 

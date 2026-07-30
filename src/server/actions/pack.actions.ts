@@ -5,6 +5,8 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { requirePermission } from "@/server/auth/core/session";
 import { collectionRepository } from "@/server/repositories/collection.repository";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
+import { searchCatalog } from "@/server/services/search.service";
+import type { CatalogPage } from "@/types/catalog";
 import { revisionRepository } from "@/server/repositories/revision.repository";
 import { PACKS_CACHE_TAG } from "@/server/services/pack.service";
 import { packDownloadService, type PackPreflight } from "@/server/services/pack-download.service";
@@ -75,6 +77,22 @@ export async function searchVersionsAction(
 ): Promise<Array<{ versionId: string; label: string }>> {
   await requirePermission("collections.manage");
   return catalogRepository.searchVersionsForPicker(query.trim());
+}
+
+/**
+ * Каталог треков для пикера пака — тот же кэшируемый searchCatalog, что и /pool
+ * (без дублирования логики). Поиск просто фильтрует каталог, пагинация — page.
+ */
+export async function packCatalogAction(
+  q: string,
+  page: number,
+): Promise<CatalogPage> {
+  await requirePermission("collections.manage");
+  return searchCatalog({
+    q: q.trim() || undefined,
+    page: page > 1 ? page : undefined,
+    sort: "newest",
+  });
 }
 
 export async function addTrackToPackAction(
