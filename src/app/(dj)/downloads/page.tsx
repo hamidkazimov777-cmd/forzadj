@@ -5,6 +5,7 @@ import { requireUser } from "@/server/auth/core/session";
 import { downloadService } from "@/server/services/download.service";
 import { downloadRepository } from "@/server/repositories/download.repository";
 import { downloadLimits } from "@/lib/config/limits";
+import { genreGradient } from "@/lib/genre-color";
 
 export const metadata = { title: "Скачивания" };
 
@@ -68,14 +69,37 @@ export default async function DownloadsPage() {
               const artists = d.version.track.artists
                 .map((a) => a.artist.name)
                 .join(", ");
+              const slug = d.version.track.slug;
+              const hasArtwork = d.version.assets.length > 0;
               return (
                 <li
                   key={d.id}
-                  className="flex items-center justify-between gap-4 px-4 py-2 text-sm"
+                  className="flex items-center gap-3 px-4 py-2 text-sm"
                 >
-                  <div className="min-w-0">
+                  <Link
+                    href={`/pool/track/${slug}`}
+                    className="relative size-10 shrink-0 overflow-hidden rounded-md ring-1 ring-inset ring-white/10"
+                    style={
+                      hasArtwork
+                        ? undefined
+                        : { backgroundImage: genreGradient(undefined, slug) }
+                    }
+                    aria-label={d.version.track.title}
+                  >
+                    {hasArtwork && (
+                      // Обложка отдаётся собственным API с кэшем — обычный img.
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={`/api/artwork/${d.versionId}`}
+                        alt=""
+                        loading="lazy"
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    )}
+                  </Link>
+                  <div className="min-w-0 flex-1">
                     <Link
-                      href={`/pool/track/${d.version.track.slug}`}
+                      href={`/pool/track/${slug}`}
                       className="font-medium hover:underline"
                     >
                       {d.version.track.title}

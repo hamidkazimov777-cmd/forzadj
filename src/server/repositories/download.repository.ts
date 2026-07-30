@@ -41,6 +41,10 @@ export const downloadRepository = {
           version: {
             include: {
               track: { include: { artists: { include: { artist: true } } } },
+              assets: {
+                where: { deletedAt: null, status: "READY", type: "ARTWORK" },
+                select: { type: true },
+              },
             },
           },
         },
