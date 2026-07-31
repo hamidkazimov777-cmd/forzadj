@@ -52,7 +52,7 @@ export default async function SharedLayout({
             ForzaDJ
           </Link>
           <Button asChild size="sm" className="ml-auto">
-            <Link href="/">Войти</Link>
+            <Link href="/">Войти TEST</Link>
           </Button>
         </div>
       </header>
