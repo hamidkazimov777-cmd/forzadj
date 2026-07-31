@@ -7,7 +7,9 @@ import { HeroCovers } from "@/components/marketing/hero-covers";
 import { PacksShowcase } from "@/components/marketing/packs-showcase";
 import { TrackList } from "@/components/tracks/track-list";
 import { TelegramBotLogin } from "@/components/auth/telegram-bot-login";
+import { AuthPanel } from "@/components/auth/auth-panel";
 import { getCurrentUser } from "@/server/auth/core/session";
+import { detectRegion } from "@/server/auth/region";
 import { searchCatalog } from "@/server/services/search.service";
 import { getPublishedPacks } from "@/server/services/pack.service";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
@@ -28,6 +30,8 @@ export const metadata = {
 const ERROR_MESSAGES: Record<string, string> = {
   invalid_signature: "Не удалось проверить данные Telegram. Попробуйте ещё раз.",
   session_failed: "Не удалось создать сессию. Попробуйте ещё раз.",
+  invalid_state: "Сессия входа устарела. Попробуйте войти ещё раз.",
+  yandex_not_configured: "Вход через Яндекс временно недоступен.",
   internal: "Внутренняя ошибка. Попробуйте позже.",
 };
 
@@ -84,7 +88,7 @@ export default async function HomePage({
   const callbackUrl = new URL("/api/auth/telegram/callback", appUrl);
   if (safeNextPath) callbackUrl.searchParams.set("next", safeNextPath);
 
-  const login = botUsername ? (
+  const telegramFallback = botUsername ? (
     <TelegramBotLogin
       next={safeNextPath ?? undefined}
       start={startTelegramBotLogin}
@@ -92,11 +96,12 @@ export default async function HomePage({
       fallbackBotUsername={botUsername}
       fallbackAuthUrl={callbackUrl.toString()}
     />
-  ) : (
-    <p className="text-sm text-muted-foreground">
-      Telegram-бот не настроен: заполните NEXT_PUBLIC_TELEGRAM_BOT_USERNAME в .env.
-    </p>
-  );
+  ) : null;
+
+  const region = await detectRegion();
+  const yandexHref = `/api/auth/yandex${
+    safeNextPath ? `?next=${encodeURIComponent(safeNextPath)}` : ""
+  }`;
 
   return (
     <div className="flex flex-col gap-20 pb-28 sm:gap-28">
@@ -115,16 +120,15 @@ export default async function HomePage({
             Полностью бесплатный DJ-пул: эксклюзивные версии треков и
             редакторские паки без подписок и скрытых платежей.
           </p>
-          <div className="mt-1 flex flex-col items-center gap-2">
-            {login}
+          <div className="mt-1 flex w-full flex-col items-center gap-2">
+            <AuthPanel region={region} yandexHref={yandexHref}>
+              {telegramFallback}
+            </AuthPanel>
             {error && (
               <p className="text-sm text-destructive">
                 {ERROR_MESSAGES[error] ?? ERROR_MESSAGES.internal}
               </p>
             )}
-            <p className="text-xs text-muted-foreground">
-              Вход через Telegram — без пароля и email.
-            </p>
           </div>
         </div>
       </section>

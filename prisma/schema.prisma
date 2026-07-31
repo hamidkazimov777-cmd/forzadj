@@ -32,6 +32,9 @@ enum UserRole {
 enum AuthProvider {
   TELEGRAM
   EMAIL
+  YANDEX
+  GOOGLE
+  APPLE
 }
 
 model User {
