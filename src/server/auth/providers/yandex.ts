@@ -43,8 +43,9 @@ export function buildYandexAuthUrl(state: string): string {
   url.searchParams.set("client_id", clientId());
   url.searchParams.set("redirect_uri", yandexRedirectUri());
   url.searchParams.set("state", state);
-  // Минимальный доступ: только логин/имя/аватар.
-  url.searchParams.set("scope", "login:info");
+  // scope НЕ передаём: используются доступы, включённые в кабинете приложения
+  // (это избавляет от рассинхрона invalid_scope). Нужный минимум — логин/имя/
+  // аватар — настраивается галочками в самом приложении Яндекса.
   return url.toString();
 }
 
