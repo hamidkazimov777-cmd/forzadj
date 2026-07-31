@@ -8,24 +8,19 @@ import { Button } from "@/components/ui/button";
  * Экран входа с выбором способа по региону (гейт — по IP на сервере, здесь
  * лишь отображение соответствующего набора). РФ → Яндекс ID; остальной мир →
  * Google/Apple. Кнопки активны только после согласия с документами.
- * Telegram остаётся временным запасным способом («Другой способ входа»)
- * на период миграции и передаётся как children.
  */
 export function AuthPanel({
   region,
   yandexHref,
   googleHref,
   appleHref,
-  children,
 }: {
   region: "RU" | "OTHER";
   yandexHref: string;
   googleHref?: string;
   appleHref?: string;
-  children?: React.ReactNode;
 }) {
   const [consented, setConsented] = useState(false);
-  const [showOther, setShowOther] = useState(false);
 
   const linkButton = (
     href: string | undefined,
@@ -84,22 +79,6 @@ export function AuthPanel({
         </p>
       )}
 
-      {/* Временный запасной способ (Telegram) на период миграции. */}
-      {children && (
-        <div className="mt-1 flex flex-col items-center gap-2">
-          {!showOther ? (
-            <button
-              type="button"
-              onClick={() => setShowOther(true)}
-              className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
-            >
-              Другой способ входа
-            </button>
-          ) : (
-            children
-          )}
-        </div>
-      )}
     </div>
   );
 }

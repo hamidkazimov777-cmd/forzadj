@@ -6,7 +6,6 @@ import { Wordmark } from "@/components/brand/wordmark";
 import { HeroCovers } from "@/components/marketing/hero-covers";
 import { PacksShowcase } from "@/components/marketing/packs-showcase";
 import { TrackList } from "@/components/tracks/track-list";
-import { TelegramBotLogin } from "@/components/auth/telegram-bot-login";
 import { AuthPanel } from "@/components/auth/auth-panel";
 import { getCurrentUser } from "@/server/auth/core/session";
 import { detectRegion } from "@/server/auth/region";
@@ -16,10 +15,6 @@ import { catalogRepository } from "@/server/repositories/catalog.repository";
 import { defaultVersionOf } from "@/lib/player-track";
 import { genreColor } from "@/lib/genre-color";
 import { isRetiredGenreName } from "@/lib/content-metadata";
-import {
-  startTelegramBotLogin,
-  pollTelegramBotLogin,
-} from "@/server/actions/telegram-login.actions";
 
 export const metadata = {
   title: { absolute: "ForzaDJ — бесплатный DJ-пул" },
@@ -28,7 +23,7 @@ export const metadata = {
 };
 
 const ERROR_MESSAGES: Record<string, string> = {
-  invalid_signature: "Не удалось проверить данные Telegram. Попробуйте ещё раз.",
+  invalid_signature: "Не удалось проверить данные входа. Попробуйте ещё раз.",
   session_failed: "Не удалось создать сессию. Попробуйте ещё раз.",
   invalid_state: "Сессия входа устарела. Попробуйте войти ещё раз.",
   yandex_not_configured: "Вход через Яндекс временно недоступен.",
@@ -83,21 +78,6 @@ export default async function HomePage({
     .filter((g) => g._count.tracks > 0 && !isRetiredGenreName(g.name))
     .map((g) => ({ name: g.name, slug: g.slug }));
 
-  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const callbackUrl = new URL("/api/auth/telegram/callback", appUrl);
-  if (safeNextPath) callbackUrl.searchParams.set("next", safeNextPath);
-
-  const telegramFallback = botUsername ? (
-    <TelegramBotLogin
-      next={safeNextPath ?? undefined}
-      start={startTelegramBotLogin}
-      poll={pollTelegramBotLogin}
-      fallbackBotUsername={botUsername}
-      fallbackAuthUrl={callbackUrl.toString()}
-    />
-  ) : null;
-
   const region = await detectRegion();
   const yandexHref = `/api/auth/yandex${
     safeNextPath ? `?next=${encodeURIComponent(safeNextPath)}` : ""
@@ -121,9 +101,7 @@ export default async function HomePage({
             редакторские паки без подписок и скрытых платежей.
           </p>
           <div className="mt-1 flex w-full flex-col items-center gap-2">
-            <AuthPanel region={region} yandexHref={yandexHref}>
-              {telegramFallback}
-            </AuthPanel>
+            <AuthPanel region={region} yandexHref={yandexHref} />
             {error && (
               <p className="text-sm text-destructive">
                 {ERROR_MESSAGES[error] ?? ERROR_MESSAGES.internal}
@@ -177,8 +155,8 @@ export default async function HomePage({
             Весь каталог — бесплатно
           </h2>
           <p className="relative mx-auto mt-2 max-w-lg text-pretty text-muted-foreground">
-            Тысячи треков, эксклюзивные версии и паки. Войдите через Telegram —
-            и скачивайте без ограничений и подписок.
+            Тысячи треков, эксклюзивные версии и паки. Войдите и скачивайте без
+            ограничений и подписок.
           </p>
           <div className="relative mt-5 flex justify-center">
             <Button asChild size="lg">

@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
 
 /**
- * Вход переехал на главную (Hero со встроенным Telegram Login).
- * Оставляем тонкий редирект, чтобы старые ссылки/закладки /login и прежние
- * редиректы не давали 404. Сохраняем error/next.
+ * Вход переехал на главную. Оставляем тонкий редирект, чтобы старые
+ * ссылки/закладки /login и прежние редиректы не давали 404. Сохраняем error/next.
  */
 export default async function LoginRedirect({
   searchParams,
