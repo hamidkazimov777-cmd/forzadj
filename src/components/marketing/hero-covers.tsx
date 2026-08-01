@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface CardPosition {
   id: string;
@@ -26,10 +26,24 @@ interface CardPosition {
  * Карточки разбросаны хаотично по всей площади экрана (viewport),
  * плавно «дышат» и сдвигаются с помощью легких CSS-анимаций.
  * При изменении размеров окна браузера сетка пересчитывается.
+ * При движении мыши по hero-секции карточки интерактивно отклоняются
+ * и поворачиваются в 3D на основе расстояния до курсора.
  */
 export function HeroCovers({ versionIds }: { versionIds: string[] }) {
   const [cards, setCards] = useState<CardPosition[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const mousePos = useRef({ x: 0, y: 0, isHovering: false });
+  const motionState = useRef<Array<{
+    x: number;
+    y: number;
+    rx: number;
+    ry: number;
+    rz: number;
+    s: number;
+  }>>([]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -103,6 +117,12 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
           });
         }
       }
+
+      cardRefs.current = [];
+      motionState.current = newCards.map((_, idx) => {
+        return motionState.current[idx] || { x: 0, y: 0, rx: 0, ry: 0, rz: 0, s: 1 };
+      });
+
       setCards(newCards);
     }
     
@@ -111,19 +131,145 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
     return () => window.removeEventListener("resize", handleResize);
   }, [versionIds]);
 
+  // Слушаем движения мыши над #hero
+  useEffect(() => {
+    const heroElement = document.getElementById("hero");
+    if (!heroElement) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      mousePos.current.x = e.clientX;
+      mousePos.current.y = e.clientY;
+      mousePos.current.isHovering = true;
+    };
+
+    const handleMouseLeave = () => {
+      mousePos.current.isHovering = false;
+    };
+
+    heroElement.addEventListener("mousemove", handleMouseMove);
+    heroElement.addEventListener("mouseleave", handleMouseLeave);
+    
+    return () => {
+      heroElement.removeEventListener("mousemove", handleMouseMove);
+      heroElement.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, []);
+
+  // requestAnimationFrame цикл анимации следования сглаженной пружиной (Spring interpolation)
+  useEffect(() => {
+    let rafId: number;
+    const springStrength = 0.08; // Мягкость и плавность эффекта
+
+    function update() {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) {
+        rafId = requestAnimationFrame(update);
+        return;
+      }
+
+      const localMouseX = mousePos.current.x - rect.left;
+      const localMouseY = mousePos.current.y - rect.top;
+      const isHovering = mousePos.current.isHovering;
+
+      cards.forEach((card, index) => {
+        const el = cardRefs.current[index];
+        if (!el) return;
+
+        let targetX = 0;
+        let targetY = 0;
+        let targetRotateX = 0;
+        let targetRotateY = 0;
+        let targetRotateZ = 0;
+        let targetScale = 1;
+
+        if (isHovering) {
+          const dx = localMouseX - card.left;
+          const dy = localMouseY - card.top;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const maxDistance = 320; // Радиус взаимодействия
+
+          if (distance < maxDistance) {
+            const force = 1 - distance / maxDistance;
+            const influence = force * force; // Плавное нелинейное затухание
+
+            const nx = dx / (distance || 1);
+            const ny = dy / (distance || 1);
+
+            // Отталкивание обложек (magnetic repulsion) — макс 18px
+            targetX = -nx * 18 * influence;
+            targetY = -ny * 18 * influence;
+
+            // Наклон обложек в 3D пространстве — макс 6 градусов
+            targetRotateX = -ny * 6 * influence;
+            targetRotateY = nx * 6 * influence;
+
+            // Небольшое кручение обложки по Z — макс 3 градуса
+            targetRotateZ = -nx * ny * 3 * influence;
+
+            // Увеличение масштаба — макс 1.04
+            targetScale = 1 + 0.04 * influence;
+          }
+        }
+
+        // Интерполяция значений (пружина)
+        const state = motionState.current[index] || { x: 0, y: 0, rx: 0, ry: 0, rz: 0, s: 1 };
+        
+        state.x += (targetX - state.x) * springStrength;
+        state.y += (targetY - state.y) * springStrength;
+        state.rx += (targetRotateX - state.rx) * springStrength;
+        state.ry += (targetRotateY - state.ry) * springStrength;
+        state.rz += (targetRotateZ - state.rz) * springStrength;
+        state.s += (targetScale - state.s) * springStrength;
+
+        motionState.current[index] = state;
+
+        // Прямое обновление стилей элемента без перерендера React
+        el.style.setProperty("--mouse-tx", `${state.x.toFixed(2)}px`);
+        el.style.setProperty("--mouse-ty", `${state.y.toFixed(2)}px`);
+        el.style.setProperty("--mouse-rx", `${state.rx.toFixed(2)}deg`);
+        el.style.setProperty("--mouse-ry", `${state.ry.toFixed(2)}deg`);
+        el.style.setProperty("--mouse-rz", `${state.rz.toFixed(2)}deg`);
+        el.style.setProperty("--mouse-scale", `${state.s.toFixed(3)}`);
+      });
+
+      rafId = requestAnimationFrame(update);
+    }
+
+    rafId = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(rafId);
+  }, [cards]);
+
   if (versionIds.length === 0 || !isMounted) return null;
 
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+    <div
+      ref={containerRef}
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+      style={{ perspective: "1000px" }}
+    >
       {/* Контейнер с карточками */}
-      <div className="absolute inset-0 opacity-45">
+      <div className="absolute inset-0 opacity-45" style={{ transformStyle: "preserve-3d" }}>
         {cards.map((card, i) => {
           const wrapperStyle = {
             position: "absolute",
             left: `${card.left}px`,
             top: `${card.top}px`,
-            // Смещаем центр карточки в координаты ячейки
-            transform: `translate3d(-50%, -50%, 0) translate3d(${card.offsetX}px, ${card.offsetY}px, 0) rotate(${card.rotation}deg) scale(${card.scale})`,
+            "--base-offset-x": `${card.offsetX}px`,
+            "--base-offset-y": `${card.offsetY}px`,
+            "--base-rotation": `${card.rotation}deg`,
+            "--base-scale": `${card.scale}`,
+            
+            // Композиция базовых и интерактивных трансформаций
+            transform: `
+              translate3d(-50%, -50%, 0)
+              translate3d(calc(var(--base-offset-x) + var(--mouse-tx, 0px)), calc(var(--base-offset-y) + var(--mouse-ty, 0px)), 0)
+              rotateX(var(--mouse-rx, 0deg))
+              rotateY(var(--mouse-ry, 0deg))
+              rotateZ(calc(var(--base-rotation) + var(--mouse-rz, 0deg)))
+              scale(calc(var(--base-scale) * var(--mouse-scale, 1)))
+            `,
+            transformStyle: "preserve-3d",
           } as React.CSSProperties;
 
           const imageStyle = {
@@ -139,7 +285,13 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
           } as React.CSSProperties;
 
           return (
-            <div key={i} style={wrapperStyle}>
+            <div
+              key={i}
+              ref={(el) => {
+                cardRefs.current[i] = el;
+              }}
+              style={wrapperStyle}
+            >
               <img
                 src={`/api/artwork/${card.id}`}
                 alt=""
