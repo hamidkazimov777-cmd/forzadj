@@ -3,16 +3,41 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+/** Базовые стили кнопки «Войти через Яндекс ID» (light / main, ~56px). */
+const yandexButtonClass = cn(
+  "relative flex h-14 w-full select-none items-center justify-center gap-3",
+  "rounded-[13px] border border-[rgba(0,0,0,0.12)] bg-white px-5",
+  "text-[15px] font-medium leading-none tracking-[-0.01em] text-black whitespace-nowrap",
+  "shadow-[0_1px_2px_rgba(0,0,0,0.06)]",
+  "transition-[transform,box-shadow,background-color,border-color] duration-200 ease-out",
+  "touch-manipulation antialiased",
+);
+
+const yandexButtonInteractiveClass = cn(
+  yandexButtonClass,
+  "hover:scale-[1.02] hover:border-[rgba(0,0,0,0.18)] hover:bg-[#f7f7f7]",
+  "hover:shadow-[0_4px_16px_rgba(0,0,0,0.1)]",
+  "active:scale-[0.985] active:bg-[#f0f0f0] active:shadow-[0_1px_4px_rgba(0,0,0,0.08)]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(0,0,0,0.15)] focus-visible:ring-offset-2",
+);
+
+const yandexButtonDisabledClass = cn(
+  yandexButtonClass,
+  "cursor-not-allowed border-[rgba(0,0,0,0.06)] text-[rgba(0,0,0,0.35)] shadow-none opacity-60",
+);
 
 function YandexLogo({ disabled }: { disabled?: boolean }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="22"
-      height="22"
+      width="24"
+      height="24"
       viewBox="0 0 100 100"
       fill="none"
-      className={disabled ? "grayscale opacity-35" : "shrink-0"}
+      aria-hidden
+      className={cn("shrink-0", disabled && "grayscale opacity-40")}
     >
       <rect width="100" height="100" rx="22" fill="#FC3F1D" />
       <path
@@ -57,18 +82,12 @@ export function AuthPanel({
     );
 
   const yandexButton = consented && yandexHref ? (
-    <a
-      href={yandexHref}
-      className="flex h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-black/10 bg-white px-5 text-sm font-medium text-black shadow-[0_2px_6px_rgba(0,0,0,0.04)] transition-all duration-200 ease-out hover:scale-[1.015] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-    >
+    <a href={yandexHref} className={yandexButtonInteractiveClass}>
       <YandexLogo />
       <span>Войти через Яндекс ID</span>
     </a>
   ) : (
-    <button
-      disabled
-      className="flex h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-black/5 bg-white px-5 text-sm font-medium text-black/35 opacity-50 cursor-not-allowed"
-    >
+    <button type="button" disabled className={yandexButtonDisabledClass}>
       <YandexLogo disabled />
       <span>Войти через Яндекс ID</span>
     </button>
