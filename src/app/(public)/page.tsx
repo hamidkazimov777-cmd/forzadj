@@ -16,6 +16,7 @@ import { defaultVersionOf } from "@/lib/player-track";
 import { genreColor } from "@/lib/genre-color";
 import { isRetiredGenreName } from "@/lib/content-metadata";
 import { ScrollTransitionManager } from "@/components/marketing/scroll-transition-manager";
+import { yandexSuggestConfig } from "@/server/auth/providers/yandex";
 
 export const metadata = {
   title: { absolute: "ForzaDJ — бесплатный DJ-пул" },
@@ -80,9 +81,7 @@ export default async function HomePage({
     .map((g) => ({ name: g.name, slug: g.slug }));
 
   const region = await detectRegion();
-  const yandexHref = `/api/auth/yandex${
-    safeNextPath ? `?next=${encodeURIComponent(safeNextPath)}` : ""
-  }`;
+  const yandexConfig = yandexSuggestConfig();
 
   return (
     <div id="landing-page-wrapper" className="flex flex-col gap-20 pb-28 sm:gap-28">
@@ -103,7 +102,11 @@ export default async function HomePage({
             редакторские паки без подписок и скрытых платежей.
           </p>
           <div className="mt-1 flex w-full flex-col items-center gap-2">
-            <AuthPanel region={region} yandexHref={yandexHref} />
+            <AuthPanel
+              region={region}
+              yandexConfig={yandexConfig}
+              yandexNextPath={safeNextPath}
+            />
             {error && (
               <p className="text-sm text-destructive">
                 {ERROR_MESSAGES[error] ?? ERROR_MESSAGES.internal}

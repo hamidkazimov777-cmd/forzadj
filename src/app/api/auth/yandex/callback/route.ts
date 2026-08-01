@@ -2,14 +2,9 @@ import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   exchangeYandexCode,
-  fetchYandexProfile,
   yandexConfigured,
 } from "@/server/auth/providers/yandex";
-import { issueYandexSession } from "@/server/services/auth.service";
-import {
-  createSupabaseServerClient,
-  isSupabaseConfigured,
-} from "@/server/auth/providers/supabase-server";
+import { completeYandexLogin } from "@/server/auth/yandex-login";
 
 /**
  * Возврат от Яндекса: проверяем state (CSRF), меняем code на токен, читаем
@@ -31,7 +26,7 @@ export async function GET(request: NextRequest) {
   const rawState = store.get(STATE_COOKIE)?.value;
   store.delete(STATE_COOKIE);
 
-  if (!yandexConfigured() || !isSupabaseConfigured()) {
+  if (!yandexConfigured()) {
     return redirectWithError(base, "yandex_not_configured");
   }
 
@@ -50,15 +45,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const accessToken = await exchangeYandexCode(code);
-    const profile = await fetchYandexProfile(accessToken);
-    const { tokenHash } = await issueYandexSession(profile);
-
-    const supabase = await createSupabaseServerClient();
-    const { error } = await supabase.auth.verifyOtp({
-      type: "magiclink",
-      token_hash: tokenHash,
-    });
-    if (error) return redirectWithError(base, "session_failed");
+    const result = await completeYandexLogin(accessToken);
+    if (!result.ok) return redirectWithError(base, result.code);
   } catch {
     return redirectWithError(base, "internal");
   }

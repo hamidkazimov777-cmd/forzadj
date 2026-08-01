@@ -18,8 +18,16 @@ export function yandexConfigured(): boolean {
   );
 }
 
+function appOrigin(): string {
+  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+}
+
+export function yandexClientId(): string | null {
+  return process.env.YANDEX_CLIENT_ID?.trim() || null;
+}
+
 function clientId(): string {
-  const v = process.env.YANDEX_CLIENT_ID;
+  const v = yandexClientId();
   if (!v) throw new Error("YANDEX_CLIENT_ID is not set");
   return v;
 }
@@ -30,10 +38,35 @@ function clientSecret(): string {
   return v;
 }
 
-/** Адрес возврата (должен совпадать с Redirect URI в кабинете Яндекса). */
+/** Адрес возврата code-flow (должен совпадать с Redirect URI в кабинете Яндекса). */
 export function yandexRedirectUri(): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  return new URL("/api/auth/yandex/callback", base).toString();
+  return new URL("/api/auth/yandex/callback", appOrigin()).toString();
+}
+
+/** Вспомогательная страница YaAuthSuggest (token flow). */
+export function yandexSuggestRedirectUri(): string {
+  return new URL("/auth/yandex/token", appOrigin()).toString();
+}
+
+/** Origin приложения для postMessage между страницей входа и token-страницей. */
+export function yandexTokenPageOrigin(): string {
+  return new URL(appOrigin()).origin;
+}
+
+/** Публичная конфигурация для клиентского виджета YaAuthSuggest. */
+export function yandexSuggestConfig(): {
+  clientId: string;
+  redirectUri: string;
+  tokenPageOrigin: string;
+} | null {
+  if (!yandexConfigured()) return null;
+  const id = yandexClientId();
+  if (!id) return null;
+  return {
+    clientId: id,
+    redirectUri: yandexSuggestRedirectUri(),
+    tokenPageOrigin: yandexTokenPageOrigin(),
+  };
 }
 
 /** URL для перенаправления пользователя на страницу согласия Яндекса. */
