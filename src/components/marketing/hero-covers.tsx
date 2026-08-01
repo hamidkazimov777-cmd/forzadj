@@ -246,10 +246,9 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
       ref={containerRef}
       aria-hidden
       className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
-      style={{ perspective: "1000px" }}
     >
       {/* Контейнер с карточками */}
-      <div className="absolute inset-0 opacity-45" style={{ transformStyle: "preserve-3d" }}>
+      <div className="absolute inset-0 opacity-45">
         {cards.map((card, i) => {
           const wrapperStyle = {
             position: "absolute",
@@ -260,8 +259,9 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
             "--base-rotation": `${card.rotation}deg`,
             "--base-scale": `${card.scale}`,
             
-            // Композиция базовых и интерактивных трансформаций
+            // Композиция базовых и интерактивных трансформаций с индивидуальной перспективой (предотвращает растягивание по краям)
             transform: `
+              perspective(1000px)
               translate3d(-50%, -50%, 0)
               translate3d(calc(var(--base-offset-x) + var(--mouse-tx, 0px)), calc(var(--base-offset-y) + var(--mouse-ty, 0px)), 0)
               rotateX(var(--mouse-rx, 0deg))
@@ -269,7 +269,6 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
               rotateZ(calc(var(--base-rotation) + var(--mouse-rz, 0deg)))
               scale(calc(var(--base-scale) * var(--mouse-scale, 1)))
             `,
-            transformStyle: "preserve-3d",
           } as React.CSSProperties;
 
           const imageStyle = {
@@ -291,13 +290,14 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
                 cardRefs.current[i] = el;
               }}
               style={wrapperStyle}
+              className="absolute size-28 sm:size-36"
             >
               <img
                 src={`/api/artwork/${card.id}`}
                 alt=""
                 loading="lazy"
                 decoding="async"
-                className="size-28 rounded-xl object-cover shadow-xl ring-1 ring-white/10 sm:size-36"
+                className="w-full h-full rounded-xl object-cover shadow-xl ring-1 ring-white/10"
                 style={imageStyle}
               />
             </div>
