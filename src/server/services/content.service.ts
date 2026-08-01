@@ -87,12 +87,12 @@ export const contentService = {
       const existingGenreSlugs = new Set(
         before.genres.map(({ genre }) => genre.slug),
       );
-      const isAddingRetiredGenre = genreNames.some(
+      const addedRetiredGenre = genreNames.find(
         (name) =>
           isRetiredGenreName(name) && !existingGenreSlugs.has(slugify(name)),
       );
-      if (isAddingRetiredGenre) {
-        throw new Error("Жанр Mashup доступен только в метаданных старых треков");
+      if (addedRetiredGenre) {
+        throw new Error(`Жанр ${addedRetiredGenre} доступен только в метаданных старых треков`);
       }
       const ids: string[] = [];
       for (const name of genreNames) {

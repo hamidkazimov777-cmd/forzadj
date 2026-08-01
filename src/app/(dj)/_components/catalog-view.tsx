@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { CatalogFilters } from "@/components/tracks/catalog-filters";
+import { isRetiredGenreName } from "@/lib/content-metadata";
 import { TrackList } from "@/components/tracks/track-list";
 import {
   searchCatalog,
@@ -61,11 +62,13 @@ export async function CatalogView({
       {showFilters && (
         <Suspense>
           <CatalogFilters
-            genres={genres.map((g) => ({
-              slug: g.slug,
-              name: g.name,
-              count: g._count.tracks,
-            }))}
+            genres={genres
+              .filter((g) => !isRetiredGenreName(g.name))
+              .map((g) => ({
+                slug: g.slug,
+                name: g.name,
+                count: g._count.tracks,
+              }))}
             defaultSort={filters.sort ?? "newest"}
           />
         </Suspense>
