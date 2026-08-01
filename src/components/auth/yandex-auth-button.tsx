@@ -40,7 +40,7 @@ export function YandexAuthButton({
   const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (!enabled || !sdkReady || initializedRef.current) return;
+    if (!sdkReady || initializedRef.current) return;
     if (!window.YaAuthSuggest) return;
 
     initializedRef.current = true;
@@ -111,13 +111,8 @@ export function YandexAuthButton({
     return () => {
       cancelled = true;
     };
-  }, [config, containerId, enabled, nextPath, onError, sdkReady]);
+  }, [config, containerId, nextPath, onError, sdkReady]);
 
-  useEffect(() => {
-    if (!enabled) {
-      initializedRef.current = false;
-    }
-  }, [enabled]);
 
   return (
     <div className="relative w-full">
