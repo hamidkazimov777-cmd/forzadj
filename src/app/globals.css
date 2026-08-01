@@ -221,3 +221,15 @@ select:not([multiple]):not([size]) {
     animation: none;
   }
 }
+
+@keyframes card-breathe-drift {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  33% {
+    transform: translate3d(var(--drift-x1), var(--drift-y1), 0) rotate(var(--drift-r1)) scale(1.02);
+  }
+  66% {
+    transform: translate3d(var(--drift-x2), var(--drift-y2), 0) rotate(var(--drift-r2)) scale(0.98);
+  }
+}
