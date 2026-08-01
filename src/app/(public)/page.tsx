@@ -15,6 +15,7 @@ import { catalogRepository } from "@/server/repositories/catalog.repository";
 import { defaultVersionOf } from "@/lib/player-track";
 import { genreColor } from "@/lib/genre-color";
 import { isRetiredGenreName } from "@/lib/content-metadata";
+import { ScrollTransitionManager } from "@/components/marketing/scroll-transition-manager";
 
 export const metadata = {
   title: { absolute: "ForzaDJ — бесплатный DJ-пул" },
@@ -84,14 +85,15 @@ export default async function HomePage({
   }`;
 
   return (
-    <div className="flex flex-col gap-20 pb-28 sm:gap-28">
+    <div id="landing-page-wrapper" className="flex flex-col gap-20 pb-28 sm:gap-28">
+      <ScrollTransitionManager />
       {/* ── HERO ── */}
       <section
         id="hero"
         className="relative isolate flex min-h-[calc(100vh-3.5rem-1px)] flex-col items-center justify-center overflow-hidden px-6 py-16 text-center"
       >
         <HeroCovers versionIds={heroCoverIds} />
-        <div className="relative z-10 flex flex-col items-center gap-6">
+        <div id="hero-content" className="relative z-10 flex flex-col items-center gap-6">
           <Wordmark className="h-12 drop-shadow-[0_2px_20px_rgba(0,0,0,0.4)] sm:h-16" />
           <p className="text-balance text-2xl font-bold tracking-tight sm:text-3xl">
             Музыка должна быть доступной каждому.
@@ -112,11 +114,11 @@ export default async function HomePage({
       </section>
 
       {/* ── КАТАЛОГ (гостевой: слушать можно, скачивать — после входа) ── */}
-      <section className="mx-auto w-full max-w-6xl px-4">
+      <section id="catalog-section" className="mx-auto w-full max-w-6xl px-4">
         <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Свежее в каталоге</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+          <div id="catalog-header">
+            <h2 id="catalog-title" className="text-2xl font-bold tracking-tight">Свежее в каталоге</h2>
+            <p id="catalog-subtitle" className="mt-1 text-sm text-muted-foreground">
               Слушайте превью прямо здесь. Скачивание — после входа.
             </p>
           </div>

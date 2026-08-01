@@ -233,3 +233,8 @@ select:not([multiple]):not([size]) {
     transform: translate3d(var(--drift-x2), var(--drift-y2), 0) rotate(var(--drift-r2)) scale(0.98);
   }
 }
+
+#landing-page-wrapper {
+  background-color: color-mix(in oklch, var(--background), oklch(0.20 0.006 277) var(--bg-mix, 0%));
+  transition: background-color 0.2s ease-out;
+}

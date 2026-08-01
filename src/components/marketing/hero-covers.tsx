@@ -248,7 +248,7 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
       className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
     >
       {/* Контейнер с карточками */}
-      <div className="absolute inset-0 opacity-45">
+      <div id="hero-covers-cards" className="absolute inset-0 opacity-45">
         {cards.map((card, i) => {
           const wrapperStyle = {
             position: "absolute",
