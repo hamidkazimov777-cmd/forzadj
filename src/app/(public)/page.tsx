@@ -80,9 +80,12 @@ export default async function HomePage({
     .map((g) => ({ name: g.name, slug: g.slug }));
 
   const region = await detectRegion();
+  const appOrigin = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const yandexHref = `/api/auth/yandex${
     safeNextPath ? `?next=${encodeURIComponent(safeNextPath)}` : ""
   }`;
+  const yandexSuggestRedirectUri = `${appOrigin}/yandex/suggest/token`;
+  const yandexClientId = process.env.YANDEX_CLIENT_ID;
 
   return (
     <div id="landing-page-wrapper" className="flex flex-col gap-20 pb-28 sm:gap-28">
@@ -103,7 +106,14 @@ export default async function HomePage({
             редакторские паки без подписок и скрытых платежей.
           </p>
           <div className="mt-1 flex w-full flex-col items-center gap-2">
-            <AuthPanel region={region} yandexHref={yandexHref} />
+            <AuthPanel
+              region={region}
+              yandexHref={yandexHref}
+              yandexClientId={yandexClientId}
+              yandexSuggestRedirectUri={yandexSuggestRedirectUri}
+              appOrigin={appOrigin}
+              nextPath={safeNextPath}
+            />
             {error && (
               <p className="text-sm text-destructive">
                 {ERROR_MESSAGES[error] ?? ERROR_MESSAGES.internal}
