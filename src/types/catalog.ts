@@ -27,6 +27,8 @@ export interface TrackCardDto {
   id: string;
   slug: string;
   title: string;
+  /** Настроение (сет-тайм) трека. */
+  mood: TrackMood | null;
   artists: Array<{ name: string; role: "MAIN" | "FEATURED" | "REMIXER" }>;
   genres: string[];
   tags: string[];

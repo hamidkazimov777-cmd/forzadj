@@ -10,6 +10,7 @@ import { DownloadButton } from "@/components/tracks/download-button";
 import { EnergyRating } from "@/components/tracks/energy-rating";
 import { TrackList } from "@/components/tracks/track-list";
 import { artistLineOf, defaultVersionOf, toPlayerTrack } from "@/lib/player-track";
+import { MOOD_ICONS, MOOD_LABELS } from "@/lib/mood";
 import type { TrackCardDto } from "@/types/catalog";
 import type { PlayerTrack } from "@/types/player";
 import type { RequestDownloadFn } from "@/types/download";
@@ -17,6 +18,20 @@ import type { RequestDownloadFn } from "@/types/download";
 function fmt(sec: number | null): string {
   if (sec == null) return "--:--";
   return `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
+}
+
+/** Настроение (сет-тайм) строкой: иконка + подпись — как в фильтре каталога. */
+function MoodCell({ mood }: { mood: string | null }) {
+  const MoodIcon = mood ? MOOD_ICONS[mood] : undefined;
+  if (!mood || !MoodIcon) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+  return (
+    <span className="flex items-center gap-2">
+      <MoodIcon className="size-4 shrink-0 text-muted-foreground" />
+      {MOOD_LABELS[mood]}
+    </span>
+  );
 }
 
 /**
@@ -302,6 +317,7 @@ export function TrackNowPlaying({
             <thead className="border-b text-left text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 font-medium">Версия</th>
+                <th className="px-3 py-2 font-medium">Настроение</th>
                 <th className="px-3 py-2 font-medium">BPM</th>
                 <th className="px-3 py-2 font-medium">Camelot</th>
                 <th className="px-3 py-2 font-medium">Рейтинг</th>
@@ -326,6 +342,9 @@ export function TrackNowPlaying({
                     {v.isExplicit && (
                       <Badge variant="destructive" className="ml-2">E</Badge>
                     )}
+                  </td>
+                  <td className="px-3 py-2">
+                    <MoodCell mood={track.mood} />
                   </td>
                   <td className="px-3 py-2 tabular-nums">{v.bpm ?? "—"}</td>
                   <td className="px-3 py-2 tabular-nums">{v.camelotKey ?? "—"}</td>

@@ -35,6 +35,7 @@ function toCardDto(track: CatalogTrack): TrackCardDto {
     id: track.id,
     slug: track.slug,
     title: track.title,
+    mood: track.mood,
     artists: track.artists.map((a) => ({ name: a.artist.name, role: a.role })),
     genres: track.genres.map((g) => g.genre.name),
     tags: track.tags.map((t) => t.tag.name),

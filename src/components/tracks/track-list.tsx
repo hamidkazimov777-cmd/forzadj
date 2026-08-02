@@ -17,6 +17,7 @@ import {
   toPlayerTrack,
 } from "@/lib/player-track";
 import { camelotColor } from "@/lib/camelot";
+import { MOOD_ICONS, MOOD_LABELS } from "@/lib/mood";
 import { TrackCover } from "@/components/tracks/track-cover";
 import { cn } from "@/lib/utils";
 import type { TrackCardDto, VersionCardDto } from "@/types/catalog";
@@ -219,6 +220,16 @@ export function TrackList({
                 </button>
               ))}
             </div>
+
+            {/* Настроение (сет-тайм) — только иконка */}
+            <span className="hidden w-8 shrink-0 justify-center lg:flex" title={track.mood ? MOOD_LABELS[track.mood] : undefined}>
+              {track.mood && MOOD_ICONS[track.mood]
+                ? (() => {
+                    const MoodIcon = MOOD_ICONS[track.mood];
+                    return <MoodIcon className="size-4 text-muted-foreground" aria-label={MOOD_LABELS[track.mood]} />;
+                  })()
+                : <span className="text-sm text-muted-foreground">—</span>}
+            </span>
 
             {/* Приборные колонки (выровнены по всей таблице) */}
             <span className="hidden w-24 shrink-0 truncate text-right text-sm text-muted-foreground lg:block">

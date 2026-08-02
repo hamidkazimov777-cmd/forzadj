@@ -10,16 +10,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { camelotColor } from "@/lib/camelot";
+import { MOOD_ICONS, MOOD_LABELS } from "@/lib/mood";
 import { VERSION_TYPES } from "@/lib/content-metadata";
 import { TRACK_MOODS } from "@/lib/validators/content";
 import { cn } from "@/lib/utils";
-
-/** Подписи настроений (сет-тайм) для фильтра каталога. */
-const MOOD_LABELS: Record<string, string> = {
-  WARM_UP: "Warm Up",
-  PRIME_TIME: "Prime Time",
-  AFTER_PARTY: "After Party",
-};
 
 /**
  * Панель фильтров каталога. Состояние — URL search params: шэрабельные ссылки,
@@ -364,19 +358,23 @@ export function CatalogFilters({
           >
             Любое
           </button>
-          {TRACK_MOODS.map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setParam("mood", m)}
-              className={cn(
-                "flex w-full rounded-md px-2 py-1.5 text-left text-sm transition-colors",
-                moodVal === m ? "bg-primary/12 text-foreground" : "text-muted-foreground hover:bg-accent",
-              )}
-            >
-              {MOOD_LABELS[m]}
-            </button>
-          ))}
+          {TRACK_MOODS.map((m) => {
+            const MoodIcon = MOOD_ICONS[m];
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setParam("mood", m)}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+                  moodVal === m ? "bg-primary/12 text-foreground" : "text-muted-foreground hover:bg-accent",
+                )}
+              >
+                {MoodIcon && <MoodIcon className="size-4 shrink-0 opacity-70" />}
+                {MOOD_LABELS[m]}
+              </button>
+            );
+          })}
         </PopoverContent>
       </Popover>
 
