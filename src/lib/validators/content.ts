@@ -8,6 +8,9 @@ export const CAMELOT_KEYS = Array.from({ length: 12 }, (_, i) => i + 1).flatMap(
   (n) => [`${n}A`, `${n}B`],
 );
 
+/** Настроение трека (сет-тайм) — значения enum TrackMood. */
+export const TRACK_MOODS = ["WARM_UP", "PRIME_TIME", "AFTER_PARTY"] as const;
+
 const emptyToUndef = (v: unknown) =>
   typeof v === "string" && v.trim() === "" ? undefined : v;
 
@@ -26,6 +29,7 @@ export const trackMetadataSchema = z.object({
       .regex(/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/i, "Неверный формат ISRC")
       .optional(),
   ),
+  mood: z.preprocess(emptyToUndef, z.enum(TRACK_MOODS).optional()),
   artistNames: z.string().default(""),
   featuredNames: z.string().default(""),
   genreNames: z.string().default(""),

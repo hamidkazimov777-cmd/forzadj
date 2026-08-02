@@ -10,6 +10,7 @@ import { slugify } from "@/lib/slug";
 import type {
   ArtistRole,
   ContentStatus,
+  TrackMood,
   VersionType,
 } from "@/types/db";
 
@@ -32,6 +33,7 @@ export interface TrackMetadataInput {
   year?: number | null;
   isExplicit?: boolean;
   isrc?: string | null;
+  mood?: TrackMood | null;
   /** Имена через запятую — несуществующие создаются. */
   artistNames?: string;
   featuredNames?: string;
@@ -60,6 +62,7 @@ export const contentService = {
       year: input.year === undefined ? before.year : input.year,
       isExplicit: input.isExplicit ?? before.isExplicit,
       isrc: input.isrc === undefined ? before.isrc : input.isrc,
+      mood: input.mood === undefined ? before.mood : input.mood,
     };
     await trackRepository.update(trackId, patch);
 

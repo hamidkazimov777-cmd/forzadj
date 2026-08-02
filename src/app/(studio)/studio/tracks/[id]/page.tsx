@@ -17,7 +17,14 @@ import {
   deleteTrackAction,
   reprocessVersionAction,
 } from "@/server/actions/content.actions";
-import { VERSION_TYPES, CAMELOT_KEYS } from "@/lib/validators/content";
+import { VERSION_TYPES, CAMELOT_KEYS, TRACK_MOODS } from "@/lib/validators/content";
+
+/** Подписи настроений трека (сет-тайм) для редактора. */
+const MOOD_LABELS: Record<string, string> = {
+  WARM_UP: "Warm Up",
+  PRIME_TIME: "Prime Time",
+  AFTER_PARTY: "After Party",
+};
 
 export const metadata = { title: "Редактирование трека" };
 
@@ -123,6 +130,20 @@ export default async function TrackEditPage({
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="isrc">ISRC</Label>
               <Input id="isrc" name="isrc" defaultValue={track.isrc ?? ""} placeholder="AZ-XXX-26-00001" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="mood">Настроение</Label>
+              <select
+                id="mood"
+                name="mood"
+                defaultValue={track.mood ?? ""}
+                className="h-9 rounded-md border bg-transparent px-3 text-sm"
+              >
+                <option value="">—</option>
+                {TRACK_MOODS.map((m) => (
+                  <option key={m} value={m}>{MOOD_LABELS[m]}</option>
+                ))}
+              </select>
             </div>
             <label className="col-span-2 flex items-center gap-2 text-sm">
               <input

@@ -45,6 +45,7 @@ export async function updateTrackAction(
     ...parsed,
     year: parsed.year ?? null,
     isrc: parsed.isrc ?? null,
+    mood: parsed.mood ?? null,
   });
   revalidatePath(`/studio/tracks/${trackId}`);
   revalidatePath("/studio/tracks");

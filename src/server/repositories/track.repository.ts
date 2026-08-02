@@ -4,6 +4,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import type {
   ArtistRole,
   ContentStatus,
+  TrackMood,
   VersionType,
 } from "@/generated/prisma/enums";
 
@@ -81,6 +82,7 @@ export const trackRepository = {
       year?: number | null;
       isExplicit?: boolean;
       isrc?: string | null;
+      mood?: TrackMood | null;
       status?: ContentStatus;
     },
   ) {
