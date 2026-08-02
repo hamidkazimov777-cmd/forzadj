@@ -192,6 +192,13 @@ model Tag {
   @@map("tags")
 }
 
+/// Настроение трека для сет-таймов. Проставляет редактор в Студии.
+enum TrackMood {
+  WARM_UP
+  PRIME_TIME
+  AFTER_PARTY
+}
+
 /// Произведение "Artist — Title". Может существовать вне релиза
 /// (releaseId nullable) — пул часто оперирует одиночными эдитами.
 model Track {
@@ -201,6 +208,8 @@ model Track {
   releaseId     String?       @map("release_id") @db.Uuid
   release       Release?      @relation(fields: [releaseId], references: [id])
   status        ContentStatus @default(DRAFT)
+  /// Настроение (сет-тайм). Nullable: старые треки остаются без значения.
+  mood          TrackMood?
   /// Год оригинального произведения (для old-school эдитов).
   year          Int?
   isExplicit    Boolean       @default(false) @map("is_explicit")
