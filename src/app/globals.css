@@ -50,52 +50,6 @@
 }
 
 :root {
-  /* Нативные контролы (select/option/checkbox/скроллбары) следуют теме.
-     Без этого в тёмной теме браузер (особенно Safari/Edge/Yandex) рендерит
-     их в light-режиме — тёмный текст селекта на тёмном фоне становится не виден. */
-  color-scheme: light;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.16 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.16 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.16 0 0);
-  /* Акцент — индиго (единый бренд-цвет для CTA/активного/фокуса). */
-  --primary: oklch(0.55 0.21 277);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.52 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0 0);
-  --input: oklch(0.92 0 0);
-  --ring: oklch(0.55 0.21 277);
-  /* Готовые непрозрачные «мягкие» фоны destructive (без color-mix — Safari
-     некорректно рендерит color-mix, из-за чего фон становился сплошным). */
-  --destructive-soft: oklch(0.95 0.035 25);
-  --destructive-soft-hover: oklch(0.92 0.055 25);
-  /* Данные: энергия трека — тёплая шкала (amber). */
-  --energy: oklch(0.72 0.15 70);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.16 0 0);
-  --sidebar-primary: oklch(0.55 0.21 277);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.92 0 0);
-  --sidebar-ring: oklch(0.55 0.21 277);
-}
-
-.dark {
   color-scheme: dark;
   /* Глубокий графит с едва заметным холодным подтоном (не чистый #000). */
   --background: oklch(0.165 0.006 277);

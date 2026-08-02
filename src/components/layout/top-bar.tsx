@@ -4,13 +4,12 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DjNavMobile } from "@/components/layout/dj-nav";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { SupportButton } from "@/components/support/support-button";
 import type { SupportSubmitFn } from "@/types/donation";
 
 /**
- * Верхняя панель DJ-зоны: мобильный бургер, глобальный поиск, переключатель
- * темы, поддержка и аватар. Server Action поддержки приходит пропсом.
+ * Верхняя панель DJ-зоны: мобильный бургер, поддержка и аватар.
+ * Server Action поддержки приходит пропсом.
  */
 export function TopBar({
   showStudio,
@@ -27,7 +26,6 @@ export function TopBar({
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur md:px-6">
       <DjNavMobile showStudio={showStudio} />
       <div className="ml-auto flex items-center gap-1 sm:gap-2">
-        <ThemeToggle />
         <SupportButton
           submit={submitSupport}
           variant="ghost"
