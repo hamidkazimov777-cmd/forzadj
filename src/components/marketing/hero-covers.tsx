@@ -30,6 +30,7 @@ interface CardPosition {
 export function HeroCovers({ versionIds }: { versionIds: string[] }) {
   const [cards, setCards] = useState<CardPosition[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+  const [isSafari, setIsSafari] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -45,6 +46,9 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
 
   useEffect(() => {
     setIsMounted(true);
+    setIsSafari(
+      /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent),
+    );
   }, []);
 
   useEffect(() => {
@@ -260,6 +264,23 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
       {/* Контейнер с карточками */}
       <div id="hero-covers-cards" className="absolute inset-0 opacity-45">
         {cards.map((card, i) => {
+          const transform = isSafari
+            ? `
+              translate(-50%, -50%)
+              translate(calc(var(--base-offset-x) + var(--mouse-tx, 0px)), calc(var(--base-offset-y) + var(--mouse-ty, 0px)))
+              rotate(calc(var(--base-rotation) + var(--mouse-rz, 0deg)))
+              scale(calc(var(--base-scale) * var(--mouse-scale, 1)))
+            `
+            : `
+              perspective(1000px)
+              translate3d(-50%, -50%, 0)
+              translate3d(calc(var(--base-offset-x) + var(--mouse-tx, 0px)), calc(var(--base-offset-y) + var(--mouse-ty, 0px)), 0)
+              rotateX(var(--mouse-rx, 0deg))
+              rotateY(var(--mouse-ry, 0deg))
+              rotateZ(calc(var(--base-rotation) + var(--mouse-rz, 0deg)))
+              scale(calc(var(--base-scale) * var(--mouse-scale, 1)))
+            `;
+
           const wrapperStyle = {
             position: "absolute",
             left: `${card.left}px`,
@@ -268,21 +289,11 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
             "--base-offset-y": `${card.offsetY}px`,
             "--base-rotation": `${card.rotation}deg`,
             "--base-scale": `${card.scale}`,
-            
-            // Композиция базовых и интерактивных трансформаций с индивидуальной перспективой (предотвращает растягивание по краям)
-            transform: `
-              perspective(1000px)
-              translate3d(-50%, -50%, 0)
-              translate3d(calc(var(--base-offset-x) + var(--mouse-tx, 0px)), calc(var(--base-offset-y) + var(--mouse-ty, 0px)), 0)
-              rotateX(var(--mouse-rx, 0deg))
-              rotateY(var(--mouse-ry, 0deg))
-              rotateZ(calc(var(--base-rotation) + var(--mouse-rz, 0deg)))
-              scale(calc(var(--base-scale) * var(--mouse-scale, 1)))
-            `,
+            transform,
           } as React.CSSProperties;
 
           const imageStyle = {
-            animation: "card-breathe-drift var(--duration) ease-in-out var(--delay) infinite",
+            animation: `${isSafari ? "card-breathe-drift-2d" : "card-breathe-drift"} var(--duration) ease-in-out var(--delay) infinite`,
             "--drift-x1": `${card.driftX1}px`,
             "--drift-y1": `${card.driftY1}px`,
             "--drift-r1": `${card.driftR1}deg`,

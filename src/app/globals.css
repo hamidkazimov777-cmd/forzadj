@@ -234,6 +234,18 @@ select:not([multiple]):not([size]) {
   }
 }
 
+@keyframes card-breathe-drift-2d {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  33% {
+    transform: translate(var(--drift-x1), var(--drift-y1)) rotate(var(--drift-r1)) scale(1.02);
+  }
+  66% {
+    transform: translate(var(--drift-x2), var(--drift-y2)) rotate(var(--drift-r2)) scale(0.98);
+  }
+}
+
 #landing-page-wrapper {
   background-color: color-mix(in oklch, var(--background), oklch(0.20 0.006 277) var(--bg-mix, 0%));
   transition: background-color 0.2s ease-out;
