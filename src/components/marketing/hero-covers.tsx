@@ -50,7 +50,7 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
   }, []);
 
   useEffect(() => {
-    if (versionIds.length === 0) return;
+    if (!isMounted || versionIds.length === 0) return;
 
     // Корневой контейнер hero-«облака» перекрывает decorated viewport,
     // чтобы крайние карточки не обрезались из-за `overflow: hidden`
@@ -141,7 +141,7 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [versionIds]);
+  }, [isMounted, versionIds]);
 
   // Слушаем движения мыши над #hero
   useEffect(() => {
