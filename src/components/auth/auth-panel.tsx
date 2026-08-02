@@ -4,25 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-function YandexLogo({ disabled }: { disabled?: boolean }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="22"
-      height="22"
-      viewBox="0 0 100 100"
-      fill="none"
-      className={disabled ? "grayscale opacity-35" : "shrink-0"}
-    >
-      <rect width="100" height="100" rx="22" fill="#FC3F1D" />
-      <path
-        d="M53.5 68H59.5V32H53.5V68ZM53.5 32H44.5C36 32 29 38.5 29 47C29 55.5 36 62 44.5 62H53.5V32ZM44.5 56C39.5 56 35.5 52 35.5 47C35.5 42 39.5 38 44.5 38H53.5V56H44.5ZM53.5 62H44.5C41.5 62 39.5 61 38 59.5L50.5 75.5H57.5L46 62H53.5Z"
-        fill="white"
-      />
-    </svg>
-  );
-}
-
 /**
  * Экран входа с выбором способа по региону (гейт — по IP на сервере, здесь
  * лишь отображение соответствующего набора). РФ → Яндекс ID; остальной мир →
@@ -61,16 +42,14 @@ export function AuthPanel({
       href={yandexHref}
       className="flex h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-black/10 bg-white px-5 text-sm font-medium text-black shadow-[0_2px_6px_rgba(0,0,0,0.04)] transition-all duration-200 ease-out hover:scale-[1.015] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
     >
-      <YandexLogo />
-      <span>Войти через Яндекс ID</span>
+      <span>Войти через Яндекс</span>
     </a>
   ) : (
     <button
       disabled
       className="flex h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-black/5 bg-white px-5 text-sm font-medium text-black/35 opacity-50 cursor-not-allowed"
     >
-      <YandexLogo disabled />
-      <span>Войти через Яндекс ID</span>
+      <span>Войти через Яндекс</span>
     </button>
   );
 
