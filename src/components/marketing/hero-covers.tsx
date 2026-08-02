@@ -1,6 +1,4 @@
 "use client";
-
-/* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
 
 interface CardPosition {
@@ -304,16 +302,13 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
               style={wrapperStyle}
               className="absolute size-28 sm:size-36"
             >
-              <div className="h-full w-full overflow-hidden rounded-xl shadow-xl ring-1 ring-white/10">
-                <img
-                  src={`/api/artwork/${card.id}`}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  className="block h-full w-full object-cover"
-                  style={imageStyle}
-                />
-              </div>
+              <div
+                className="h-full w-full rounded-xl bg-cover bg-center shadow-xl ring-1 ring-white/10"
+                style={{
+                  ...imageStyle,
+                  backgroundImage: `url(/api/artwork/${card.id})`,
+                }}
+              />
             </div>
           );
         })}
