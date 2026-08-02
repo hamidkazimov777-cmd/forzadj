@@ -304,14 +304,16 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
               style={wrapperStyle}
               className="absolute size-28 sm:size-36"
             >
-              <img
-                src={`/api/artwork/${card.id}`}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                className="w-full h-full rounded-xl object-cover shadow-xl ring-1 ring-white/10"
-                style={imageStyle}
-              />
+              <div className="h-full w-full overflow-hidden rounded-xl shadow-xl ring-1 ring-white/10">
+                <img
+                  src={`/api/artwork/${card.id}`}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="block h-full w-full object-cover"
+                  style={imageStyle}
+                />
+              </div>
             </div>
           );
         })}
