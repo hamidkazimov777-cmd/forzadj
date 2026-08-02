@@ -57,14 +57,14 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
     // в WebKit/Safari (который считает `transform: translateZ(0)` + `perspective`
     // иначе при наличии `overflow` на родителе — известный баг WebKit).
     // padding-bottom компенсирует скругление углов из-за нижней полосы.
-    const container = containerRef.current;
-    if (!container) return;
+    const currentContainer = containerRef.current;
+    if (!currentContainer) return;
 
     function handleResize() {
       // Реальная высота hero-секции (`100vh` и `window.innerHeight` различаются
       // в Safari из-за динамических панелей; `getBoundingClientRect()` —
       // кроссбраузерно-точный источник размеров родителя).
-      const rect = container.getBoundingClientRect();
+      const rect = currentContainer!.getBoundingClientRect();
       const W = rect.width;
       const H = rect.height;
       const isMobile = W < 640;
