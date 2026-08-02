@@ -2,7 +2,8 @@ import { unstable_cache } from "next/cache";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
 import type { CatalogFilters, CatalogPage } from "@/types/catalog";
 import { VERSION_TYPES } from "@/lib/content-metadata";
-import type { VersionType } from "@/types/db";
+import { TRACK_MOODS } from "@/lib/validators/content";
+import type { TrackMood, VersionType } from "@/types/db";
 
 /**
  * SearchService: парсинг URL-параметров каталога + кэшируемый поиск.
@@ -25,6 +26,7 @@ export function parseCatalogParams(
   };
 
   const type = s(params.type)?.toUpperCase();
+  const mood = s(params.mood)?.toUpperCase();
   const sort = s(params.sort);
 
   // genre может прийти повторяющимся (?genre=a&genre=b) или строкой (a,b).
@@ -45,6 +47,7 @@ export function parseCatalogParams(
     key: s(params.key)?.toUpperCase(),
     keyCompatible: s(params.keyCompatible) === "1",
     type: VERSION_TYPES.includes(type as VersionType) ? (type as VersionType) : undefined,
+    mood: (TRACK_MOODS as readonly string[]).includes(mood ?? "") ? (mood as TrackMood) : undefined,
     rating: rating != null && rating >= 1 && rating <= 5 ? rating : undefined,
     cleanOnly: s(params.clean) === "1",
     sort: sort === "popular" || sort === "title" ? sort : "newest",
@@ -66,6 +69,7 @@ export function filtersToQuery(f: CatalogFilters): string {
   if (f.key) p.set("key", f.key);
   if (f.keyCompatible) p.set("keyCompatible", "1");
   if (f.type) p.set("type", f.type);
+  if (f.mood) p.set("mood", f.mood);
   if (f.rating != null) p.set("rating", String(f.rating));
   if (f.sort && f.sort !== "newest") p.set("sort", f.sort);
   return p.toString();

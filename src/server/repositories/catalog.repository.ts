@@ -114,6 +114,7 @@ function trackWhere(
   return {
     status: "PUBLISHED",
     versions: { some: versionWhere(filters) },
+    ...(filters.mood ? { mood: filters.mood } : {}),
     ...(genreIds ? { genres: { some: { genreId: { in: genreIds } } } } : {}),
     ...(filters.cleanOnly ? { isExplicit: false } : {}),
     ...(filters.q

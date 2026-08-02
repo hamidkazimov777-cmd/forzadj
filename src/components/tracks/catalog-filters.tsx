@@ -11,7 +11,15 @@ import {
 } from "@/components/ui/popover";
 import { camelotColor } from "@/lib/camelot";
 import { VERSION_TYPES } from "@/lib/content-metadata";
+import { TRACK_MOODS } from "@/lib/validators/content";
 import { cn } from "@/lib/utils";
+
+/** Подписи настроений (сет-тайм) для фильтра каталога. */
+const MOOD_LABELS: Record<string, string> = {
+  WARM_UP: "Warm Up",
+  PRIME_TIME: "Prime Time",
+  AFTER_PARTY: "After Party",
+};
 
 /**
  * Панель фильтров каталога. Состояние — URL search params: шэрабельные ссылки,
@@ -91,6 +99,7 @@ export function CatalogFilters({
   const keyVal = params.get("key") ?? "";
   const keyCompatible = params.get("keyCompatible") === "1";
   const typeVal = params.get("type") ?? "";
+  const moodVal = params.get("mood") ?? "";
   const ratingVal = params.get("rating") ?? "";
   const sortVal = params.get("sort") ?? defaultSort;
 
@@ -110,6 +119,7 @@ export function CatalogFilters({
         keyVal ||
         keyCompatible ||
         typeVal ||
+        moodVal ||
         ratingVal ||
         params.get("sort"),
     );
@@ -332,6 +342,39 @@ export function CatalogFilters({
               )}
             >
               {t}
+            </button>
+          ))}
+        </PopoverContent>
+      </Popover>
+
+      {/* Настроение */}
+      <Popover>
+        <PopoverTrigger className={chipCls(Boolean(moodVal))}>
+          {moodVal ? (MOOD_LABELS[moodVal] ?? moodVal) : "Настроение"}
+          <ChevronDown className="size-3.5 opacity-60" />
+        </PopoverTrigger>
+        <PopoverContent className="w-44 p-1.5">
+          <button
+            type="button"
+            onClick={() => setParam("mood", null)}
+            className={cn(
+              "flex w-full rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+              !moodVal ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent",
+            )}
+          >
+            Любое
+          </button>
+          {TRACK_MOODS.map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setParam("mood", m)}
+              className={cn(
+                "flex w-full rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+                moodVal === m ? "bg-primary/12 text-foreground" : "text-muted-foreground hover:bg-accent",
+              )}
+            >
+              {MOOD_LABELS[m]}
             </button>
           ))}
         </PopoverContent>

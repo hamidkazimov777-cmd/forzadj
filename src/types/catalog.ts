@@ -1,4 +1,4 @@
-import type { VersionType } from "@/types/db";
+import type { TrackMood, VersionType } from "@/types/db";
 
 /**
  * DTO каталога — лёгкие сериализуемые типы для клиентских компонентов.
@@ -44,6 +44,8 @@ export interface CatalogFilters {
   key?: string; // Camelot
   keyCompatible?: boolean;
   type?: VersionType;
+  /** Настроение (сет-тайм) — точное совпадение Track.mood. */
+  mood?: TrackMood;
   /** Точный рейтинг (звёзды energy 1–5). */
   rating?: number;
   cleanOnly?: boolean;
