@@ -52,9 +52,21 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
   useEffect(() => {
     if (versionIds.length === 0) return;
 
+    // Корневой контейнер hero-«облака» перекрывает decorated viewport,
+    // чтобы крайние карточки не обрезались из-за `overflow: hidden`
+    // в WebKit/Safari (который считает `transform: translateZ(0)` + `perspective`
+    // иначе при наличии `overflow` на родителе — известный баг WebKit).
+    // padding-bottom компенсирует скругление углов из-за нижней полосы.
+    const container = containerRef.current;
+    if (!container) return;
+
     function handleResize() {
-      const W = window.innerWidth;
-      const H = window.innerHeight;
+      // Реальная высота hero-секции (`100vh` и `window.innerHeight` различаются
+      // в Safari из-за динамических панелей; `getBoundingClientRect()` —
+      // кроссбраузерно-точный источник размеров родителя).
+      const rect = container.getBoundingClientRect();
+      const W = rect.width;
+      const H = rect.height;
       const isMobile = W < 640;
       
       // Размер ячейки сетки для разброса обложек
