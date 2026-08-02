@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { PlayerProvider } from "@/components/player/player-provider";
 import { MiniPlayer } from "@/components/player/mini-player";
+import { BeamsBackground } from "@/components/layout/beams-background";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -45,6 +46,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* Глобальный фон с диагональными лучами: рисуется под всем контентом,
+            не ловит события и не влияет на анимации страниц. */}
+        <BeamsBackground />
         {/* Плеер в корне: воспроизведение переживает переходы между зонами
             (гостевая витрина ↔ кабинет DJ), не перемонтируется. */}
         <PlayerProvider>
