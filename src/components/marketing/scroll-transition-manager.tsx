@@ -10,38 +10,59 @@ import { useEffect } from "react";
 export function ScrollTransitionManager() {
   useEffect(() => {
     let ticking = false;
+    let heroHeight = window.innerHeight;
+    let heroCovers: HTMLElement | null = null;
+    let heroContent: HTMLElement | null = null;
+    let catalogTitle: HTMLElement | null = null;
+    let catalogSubtitle: HTMLElement | null = null;
+    let catalogList: HTMLElement | null = null;
+    let catalogRows: NodeListOf<HTMLLIElement> | null = null;
+    let pageWrapper: HTMLElement | null = null;
 
     // Плавная кубическая функция сглаживания (ease-out) для дорогого ощущения движения
     const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
-    function updateProgress() {
+    function refreshElements() {
       const hero = document.getElementById("hero");
       if (!hero) return;
 
+      heroHeight = hero.getBoundingClientRect().height || window.innerHeight;
+      heroCovers = document.getElementById("hero-covers-cards");
+      heroContent = document.getElementById("hero-content");
+      catalogTitle = document.getElementById("catalog-title");
+      catalogSubtitle = document.getElementById("catalog-subtitle");
+      catalogList = document.querySelector("#catalog-section ul") as HTMLElement | null;
+      catalogRows = document.querySelectorAll("#catalog-section ul li");
+      pageWrapper = document.getElementById("landing-page-wrapper");
+
+      for (const el of [
+        heroCovers,
+        heroContent,
+        catalogTitle,
+        catalogSubtitle,
+        catalogList,
+      ]) {
+        if (el) el.style.willChange = "transform, opacity";
+      }
+      catalogRows.forEach((row) => {
+        row.style.willChange = "transform, opacity";
+      });
+    }
+
+    function updateProgress() {
       const scrollY = window.scrollY;
-      const heroHeight = hero.offsetHeight || window.innerHeight;
       
       // Вычисляем прогресс скролла (от 0 на самом верху до 1 при прокрутке всей секции hero)
       const progress = Math.max(0, Math.min(1, scrollY / heroHeight));
 
-      const heroCovers = document.getElementById("hero-covers-cards");
-      const heroContent = document.getElementById("hero-content");
-      const catalogTitle = document.getElementById("catalog-title");
-      const catalogSubtitle = document.getElementById("catalog-subtitle");
-      const catalogList = document.querySelector("#catalog-section ul") as HTMLElement;
-      const catalogRows = document.querySelectorAll("#catalog-section ul li");
-      const pageWrapper = document.getElementById("landing-page-wrapper");
-
-      // 1. Анимация ухода обложек Hero (движение в глубь, затухание, размытие)
+      // 1. Анимация ухода обложек Hero (движение в глубь и затухание)
       if (heroCovers) {
         const translateY = progress * 140; // медленный сдвиг вниз
         const scale = 1 - progress * 0.10;   // уменьшение масштаба (1.0 -> 0.90)
         const opacity = Math.max(0, 1 - progress / 0.65); // исчезновение к 65% прокрутки
-        const blur = progress * 12; // размытие до 12px
 
         heroCovers.style.transform = `translate3d(0, ${translateY.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`;
         heroCovers.style.opacity = opacity.toFixed(3);
-        heroCovers.style.filter = blur > 0 ? `blur(${blur.toFixed(1)}px)` : "none";
       }
 
       // 2. Анимация ухода контента Hero (плавное всплытие вверх и затухание)
@@ -78,8 +99,7 @@ export function ScrollTransitionManager() {
       }
 
       // 6. Строки каталога (li): каскадное staggered-появление
-      catalogRows.forEach((row, i) => {
-        const el = row as HTMLElement;
+      catalogRows?.forEach((el, i) => {
         // Каждая строка начинает анимацию чуть позже предыдущей
         const start = 0.40 + i * 0.035;
         const end = Math.min(1, start + 0.30);
@@ -109,15 +129,21 @@ export function ScrollTransitionManager() {
       }
     }
 
+    function onResize() {
+      refreshElements();
+      updateProgress();
+    }
+
     // Инициализируем стартовое состояние при монтировании
+    refreshElements();
     updateProgress();
 
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", updateProgress, { passive: true });
+    window.addEventListener("resize", onResize, { passive: true });
 
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", updateProgress);
+      window.removeEventListener("resize", onResize);
     };
   }, []);
 

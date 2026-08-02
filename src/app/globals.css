@@ -227,10 +227,10 @@ select:not([multiple]):not([size]) {
     transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
   }
   33% {
-    transform: translate3d(var(--drift-x1), var(--drift-y1), 0) rotate(var(--drift-r1)) scale(1.02);
+    transform: translate3d(var(--drift-x1), var(--drift-y1), 0) rotate(var(--drift-r1)) scale(1.006);
   }
   66% {
-    transform: translate3d(var(--drift-x2), var(--drift-y2), 0) rotate(var(--drift-r2)) scale(0.98);
+    transform: translate3d(var(--drift-x2), var(--drift-y2), 0) rotate(var(--drift-r2)) scale(0.994);
   }
 }
 
@@ -239,10 +239,10 @@ select:not([multiple]):not([size]) {
     transform: translate(0, 0) rotate(0deg) scale(1);
   }
   33% {
-    transform: translate(var(--drift-x1), var(--drift-y1)) rotate(var(--drift-r1)) scale(1.02);
+    transform: translate(var(--drift-x1), var(--drift-y1)) rotate(var(--drift-r1)) scale(1.006);
   }
   66% {
-    transform: translate(var(--drift-x2), var(--drift-y2)) rotate(var(--drift-r2)) scale(0.98);
+    transform: translate(var(--drift-x2), var(--drift-y2)) rotate(var(--drift-r2)) scale(0.994);
   }
 }
 

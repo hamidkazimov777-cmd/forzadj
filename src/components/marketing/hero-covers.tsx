@@ -99,17 +99,21 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
           const rotation = (Math.random() - 0.5) * 26; // от -13 до +13 градусов
           const scale = 0.80 + Math.random() * 0.25;   // от 0.80 до 1.05
           
-          // Параметры дрейфа для анимации
-          const driftX1 = (Math.random() - 0.5) * 12; // сдвиг до 6px
-          const driftY1 = (Math.random() - 0.5) * 12;
-          const driftR1 = (Math.random() - 0.5) * 4;  // вращение до 2deg
+          // Параметры idle-дрейфа: маленькое, но читаемое «парение».
+          const amplitude1 = 4 + Math.random() * 8;
+          const angle1 = Math.random() * Math.PI * 2;
+          const driftX1 = Math.cos(angle1) * amplitude1;
+          const driftY1 = Math.sin(angle1) * amplitude1;
+          const driftR1 = (Math.random() - 0.5) * 1.8;
           
-          const driftX2 = (Math.random() - 0.5) * 12;
-          const driftY2 = (Math.random() - 0.5) * 12;
-          const driftR2 = (Math.random() - 0.5) * 4;
+          const amplitude2 = 4 + Math.random() * 8;
+          const angle2 = angle1 + Math.PI * (0.55 + Math.random() * 0.9);
+          const driftX2 = Math.cos(angle2) * amplitude2;
+          const driftY2 = Math.sin(angle2) * amplitude2;
+          const driftR2 = (Math.random() - 0.5) * 1.8;
           
           // Медленная и разная скорость анимации
-          const duration = 24 + Math.random() * 20; // 24s до 44s
+          const duration = 10 + Math.random() * 10; // 10s до 20s
           const delay = -Math.random() * duration;  // случайная фаза запуска
           
           newCards.push({
@@ -145,45 +149,25 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
     return () => window.removeEventListener("resize", handleResize);
   }, [isMounted, versionIds]);
 
-  // Слушаем движения мыши над #hero
+  // requestAnimationFrame цикл включается только на hover и во время затухания.
   useEffect(() => {
     const heroElement = document.getElementById("hero");
     if (!heroElement) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
-      mousePos.current.x = e.clientX;
-      mousePos.current.y = e.clientY;
-      mousePos.current.isHovering = true;
-    };
-
-    const handleMouseLeave = () => {
-      mousePos.current.isHovering = false;
-    };
-
-    heroElement.addEventListener("mousemove", handleMouseMove);
-    heroElement.addEventListener("mouseleave", handleMouseLeave);
-    
-    return () => {
-      heroElement.removeEventListener("mousemove", handleMouseMove);
-      heroElement.removeEventListener("mouseleave", handleMouseLeave);
-    };
-  }, []);
-
-  // requestAnimationFrame цикл анимации следования сглаженной пружиной (Spring interpolation)
-  useEffect(() => {
-    let rafId: number;
+    let rafId: number | null = null;
     const springStrength = 0.08; // Мягкость и плавность эффекта
 
     function update() {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) {
-        rafId = requestAnimationFrame(update);
+        rafId = null;
         return;
       }
 
       const localMouseX = mousePos.current.x - rect.left;
       const localMouseY = mousePos.current.y - rect.top;
       const isHovering = mousePos.current.isHovering;
+      let shouldContinue = isHovering;
 
       cards.forEach((card, index) => {
         const el = cardRefs.current[index];
@@ -234,6 +218,16 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
         state.ry += (targetRotateY - state.ry) * springStrength;
         state.rz += (targetRotateZ - state.rz) * springStrength;
         state.s += (targetScale - state.s) * springStrength;
+        if (
+          Math.abs(state.x - targetX) > 0.02 ||
+          Math.abs(state.y - targetY) > 0.02 ||
+          Math.abs(state.rx - targetRotateX) > 0.02 ||
+          Math.abs(state.ry - targetRotateY) > 0.02 ||
+          Math.abs(state.rz - targetRotateZ) > 0.02 ||
+          Math.abs(state.s - targetScale) > 0.001
+        ) {
+          shouldContinue = true;
+        }
 
         motionState.current[index] = state;
 
@@ -246,11 +240,33 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
         el.style.setProperty("--mouse-scale", `${state.s.toFixed(3)}`);
       });
 
-      rafId = requestAnimationFrame(update);
+      rafId = shouldContinue ? requestAnimationFrame(update) : null;
     }
 
-    rafId = requestAnimationFrame(update);
-    return () => cancelAnimationFrame(rafId);
+    function startAnimation() {
+      if (rafId === null) rafId = requestAnimationFrame(update);
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
+      mousePos.current.x = e.clientX;
+      mousePos.current.y = e.clientY;
+      mousePos.current.isHovering = true;
+      startAnimation();
+    };
+
+    const handleMouseLeave = () => {
+      mousePos.current.isHovering = false;
+      startAnimation();
+    };
+
+    heroElement.addEventListener("mousemove", handleMouseMove);
+    heroElement.addEventListener("mouseleave", handleMouseLeave);
+
+    return () => {
+      heroElement.removeEventListener("mousemove", handleMouseMove);
+      heroElement.removeEventListener("mouseleave", handleMouseLeave);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
   }, [cards]);
 
   if (versionIds.length === 0 || !isMounted) return null;
@@ -311,10 +327,10 @@ export function HeroCovers({ versionIds }: { versionIds: string[] }) {
                 cardRefs.current[i] = el;
               }}
               style={wrapperStyle}
-              className="absolute size-28 sm:size-36"
+              className="absolute size-28 will-change-transform sm:size-36"
             >
               <div
-                className="h-full w-full rounded-xl bg-cover bg-center shadow-xl ring-1 ring-white/10"
+                className="h-full w-full rounded-xl bg-cover bg-center shadow-xl ring-1 ring-white/10 will-change-transform [backface-visibility:hidden]"
                 style={{
                   ...imageStyle,
                   backgroundImage: `url(/api/artwork/${card.id})`,
