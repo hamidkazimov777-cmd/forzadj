@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { TelegramLoginButton } from "@/components/auth/telegram-login-button";
 
 type StartFn = (
   next?: string,
@@ -15,26 +14,20 @@ type PollFn = () => Promise<{
 /**
  * Вход через Telegram-бота (deep-link): кнопка открывает бота в приложении/
  * вебе, пользователь подтверждает одним нажатием — без телефона и SMS.
- * Виджет остаётся запасным вариантом («Другой способ входа»).
  * Server Actions приходят пропсами (клиентский слой не импортирует server/).
  */
 export function TelegramBotLogin({
   next,
   start,
   poll,
-  fallbackBotUsername,
-  fallbackAuthUrl,
 }: {
   next?: string;
   start: StartFn;
   poll: PollFn;
-  fallbackBotUsername?: string;
-  fallbackAuthUrl?: string;
 }) {
   const [deepLink, setDeepLink] = useState<string | null>(null);
   const [waiting, setWaiting] = useState(false);
   const [expired, setExpired] = useState(false);
-  const [showFallback, setShowFallback] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const startedRef = useRef(false);
 
@@ -72,7 +65,14 @@ export function TelegramBotLogin({
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <Button asChild size="lg" disabled={!deepLink}>
+      {/* Кнопка входа: градиент в фирменном синем Telegram, мягкое свечение,
+         лёгкий подъём и нажатие. Поведение (deep-link) не меняется. */}
+      <Button
+        asChild
+        size="lg"
+        disabled={!deepLink}
+        className="rounded-xl border border-white/20 bg-gradient-to-r from-[#23A5E6] via-[#1B90CE] to-[#0F7CBA] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),inset_0_0_12px_rgba(255,255,255,0.06),0_8px_24px_-8px_rgba(27,144,206,0.45)] transition-all duration-300 ease-out hover:scale-[1.015] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_0_16px_rgba(255,255,255,0.1),0_12px_32px_-8px_rgba(27,144,206,0.55)] hover:brightness-[1.07] focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:scale-[0.985] active:brightness-95 disabled:saturate-75"
+      >
         <a
           href={deepLink ?? "#"}
           target="_blank"
@@ -104,25 +104,6 @@ export function TelegramBotLogin({
         </button>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
-
-      {fallbackBotUsername && fallbackAuthUrl && (
-        <div className="mt-1 flex flex-col items-center gap-2">
-          {!showFallback ? (
-            <button
-              type="button"
-              onClick={() => setShowFallback(true)}
-              className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
-            >
-              Другой способ входа
-            </button>
-          ) : (
-            <TelegramLoginButton
-              botUsername={fallbackBotUsername}
-              authUrl={fallbackAuthUrl}
-            />
-          )}
-        </div>
-      )}
     </div>
   );
 }

@@ -83,17 +83,11 @@ export default async function HomePage({
     .map((g) => ({ name: g.name, slug: g.slug }));
 
   const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
-  const appOrigin = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const callbackUrl = new URL("/api/auth/telegram/callback", appOrigin);
-  if (safeNextPath) callbackUrl.searchParams.set("next", safeNextPath);
-
   const telegramFallback = botUsername ? (
     <TelegramBotLogin
       next={safeNextPath ?? undefined}
       start={startTelegramBotLogin}
       poll={pollTelegramBotLogin}
-      fallbackBotUsername={botUsername}
-      fallbackAuthUrl={callbackUrl.toString()}
     />
   ) : null;
 

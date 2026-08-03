@@ -38,15 +38,17 @@ export function AuthPanel({
         </span>
       </label>
 
-      {/* Способ входа (Telegram). */}
-      <div className="flex w-full flex-col gap-2.5">
-        {consented ? (
-          children
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            Отметьте согласие, чтобы продолжить.
-          </p>
-        )}
+      {/* Способ входа (Telegram): кнопка видна всегда, блокируется до
+         согласия (без pointer-событий, без фокуса, плавная анимация opacity). */}
+      <div
+        inert={!consented}
+        aria-disabled={!consented}
+        className={
+          "flex w-full flex-col gap-2.5 transition-opacity duration-300 " +
+          (consented ? "opacity-100" : "pointer-events-none cursor-not-allowed opacity-40")
+        }
+      >
+        {children}
       </div>
     </div>
   );
