@@ -12,11 +12,6 @@ export function telegramSyntheticEmail(telegramId: string): string {
   return `tg-${telegramId}@telegram.forzadj.app`;
 }
 
-/** Детерминированный синтетический email для Яндекс-личности. */
-export function yandexSyntheticEmail(yandexId: string): string {
-  return `ya-${yandexId}@yandex.forzadj.app`;
-}
-
 /**
  * Гарантирует существование пользователя Supabase Auth с данным email.
  * Возвращает его id.

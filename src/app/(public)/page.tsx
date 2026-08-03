@@ -7,8 +7,8 @@ import { HeroCovers } from "@/components/marketing/hero-covers";
 import { PacksShowcase } from "@/components/marketing/packs-showcase";
 import { TrackList } from "@/components/tracks/track-list";
 import { AuthPanel } from "@/components/auth/auth-panel";
+import { TelegramBotLogin } from "@/components/auth/telegram-bot-login";
 import { getCurrentUser } from "@/server/auth/core/session";
-import { detectRegion } from "@/server/auth/region";
 import { searchCatalog } from "@/server/services/search.service";
 import { getPublishedPacks } from "@/server/services/pack.service";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
@@ -16,6 +16,10 @@ import { defaultVersionOf } from "@/lib/player-track";
 import { genreColor } from "@/lib/genre-color";
 import { isRetiredGenreName } from "@/lib/content-metadata";
 import { ScrollTransitionManager } from "@/components/marketing/scroll-transition-manager";
+import {
+  startTelegramBotLogin,
+  pollTelegramBotLogin,
+} from "@/server/actions/telegram-login.actions";
 
 export const metadata = {
   title: { absolute: "ForzaDJ — бесплатный DJ-пул" },
@@ -27,7 +31,6 @@ const ERROR_MESSAGES: Record<string, string> = {
   invalid_signature: "Не удалось проверить данные входа. Попробуйте ещё раз.",
   session_failed: "Не удалось создать сессию. Попробуйте ещё раз.",
   invalid_state: "Сессия входа устарела. Попробуйте войти ещё раз.",
-  yandex_not_configured: "Вход через Яндекс временно недоступен.",
   internal: "Внутренняя ошибка. Попробуйте позже.",
 };
 
@@ -79,13 +82,20 @@ export default async function HomePage({
     .filter((g) => g._count.tracks > 0 && !isRetiredGenreName(g.name))
     .map((g) => ({ name: g.name, slug: g.slug }));
 
-  const region = await detectRegion();
+  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
   const appOrigin = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const yandexHref = `/api/auth/yandex${
-    safeNextPath ? `?next=${encodeURIComponent(safeNextPath)}` : ""
-  }`;
-  const yandexSuggestRedirectUri = `${appOrigin}/yandex/suggest/token`;
-  const yandexClientId = process.env.YANDEX_CLIENT_ID;
+  const callbackUrl = new URL("/api/auth/telegram/callback", appOrigin);
+  if (safeNextPath) callbackUrl.searchParams.set("next", safeNextPath);
+
+  const telegramFallback = botUsername ? (
+    <TelegramBotLogin
+      next={safeNextPath ?? undefined}
+      start={startTelegramBotLogin}
+      poll={pollTelegramBotLogin}
+      fallbackBotUsername={botUsername}
+      fallbackAuthUrl={callbackUrl.toString()}
+    />
+  ) : null;
 
   return (
     <div id="landing-page-wrapper" className="flex flex-col gap-20 pb-28 sm:gap-28">
@@ -106,14 +116,9 @@ export default async function HomePage({
             редакторские паки без подписок и скрытых платежей.
           </p>
           <div className="mt-1 flex w-full flex-col items-center gap-2">
-            <AuthPanel
-              region={region}
-              yandexHref={yandexHref}
-              yandexClientId={yandexClientId}
-              yandexSuggestRedirectUri={yandexSuggestRedirectUri}
-              appOrigin={appOrigin}
-              nextPath={safeNextPath}
-            />
+            <AuthPanel>
+              {telegramFallback}
+            </AuthPanel>
             {error && (
               <p className="text-sm text-destructive">
                 {ERROR_MESSAGES[error] ?? ERROR_MESSAGES.internal}
