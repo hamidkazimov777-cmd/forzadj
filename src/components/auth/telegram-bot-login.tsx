@@ -54,7 +54,7 @@ export function TelegramBotLogin({
       const res = await poll();
       if (res.status === "authenticated") {
         clearInterval(id);
-        window.location.href = res.next ?? "/pool";
+        window.location.href = res.next ?? "/dashboard";
       } else if (res.status === "expired") {
         clearInterval(id);
         setExpired(true); // не перевыпускаем автоматически — покажем кнопку

@@ -47,7 +47,7 @@ export async function requirePermission(
   permission: Permission,
 ): Promise<SessionUser> {
   const user = await requireUser();
-  if (!can(user, permission)) redirect("/pool");
+  if (!can(user, permission)) redirect("/dashboard");
   return user;
 }
 

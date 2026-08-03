@@ -49,7 +49,7 @@ export default async function HomePage({
   const safeNextPath = safeNext(next);
 
   const user = await getCurrentUser();
-  if (user) redirect(safeNextPath ?? "/pool");
+  if (user) redirect(safeNextPath ?? "/dashboard");
 
   const [newest, popular, packs, genres] = await Promise.all([
     searchCatalog({ sort: "newest" }),

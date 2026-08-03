@@ -12,6 +12,7 @@ import { updateSession } from "@/server/auth/providers/supabase-middleware";
  * /packs и /c/[slug] тоже не здесь — публичная витрина (guest preview).
  */
 const PROTECTED_PREFIXES = [
+  "/dashboard",
   "/pool",
   "/new",
   "/charts",

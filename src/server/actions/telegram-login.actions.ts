@@ -120,5 +120,5 @@ export async function pollTelegramBotLogin(): Promise<PollResult> {
 
   // Сессия установлена — cookie входа больше не нужна.
   store.delete(COOKIE);
-  return { status: "authenticated", next: token.nextPath ?? "/pool" };
+  return { status: "authenticated", next: token.nextPath ?? "/dashboard" };
 }

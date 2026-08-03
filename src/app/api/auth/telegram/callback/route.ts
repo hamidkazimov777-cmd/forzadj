@@ -13,7 +13,7 @@ import { createSupabaseServerClient } from "@/server/auth/providers/supabase-ser
 /** Разрешаем только внутренние относительные пути (защита от open-redirect). */
 function safeNext(next: string | null): string {
   if (next && next.startsWith("/") && !next.startsWith("//")) return next;
-  return "/pool";
+  return "/dashboard";
 }
 
 export async function GET(request: NextRequest) {

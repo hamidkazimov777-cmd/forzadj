@@ -7,6 +7,7 @@ import {
   BarChart3,
   Download,
   Heart,
+  LayoutDashboard,
   Library,
   ListMusic,
   Menu,
@@ -30,6 +31,7 @@ interface NavItem {
 }
 
 const PRIMARY: NavItem[] = [
+  { href: "/dashboard", label: "Главная", icon: LayoutDashboard },
   { href: "/pool", label: "Каталог", icon: Library },
   { href: "/new", label: "Новинки", icon: Sparkles },
   { href: "/charts", label: "Чарты", icon: BarChart3 },
@@ -140,7 +142,7 @@ export function DjSidebar({ showStudio = false }: { showStudio?: boolean }) {
   return (
     <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r bg-sidebar px-3 pb-24 pt-4 md:flex">
       <Link
-        href="/pool"
+        href="/dashboard"
         className="mb-5 px-3 text-lg font-bold tracking-tight"
       >
         ForzaDJ
