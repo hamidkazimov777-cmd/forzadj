@@ -47,10 +47,13 @@ export function DashboardChart({ tracks }: { tracks: TrackCardDto[] }) {
                     isPlaying={isPlaying}
                     size={40}
                     className="rounded-md"
+                    // Как в каталоге: текущий трек — toggle, иначе play.
                     onClick={() =>
-                      player.play(toPlayerTrack(track, version), [
-                        toPlayerTrack(track, version),
-                      ])
+                      isPlaying
+                        ? player.toggle()
+                        : player.play(toPlayerTrack(track, version), [
+                            toPlayerTrack(track, version),
+                          ])
                     }
                   />
                 </span>

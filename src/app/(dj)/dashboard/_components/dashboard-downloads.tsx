@@ -93,7 +93,12 @@ export function DashboardDownloads({
                     isPlaying={isPlaying}
                     size={40}
                     className="rounded-md"
-                    onClick={() => player.play(pt, [pt])}
+                    // Как в каталоге: текущий трек — toggle, иначе play.
+                    onClick={() =>
+                      isPlaying
+                        ? player.toggle()
+                        : player.play(pt, [pt])
+                    }
                   />
                 </span>
               ) : (

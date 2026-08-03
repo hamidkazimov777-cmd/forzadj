@@ -52,6 +52,8 @@ export function DashboardReleaseCard({ track }: { track: TrackCardDto }) {
               e.stopPropagation();
             }}
           >
+            {/* Как в каталоге: клик по текущему треку — toggle (пауза/продолжение),
+                по другому — запуск нового трека. */}
             <TrackCover
               seed={track.id}
               hasArtwork={false}
@@ -59,9 +61,11 @@ export function DashboardReleaseCard({ track }: { track: TrackCardDto }) {
               size={36}
               className="rounded-full"
               onClick={() =>
-                player.play(toPlayerTrack(track, version), [
-                  toPlayerTrack(track, version),
-                ])
+                isPlaying
+                  ? player.toggle()
+                  : player.play(toPlayerTrack(track, version), [
+                      toPlayerTrack(track, version),
+                    ])
               }
             />
           </span>
