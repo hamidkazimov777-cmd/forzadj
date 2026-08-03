@@ -50,6 +50,14 @@ export default async function DashboardPage() {
       hasArtwork: d.version.assets.length > 0,
       genre: null,
       downloadedAt: d.createdAt.toISOString(),
+      versionType: d.version.type,
+      versionLabel: d.version.versionLabel,
+      bpm: d.version.bpm,
+      camelotKey: d.version.camelotKey,
+      durationSeconds: d.version.durationSeconds,
+      // WAVEFORM-ассеты не подтягиваются включением репозитория — без его
+      // правки волну не вычислить; MiniPlayer в этом случае показывает обложку.
+      hasWaveform: false,
     };
   });
 
@@ -107,7 +115,7 @@ export default async function DashboardPage() {
           </p>
         )}
       </DashboardSection>
-      <DashboardSection title="Недавние скачивания" href="/downloads">
+      <DashboardSection title="Последние загрузки" href="/downloads">
         {downloads.length > 0 ? (
           <DashboardDownloads downloads={downloads} />
         ) : (

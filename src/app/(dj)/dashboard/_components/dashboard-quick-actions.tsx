@@ -1,20 +1,20 @@
 import Link from "next/link";
 import {
-  Disc3,
-  FolderOpen,
-  LayoutGrid,
+  BarChart3,
+  Library,
+  ListMusic,
   Package,
+  SlidersHorizontal,
   Sparkles,
-  Trophy,
 } from "lucide-react";
 
 const ACTIONS = [
-  { title: "Каталог", href: "/pool", icon: LayoutGrid },
+  { title: "Каталог", href: "/pool", icon: Library },
   { title: "Новинки", href: "/new", icon: Sparkles },
   { title: "Паки", href: "/packs", icon: Package },
-  { title: "Чарты", href: "/charts", icon: Trophy },
-  { title: "Плейлисты", href: "/collections", icon: FolderOpen },
-  { title: "Студия", href: "/studio", icon: Disc3 },
+  { title: "Чарты", href: "/charts", icon: BarChart3 },
+  { title: "Плейлисты", href: "/collections", icon: ListMusic },
+  { title: "Студия", href: "/studio", icon: SlidersHorizontal },
 ];
 
 /**

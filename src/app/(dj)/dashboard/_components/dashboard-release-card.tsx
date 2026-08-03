@@ -1,16 +1,26 @@
+"use client";
+
 import Link from "next/link";
+import { usePlayer } from "@/components/player/player-provider";
+import { TrackCover } from "@/components/tracks/track-cover";
 import type { TrackCardDto } from "@/types/catalog";
-import { artistLineOf, defaultVersionOf } from "@/lib/player-track";
+import { artistLineOf, defaultVersionOf, toPlayerTrack } from "@/lib/player-track";
 import { genreGradient } from "@/lib/genre-color";
 
 /**
  * Компактная карточка трека для сетки новинок дашборда.
- * Презентационная Server Component: арт, название, артисты.
- * Аудио/действия намеренно не добавляем — это навигация в каталог.
+ * Вся карточка — ссылка на страницу трека; круглая кнопка Play
+ * (тот же TrackCover, что и в каталоге) приглушает переход
+ * и запускает воспроизведение через глобальный плеер.
  */
 export function DashboardReleaseCard({ track }: { track: TrackCardDto }) {
+  const player = usePlayer();
   const version = defaultVersionOf(track);
   const showImg = Boolean(version?.hasArtwork);
+  const isPlaying =
+    version != null &&
+    player.current?.versionId === version.id &&
+    player.status === "playing";
 
   return (
     <Link
@@ -31,6 +41,30 @@ export function DashboardReleaseCard({ track }: { track: TrackCardDto }) {
             decoding="async"
             className="absolute inset-0 h-full w-full object-cover transition-opacity duration-150 group-hover:opacity-90"
           />
+        )}
+        {version && (
+          // Тот же TrackCover, что и в списках каталога — только иконка Play
+          // (без повторной обложки), в круглой форме в углу артворка.
+          <span
+            className="absolute bottom-2 right-2"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            <TrackCover
+              seed={track.id}
+              hasArtwork={false}
+              isPlaying={isPlaying}
+              size={36}
+              className="rounded-full"
+              onClick={() =>
+                player.play(toPlayerTrack(track, version), [
+                  toPlayerTrack(track, version),
+                ])
+              }
+            />
+          </span>
         )}
       </div>
       <div className="flex min-w-0 flex-col gap-0.5">

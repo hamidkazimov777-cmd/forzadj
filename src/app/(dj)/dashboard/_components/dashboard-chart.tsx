@@ -1,19 +1,27 @@
+"use client";
+
 import Link from "next/link";
+import { usePlayer } from "@/components/player/player-provider";
+import { TrackCover } from "@/components/tracks/track-cover";
 import type { TrackCardDto } from "@/types/catalog";
-import { artistLineOf, defaultVersionOf } from "@/lib/player-track";
+import { artistLineOf, defaultVersionOf, toPlayerTrack } from "@/lib/player-track";
 import { camelotColor } from "@/lib/camelot";
-import { genreGradient } from "@/lib/genre-color";
 
 /**
- * Топ-5 треков недели. Лёгкий список без плеера/действий —
- * только навигация в каталог. Server Component.
+ * Топ-5 треков недели. Строка — ссылка на страницу трека; обложка — тот же
+ * TrackCover, что и в списках каталога: клик запускает глобальный плеер
+ * без перехода по ссылке.
  */
 export function DashboardChart({ tracks }: { tracks: TrackCardDto[] }) {
+  const player = usePlayer();
   return (
     <ol className="flex flex-col divide-y divide-border overflow-hidden rounded-xl border">
       {tracks.map((track, i) => {
         const version = defaultVersionOf(track);
-        const showImg = Boolean(version?.hasArtwork);
+        const isPlaying =
+          version != null &&
+          player.current?.versionId === version.id &&
+          player.status === "playing";
         return (
           <li key={track.id}>
             <Link
@@ -23,22 +31,32 @@ export function DashboardChart({ tracks }: { tracks: TrackCardDto[] }) {
               <span className="w-5 shrink-0 text-center text-sm font-semibold tabular-nums text-muted-foreground">
                 {i + 1}
               </span>
-              <div
-                className="relative size-10 shrink-0 overflow-hidden rounded-md ring-1 ring-inset ring-white/10"
-                style={showImg ? undefined : { backgroundImage: genreGradient(track.genres[0], track.id) }}
-              >
-                {showImg && (
-                  // Обложки отдаём собственным API с длинным кэшем — обычный img.
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={`/api/artwork/${version!.id}`}
-                    alt={track.title}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-cover"
+              {version ? (
+                <span
+                  className="shrink-0"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
+                  <TrackCover
+                    versionId={version.id}
+                    hasArtwork={version.hasArtwork}
+                    genre={track.genres[0]}
+                    seed={track.id}
+                    isPlaying={isPlaying}
+                    size={40}
+                    className="rounded-md"
+                    onClick={() =>
+                      player.play(toPlayerTrack(track, version), [
+                        toPlayerTrack(track, version),
+                      ])
+                    }
                   />
-                )}
-              </div>
+                </span>
+              ) : (
+                <span className="block size-10 shrink-0 rounded-md ring-1 ring-inset ring-white/10" />
+              )}
               <div className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-sm font-medium leading-tight">
                   {track.title}
