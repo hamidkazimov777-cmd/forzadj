@@ -3,7 +3,7 @@
 > **Основной технический документ.** Обновляется при каждом архитектурном,
 > функциональном или структурном изменении. Отражает ТЕКУЩЕЕ состояние репозитория.
 >
-> Последнее обновление: 2026-08-04 (ревизия по HEAD — включает artwork optimization)
+> Последнее обновление: 2026-08-04 (ревизия по HEAD — включает bot upload endpoint)
 
 ---
 
@@ -429,6 +429,7 @@ Webhook верификация: `X-Telegram-Bot-Api-Secret-Token` (опцион�
 | GET   | `/api/collections/[id]/download`      | ZIP крейта                                  |
 | GET   | `/api/packs/[slug]/download`          | ZIP редакционного пака                      |
 | GET   | `/yandex/suggest/token`               | Yandex OAuth helper (устаревший, оставлен)  |
+| POST  | `/api/bot/upload`                     | Загрузка трека через ForzaDJ Admin Bot (auth: `x-bot-secret` = `BOT_UPLOAD_SECRET`) |
 
 ---
 
@@ -449,7 +450,10 @@ STORAGE_BUCKET_AUDIO="audio"
 STORAGE_BUCKET_PREVIEWS="previews"
 STORAGE_BUCKET_ARTWORK="artwork"
 
-# Telegram
+# Telegram Admin Bot (forzadj-admin-bot)
+BOT_UPLOAD_SECRET="<secret>"               # shared secret с ботом; мин. 32 символа
+
+# Telegram Login
 TELEGRAM_BOT_TOKEN="<token>"
 NEXT_PUBLIC_TELEGRAM_BOT_USERNAME="<username>"
 TELEGRAM_WEBHOOK_SECRET="<secret>"        # опционально
@@ -497,6 +501,7 @@ npm_config_cache=.npm-cache npm install
 
 | Решение                              | Обоснование                                                        |
 |--------------------------------------|--------------------------------------------------------------------|
+| `POST /api/bot/upload` как отдельный HTTP endpoint | Studio использует Server Actions (browser-only RPC) + presigned Supabase URL (прямая загрузка из браузера) — ни то ни другое недоступно внешнему Node.js процессу. Бот — отдельный сервер; нужен HTTP API с shared-secret аутентификацией. Существующих подходящих endpoint'ов не было. |
 | Supabase Auth v1 (magic-link OTP)    | Единственный путь создать сессию для Telegram-пользователя без email |
 | Синтетический email `tg_<id>@forzadj.internal` | Telegram не даёт email; нужен уникальный ID для Supabase Auth |
 | Inline job queue                     | MVP без внешних зависимостей (Redis); при масштабировании заменить |
@@ -519,6 +524,9 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
+| *(current)* | 2026-08-04 | Verify complete publication pipeline: bot upload endpoint + .env.example |
+| `b3a1c5e` | 2026-08-04 | Add one-time artwork WebP migration endpoint                      |
+| `d8ef060` | 2026-08-04 | Add automatic artwork optimization                                |
 | `fd41dc5` | 2026-08-04 | fix(dashboard): toggle pause/resume на текущем треке             |
 | `d1d4f8f` | 2026-08-04 | feat(dashboard): унификация иконок nav + playback в секциях      |
 | `92c6952` | 2026-08-04 | feat(dashboard): DJ Dashboard как пост-логин главная             |
@@ -526,28 +534,18 @@ npm_config_cache=.npm-cache npm install
 | `d6578f2` | 2026-08-03 | feat(ui): редизайн кнопки Telegram + consent UX                  |
 | `c01fccc` | 2026-08-03 | feat(auth): восстановление Telegram auth, удаление Яндекс входа |
 | `a638d79` | 2026-08-02 | Revert: BeamsBackground (откат неудачного фона)                  |
-| `66de6da` | 2026-08-02 | feat: track mood во Studio и каталоге                            |
-| `26acc86` | 2026-08-02 | Add mood filter to catalog                                        |
-| `7bfe8eb` | 2026-08-02 | Add track mood field (Warm Up / Prime Time / After Party)        |
 
 ---
 
 ## 17. Недавно изменённые файлы (незакоммиченное)
 
-Изменения в рамках фичи «Автоматическая оптимизация обложек»:
+Изменения в рамках фичи «Bot Upload Endpoint» (фиксируются текущим коммитом):
 
 ```
-M  src/server/jobs/jobs.interface.ts              # добавлен тип artwork.optimize
-A  src/server/jobs/handlers/artwork-optimize.ts  # новый обработчик (Sharp + WebP)
-M  src/server/jobs/index.ts                       # регистрация нового обработчика
-M  src/server/jobs/handlers/asset-process.ts     # энqueue после embedded artwork
-M  src/server/actions/pack.actions.ts             # энqueue после подтверждения обложки пака
-M  src/app/api/artwork/[versionId]/route.ts      # WebP content negotiation
-M  package.json                                   # добавлена зависимость sharp@0.35.3
-M  PROJECT_HANDOFF.md                             # этот документ
+A  src/app/api/bot/upload/route.ts   # POST /api/bot/upload — HTTP API для ForzaDJ Admin Bot
+M  .env.example                      # добавлен BOT_UPLOAD_SECRET
+M  PROJECT_HANDOFF.md                # этот документ
 ```
-
-`src/app/(public)/page.tsx` — восстановлен через `git restore` (был сломан другой AI).
 
 ---
 
