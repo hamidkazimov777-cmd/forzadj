@@ -6,6 +6,45 @@ import { assetRepository } from "@/server/repositories/asset.repository";
 import { taxonomyRepository } from "@/server/repositories/taxonomy.repository";
 import { revisionRepository } from "@/server/repositories/revision.repository";
 import type { VersionType, TrackMood } from "@/types/db";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import { writeFile, readFile, unlink } from "fs/promises";
+import { tmpdir } from "os";
+import { join } from "path";
+
+const execFileAsync = promisify(execFile);
+
+async function embedArtworkIntoAudio(
+  audioBuffer: Buffer,
+  artworkBuffer: Buffer,
+  ext: string,
+): Promise<Buffer> {
+  const tmp = tmpdir();
+  const inAudio = join(tmp, `forzadj-in-${Date.now()}.${ext}`);
+  const inArt = join(tmp, `forzadj-art-${Date.now()}.png`);
+  const outAudio = join(tmp, `forzadj-out-${Date.now()}.${ext}`);
+  await writeFile(inAudio, audioBuffer);
+  await writeFile(inArt, artworkBuffer);
+  try {
+    await execFileAsync("ffmpeg", [
+      "-y",
+      "-i", inAudio,
+      "-i", inArt,
+      "-map", "0:a",
+      "-map", "1:v",
+      "-c:a", "copy",
+      "-c:v", "mjpeg",
+      "-id3v2_version", "3",
+      "-metadata:s:v", "title=Album cover",
+      "-metadata:s:v", "comment=Cover (front)",
+      "-disposition:v", "attached_pic",
+      outAudio,
+    ]);
+    return await readFile(outAudio);
+  } finally {
+    await Promise.all([unlink(inAudio), unlink(inArt), unlink(outAudio).catch(() => {})]);
+  }
+}
 
 // Internal endpoint for the ForzaDJ Admin Telegram Bot.
 // Auth: X-Bot-Secret header must match BOT_UPLOAD_SECRET env var.
@@ -138,6 +177,11 @@ export async function POST(req: NextRequest) {
     //    Then run artwork.optimize so the catalog gets WebP variants of the branded cover.
     if (artworkFile) {
       const artworkBuffer = Buffer.from(await artworkFile.arrayBuffer());
+
+      // Re-embed branded artwork into the original audio so downloads contain it.
+      const taggedBuffer = await embedArtworkIntoAudio(fileBuffer, artworkBuffer, ext);
+      await getStorage().put("audio", storageKey, taggedBuffer, { contentType: meta.mimeType });
+
       const artworkKey = `tracks/${track.id}/${version.id}/artwork.png`;
       await getStorage().put("artwork", artworkKey, artworkBuffer, { contentType: "image/png" });
       await assetRepository.softDeleteByVersionAndType(version.id, "ARTWORK");
