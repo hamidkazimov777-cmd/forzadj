@@ -116,11 +116,26 @@ export async function POST(req: NextRequest) {
       await trackVersionRepository.update(version.id, { energy: meta.energy });
     }
 
-    // 7. Upload branded artwork if provided
+    // 7. Record revision
+    await revisionRepository.record({
+      entityType: "TRACK",
+      entityId: track.id,
+      action: "CREATE",
+      actorId: null,
+    });
+
+    // 8. Trigger asset processing (preview + waveform + embedded artwork extraction).
+    // Must run BEFORE branded artwork upload: asset.process soft-deletes any existing
+    // ARTWORK asset before creating one from embedded ID3 tags.
+    await assetRepository.setStatus(asset.id, "PROCESSING");
+    await getJobQueue().enqueue("asset.process", { assetId: asset.id });
+
+    // 9. Upload branded artwork AFTER asset.process so it overwrites the embedded cover.
     if (artworkFile) {
       const artworkBuffer = Buffer.from(await artworkFile.arrayBuffer());
       const artworkKey = `tracks/${track.id}/${version.id}/artwork.png`;
       await getStorage().put("artwork", artworkKey, artworkBuffer, { contentType: "image/png" });
+      await assetRepository.softDeleteByVersionAndType(version.id, "ARTWORK");
       await assetRepository.create({
         versionId: version.id,
         type: "ARTWORK",
@@ -130,18 +145,6 @@ export async function POST(req: NextRequest) {
         sizeBytes: BigInt(artworkBuffer.length),
       });
     }
-
-    // 8. Record revision
-    await revisionRepository.record({
-      entityType: "TRACK",
-      entityId: track.id,
-      action: "CREATE",
-      actorId: null,
-    });
-
-    // 9. Trigger asset processing (preview + waveform generation)
-    await assetRepository.setStatus(asset.id, "PROCESSING");
-    await getJobQueue().enqueue("asset.process", { assetId: asset.id });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://forzadj.ru";
     return NextResponse.json({
