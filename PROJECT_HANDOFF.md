@@ -524,6 +524,7 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
+| *(current)* | 2026-08-04 | Complete first real publication test: BOT_UPLOAD_SECRET, HANDOFF update |
 | `a4b4db5` | 2026-08-04 | Verify complete publication pipeline: bot upload endpoint + .env.example |
 | `b3a1c5e` | 2026-08-04 | Add one-time artwork WebP migration endpoint                      |
 | `d8ef060` | 2026-08-04 | Add automatic artwork optimization                                |
@@ -539,10 +540,9 @@ npm_config_cache=.npm-cache npm install
 
 ## 17. Недавно изменённые файлы (незакоммиченное)
 
-Только PROJECT_HANDOFF.md (уточнение commit hash в секции 16 после коммита `a4b4db5`).
-
 ```
-M  PROJECT_HANDOFF.md
+M  .env                    # добавлен BOT_UPLOAD_SECRET (в gitignore, не коммитится)
+M  PROJECT_HANDOFF.md      # этот документ
 ```
 
 ---
@@ -595,6 +595,8 @@ M  PROJECT_HANDOFF.md
 ### Следующие этапы
 
 #### Приоритет 1 (срочно)
+- [x] Настроить `BOT_UPLOAD_SECRET` в `.env` сайта и `FORZADJ_BOT_SECRET` в боте — готово (2026-08-04)
+- [x] Провести первый реальный тест публикации — pipeline прошёл все этапы (2026-08-04)
 - [ ] Убедиться что Telegram Bot webhook установлен на продакшне
 
 #### Приоритет 2 (ближайшие)
