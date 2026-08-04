@@ -3,7 +3,7 @@
 > **Основной технический документ.** Обновляется при каждом архитектурном,
 > функциональном или структурном изменении. Отражает ТЕКУЩЕЕ состояние репозитория.
 >
-> Последнее обновление: 2026-08-04 (ревизия по HEAD — включает bot upload endpoint)
+> Последнее обновление: 2026-08-05 (ревизия по HEAD — включает исправление multipart upload)
 
 ---
 
@@ -524,6 +524,7 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
+| *(pending)* | 2026-08-05 | Fix multipart upload: formData parse error log in bot/upload route |
 | `2260e9d` | 2026-08-04 | Complete first real publication test: BOT_UPLOAD_SECRET, HANDOFF update |
 | `a4b4db5` | 2026-08-04 | Verify complete publication pipeline: bot upload endpoint + .env.example |
 | `b3a1c5e` | 2026-08-04 | Add one-time artwork WebP migration endpoint                      |
@@ -541,8 +542,9 @@ npm_config_cache=.npm-cache npm install
 ## 17. Недавно изменённые файлы (незакоммиченное)
 
 ```
-M  .env                    # добавлен BOT_UPLOAD_SECRET (в gitignore, не коммитится)
-M  PROJECT_HANDOFF.md      # этот документ
+M  .env                                        # добавлен BOT_UPLOAD_SECRET (gitignore)
+M  src/app/api/bot/upload/route.ts             # добавлен console.error при formData parse failure
+M  PROJECT_HANDOFF.md                          # этот документ
 ```
 
 ---

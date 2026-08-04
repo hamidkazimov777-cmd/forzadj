@@ -45,7 +45,8 @@ export async function POST(req: NextRequest) {
   let form: FormData;
   try {
     form = await req.formData();
-  } catch {
+  } catch (e) {
+    console.error("[bot/upload] formData parse error:", e);
     return NextResponse.json({ error: "Invalid multipart body" }, { status: 400 });
   }
 
