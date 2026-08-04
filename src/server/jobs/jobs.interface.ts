@@ -20,6 +20,12 @@ export interface JobPayloads {
    * чтобы не блокировать публикацию.
    */
   "audio.analyze": { versionId: string };
+  /**
+   * Оптимизация обложки: генерация WebP-вариантов 1200/600/300/120px.
+   * Ставится после сохранения ARTWORK-ассета. Оригинал сохраняется, WebP-
+   * варианты создаются один раз; при ошибке оригинал остаётся доступным.
+   */
+  "artwork.optimize": { storageKey: string };
 }
 
 export type JobName = keyof JobPayloads;

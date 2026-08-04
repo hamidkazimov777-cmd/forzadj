@@ -7,6 +7,7 @@ import { collectionRepository } from "@/server/repositories/collection.repositor
 import { catalogRepository } from "@/server/repositories/catalog.repository";
 import { searchCatalog } from "@/server/services/search.service";
 import { getStorage } from "@/server/storage";
+import { getJobQueue } from "@/server/jobs";
 import type { CatalogPage } from "@/types/catalog";
 import { revisionRepository } from "@/server/repositories/revision.repository";
 import { PACKS_CACHE_TAG } from "@/server/services/pack.service";
@@ -200,6 +201,7 @@ export async function confirmPackCoverAction(
   if (oldKey && oldKey !== storageKey) {
     await getStorage().delete("artwork", oldKey).catch(() => {});
   }
+  void getJobQueue().enqueue("artwork.optimize", { storageKey });
   await revisionRepository.record({
     entityType: "COLLECTION",
     entityId: packId,

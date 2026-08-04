@@ -3,6 +3,7 @@ import { InlineJobQueue } from "./adapters/inline";
 // Регистрация обработчиков (side effect).
 import "./handlers/asset-process";
 import "./handlers/audio-analyze";
+import "./handlers/artwork-optimize";
 
 export type { JobQueue, JobName, JobPayloads } from "./jobs.interface";
 export { registerJobHandler } from "./registry";

@@ -195,6 +195,7 @@ registerJobHandler("asset.process", async ({ assetId }) => {
         sizeBytes: BigInt(artBuf.length),
       });
       await assetRepository.setStatus(artAsset.id, "READY");
+      void getJobQueue().enqueue("artwork.optimize", { storageKey: artKey });
     }
 
     // ── Превью + waveform (требуют ffmpeg) ────────────────────────────────
