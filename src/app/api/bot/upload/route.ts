@@ -124,20 +124,24 @@ export async function POST(req: NextRequest) {
       actorId: null,
     });
 
-    // 8. Trigger asset processing (preview + waveform + embedded artwork extraction).
+    // 8. Auto-publish: bot uploads go straight to catalog without manual Studio step.
+    await trackRepository.update(track.id, { status: "PUBLISHED" });
+    await trackVersionRepository.update(version.id, { status: "PUBLISHED" });
+
+    // 10. Trigger asset processing (preview + waveform + embedded artwork extraction).
     // Must run BEFORE branded artwork upload: asset.process soft-deletes any existing
     // ARTWORK asset before creating one from embedded ID3 tags.
     await assetRepository.setStatus(asset.id, "PROCESSING");
     await getJobQueue().enqueue("asset.process", { assetId: asset.id });
 
-    // 9. Upload branded artwork AFTER asset.process so it overwrites the embedded cover.
+    // 11. Upload branded artwork AFTER asset.process so it overwrites the embedded cover.
     //    Then run artwork.optimize so the catalog gets WebP variants of the branded cover.
     if (artworkFile) {
       const artworkBuffer = Buffer.from(await artworkFile.arrayBuffer());
       const artworkKey = `tracks/${track.id}/${version.id}/artwork.png`;
       await getStorage().put("artwork", artworkKey, artworkBuffer, { contentType: "image/png" });
       await assetRepository.softDeleteByVersionAndType(version.id, "ARTWORK");
-      await assetRepository.create({
+      const artworkAsset = await assetRepository.create({
         versionId: version.id,
         type: "ARTWORK",
         storageKey: artworkKey,
@@ -145,6 +149,7 @@ export async function POST(req: NextRequest) {
         mime: "image/png",
         sizeBytes: BigInt(artworkBuffer.length),
       });
+      await assetRepository.setStatus(artworkAsset.id, "READY");
       await getJobQueue().enqueue("artwork.optimize", { storageKey: artworkKey });
     }
 
