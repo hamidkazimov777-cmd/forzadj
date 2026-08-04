@@ -131,6 +131,7 @@ export async function POST(req: NextRequest) {
     await getJobQueue().enqueue("asset.process", { assetId: asset.id });
 
     // 9. Upload branded artwork AFTER asset.process so it overwrites the embedded cover.
+    //    Then run artwork.optimize so the catalog gets WebP variants of the branded cover.
     if (artworkFile) {
       const artworkBuffer = Buffer.from(await artworkFile.arrayBuffer());
       const artworkKey = `tracks/${track.id}/${version.id}/artwork.png`;
@@ -144,6 +145,7 @@ export async function POST(req: NextRequest) {
         mime: "image/png",
         sizeBytes: BigInt(artworkBuffer.length),
       });
+      await getJobQueue().enqueue("artwork.optimize", { storageKey: artworkKey });
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://forzadj.ru";
