@@ -524,7 +524,7 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
-| *(current)* | 2026-08-04 | Complete first real publication test: BOT_UPLOAD_SECRET, HANDOFF update |
+| `2260e9d` | 2026-08-04 | Complete first real publication test: BOT_UPLOAD_SECRET, HANDOFF update |
 | `a4b4db5` | 2026-08-04 | Verify complete publication pipeline: bot upload endpoint + .env.example |
 | `b3a1c5e` | 2026-08-04 | Add one-time artwork WebP migration endpoint                      |
 | `d8ef060` | 2026-08-04 | Add automatic artwork optimization                                |
