@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStorage } from "@/server/storage";
 import { getJobQueue } from "@/server/jobs";
-import { trackRepository } from "@/server/repositories/track.repository";
+import { trackRepository, trackVersionRepository } from "@/server/repositories/track.repository";
 import { assetRepository } from "@/server/repositories/asset.repository";
 import { taxonomyRepository } from "@/server/repositories/taxonomy.repository";
 import { revisionRepository } from "@/server/repositories/revision.repository";
@@ -19,6 +19,7 @@ interface BotUploadMetadata {
   genre?: string;
   mood?: string;
   version?: string;
+  energy?: number;
   fileName: string;
   mimeType: string;
 }
@@ -102,12 +103,15 @@ export async function POST(req: NextRequest) {
       await trackRepository.setGenres(track.id, [genre.id]);
     }
 
-    // 6. Update year and mood
+    // 6. Update year and mood on track; energy on version
     if (meta.year !== undefined || trackMood !== null) {
       await trackRepository.update(track.id, {
         year: meta.year ?? null,
         mood: trackMood,
       });
+    }
+    if (meta.energy != null) {
+      await trackVersionRepository.update(version.id, { energy: meta.energy });
     }
 
     // 7. Record revision

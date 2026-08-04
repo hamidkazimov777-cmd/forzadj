@@ -524,7 +524,8 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
-| *(pending)* | 2026-08-05 | Fix multipart upload: formData parse error log in bot/upload route |
+| *(pending)* | 2026-08-05 | Map AI energy to Studio: add energy field to bot/upload route and metadata |
+| `7669647` | 2026-08-05 | Fix multipart upload: formData parse error log in bot/upload route |
 | `2260e9d` | 2026-08-04 | Complete first real publication test: BOT_UPLOAD_SECRET, HANDOFF update |
 | `a4b4db5` | 2026-08-04 | Verify complete publication pipeline: bot upload endpoint + .env.example |
 | `b3a1c5e` | 2026-08-04 | Add one-time artwork WebP migration endpoint                      |
@@ -543,7 +544,7 @@ npm_config_cache=.npm-cache npm install
 
 ```
 M  .env                                        # добавлен BOT_UPLOAD_SECRET (gitignore)
-M  src/app/api/bot/upload/route.ts             # добавлен console.error при formData parse failure
+M  src/app/api/bot/upload/route.ts             # добавлено поле energy + trackVersionRepository.update
 M  PROJECT_HANDOFF.md                          # этот документ
 ```
 
