@@ -53,9 +53,11 @@ export async function POST(req: NextRequest) {
 
   const fileEntry = form.get("file");
   const metaRaw = form.get("metadata");
+  const artworkEntry = form.get("artwork");
   if (!(fileEntry instanceof File) || typeof metaRaw !== "string") {
     return NextResponse.json({ error: "Missing file or metadata" }, { status: 400 });
   }
+  const artworkFile = artworkEntry instanceof File ? artworkEntry : null;
 
   let meta: BotUploadMetadata;
   try {
@@ -114,7 +116,22 @@ export async function POST(req: NextRequest) {
       await trackVersionRepository.update(version.id, { energy: meta.energy });
     }
 
-    // 7. Record revision
+    // 7. Upload branded artwork if provided
+    if (artworkFile) {
+      const artworkBuffer = Buffer.from(await artworkFile.arrayBuffer());
+      const artworkKey = `tracks/${track.id}/${version.id}/artwork.png`;
+      await getStorage().put("artwork", artworkKey, artworkBuffer, { contentType: "image/png" });
+      await assetRepository.create({
+        versionId: version.id,
+        type: "ARTWORK",
+        storageKey: artworkKey,
+        originalName: "artwork.png",
+        mime: "image/png",
+        sizeBytes: BigInt(artworkBuffer.length),
+      });
+    }
+
+    // 8. Record revision
     await revisionRepository.record({
       entityType: "TRACK",
       entityId: track.id,
@@ -122,7 +139,7 @@ export async function POST(req: NextRequest) {
       actorId: null,
     });
 
-    // 8. Trigger asset processing (preview + waveform generation)
+    // 9. Trigger asset processing (preview + waveform generation)
     await assetRepository.setStatus(asset.id, "PROCESSING");
     await getJobQueue().enqueue("asset.process", { assetId: asset.id });
 
