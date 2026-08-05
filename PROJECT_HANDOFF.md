@@ -548,6 +548,7 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
+| см. HEAD  | 2026-08-05 | feat(pool): вся строка трека — ссылка; play только через кнопку  |
 | `ec3bca4` | 2026-08-05 | Embed branded artwork into audio via ffmpeg at upload time       |
 | `2874c5c` | 2026-08-05 | Auto-publish bot-uploaded tracks to catalog (DRAFT → PUBLISHED)  |
 | `b8b1c91` | 2026-08-05 | Fix body size limit config key (middlewareClientMaxBodySize)     |

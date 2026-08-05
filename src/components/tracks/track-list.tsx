@@ -151,28 +151,41 @@ export function TrackList({
               <span aria-hidden className="absolute inset-y-0 left-0 w-0.5 bg-primary" />
             )}
 
-            {/* Обложка = кнопка play (общий компонент) */}
-            <TrackCover
-              versionId={def?.id}
-              hasArtwork={def?.hasArtwork}
-              genre={track.genres[0]}
-              seed={track.id}
-              isPlaying={isPlaying}
-              disabled={!def}
-              size={44}
-              onClick={() => {
-                if (isCurrentTrack) player.toggle();
-                else if (def) playVersion(track, def);
-              }}
+            {/* Вся строка — ссылка на страницу трека. Интерактивные
+                контролы ниже приподняты через relative z-10 и работают
+                как обычно, не вызывая навигацию. */}
+            <Link
+              href={`/pool/track/${track.slug}${linkQuery ? `?${linkQuery}` : ""}`}
+              aria-label={`${track.title} — ${artistLineOf(track)}`}
+              className="absolute inset-0"
+              tabIndex={-1}
             />
 
-            {/* Название + артист (+ приборные данные на мобиле) */}
-            <div className="min-w-0 flex-1">
+            {/* Обложка = кнопка play (общий компонент) */}
+            <div className="relative z-10 shrink-0">
+              <TrackCover
+                versionId={def?.id}
+                hasArtwork={def?.hasArtwork}
+                genre={track.genres[0]}
+                seed={track.id}
+                isPlaying={isPlaying}
+                disabled={!def}
+                size={44}
+                onClick={() => {
+                  if (isCurrentTrack) player.toggle();
+                  else if (def) playVersion(track, def);
+                }}
+              />
+            </div>
+
+            {/* Название + артист (+ приборные данные на мобиле); pointer-events
+                пропускают клики к overlay-ссылке всей строки */}
+            <div className="pointer-events-none min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <Link
                   href={`/pool/track/${track.slug}${linkQuery ? `?${linkQuery}` : ""}`}
                   className={cn(
-                    "truncate font-medium hover:underline",
+                    "pointer-events-auto truncate font-medium hover:underline",
                     isCurrentTrack && "text-primary",
                   )}
                 >
@@ -203,21 +216,18 @@ export function TrackList({
               </p>
             </div>
 
-            {/* Версии-чипы */}
-            <div className="hidden flex-wrap justify-end gap-1 xl:flex">
+            {/* Версии-чипы — демо-метки; клик идёт к overlay-ссылке строки
+                и открывает страницу трека (воспроизведение — только через Play). */}
+            <div className="pointer-events-none hidden flex-wrap justify-end gap-1 xl:flex">
               {track.versions.map((v) => (
-                <button
+                <Badge
                   key={v.id}
-                  onClick={() => playVersion(track, v)}
-                  title={`${v.type}${v.versionLabel ? ` (${v.versionLabel})` : ""} — играть`}
+                  variant={v.id === player.current?.versionId ? "default" : "outline"}
+                  className="text-[10px]"
+                  title={`${v.type}${v.versionLabel ? ` (${v.versionLabel})` : ""}`}
                 >
-                  <Badge
-                    variant={v.id === player.current?.versionId ? "default" : "outline"}
-                    className="text-[10px]"
-                  >
-                    {v.type}
-                  </Badge>
-                </button>
+                  {v.type}
+                </Badge>
               ))}
             </div>
 
@@ -256,7 +266,7 @@ export function TrackList({
             </span>
 
             {/* Действия (на десктопе проявляются при наведении) */}
-            <div className="flex shrink-0 items-center gap-0.5 sm:opacity-60 sm:transition-opacity sm:group-hover:opacity-100">
+            <div className="relative z-10 flex shrink-0 items-center gap-0.5 sm:opacity-60 sm:transition-opacity sm:group-hover:opacity-100">
               {guest && def ? (
                 <>
                   <button
