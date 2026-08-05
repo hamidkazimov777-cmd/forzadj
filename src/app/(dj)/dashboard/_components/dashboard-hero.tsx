@@ -41,7 +41,7 @@ export function DashboardHero({ displayName, stats }: DashboardHeroProps) {
         className="pointer-events-none absolute inset-0 overflow-hidden [mask-image:radial-gradient(ellipse_60%_80%_at_100%_100%,black,transparent)]"
       >
         <div
-          className="animate-hero-dot-drift absolute -bottom-10 -right-10 size-[420px] opacity-40"
+          className="animate-hero-dot-drift absolute -bottom-10 -right-10 size-[420px] opacity-30"
           style={{
             backgroundImage:
               "radial-gradient(circle, var(--primary) 1.4px, transparent 1.6px)",
@@ -52,15 +52,12 @@ export function DashboardHero({ displayName, stats }: DashboardHeroProps) {
 
       <div className="relative flex w-full flex-col gap-7 md:flex-row md:items-center md:justify-between md:gap-10">
         <div className="flex min-w-0 flex-col gap-2">
-          <span className="mb-1 inline-flex w-fit items-center gap-1.5 rounded-full border bg-background/60 px-3 py-1 text-xs text-muted-foreground">
-            👋 Добро пожаловать
-          </span>
           <h1 className="text-balance text-2xl font-bold tracking-tight sm:text-3xl">
             {greeting()}
             {displayName ? (
               <>
                 ,{" "}
-                <span className="bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                   {displayName}
                 </span>
               </>
@@ -74,7 +71,7 @@ export function DashboardHero({ displayName, stats }: DashboardHeroProps) {
             в одном месте.
           </p>
           <div className="mt-2.5 flex flex-wrap gap-2">
-            <Button asChild className="bg-gradient-to-r from-primary to-blue-500 hover:opacity-90">
+            <Button asChild>
               <Link href="/pool">
                 Каталог
                 <ArrowRight className="size-4" />
