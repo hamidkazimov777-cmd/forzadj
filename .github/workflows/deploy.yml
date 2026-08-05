@@ -16,6 +16,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 25m
           script: |
             cd ${{ secrets.PROJECT_PATH }}
 
@@ -37,6 +38,11 @@ jobs:
             npx prisma generate
             npx prisma migrate deploy
 
+            # Останавливаем перед сборкой: next build перезаписывает .next
+            # на лету, а рядом маленький VPS — держать старый процесс живым
+            # во время сборки только роняет сайт наполовину и ест лишнюю память.
+            sudo pm2 stop forzadj || true
+
             npm run build
 
-            pm2 restart forzadj
+            sudo pm2 start forzadj || sudo pm2 restart forzadj
