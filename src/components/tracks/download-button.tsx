@@ -39,6 +39,9 @@ export function DownloadButton({
         a.click();
         a.remove();
         setDone(true);
+        // Сигнал для донат-напоминания: считаем скачивание сразу, не дожидаясь
+        // следующей полной загрузки страницы (когда сервер пересчитает hasDownloaded).
+        window.dispatchEvent(new Event("forzadj:download"));
         toast.success("Скачивание началось", {
           description: `Осталось сегодня: ${res.remaining} из ${res.dailyLimit}`,
         });

@@ -48,9 +48,18 @@ export function DonationNudge({
 }) {
   const [visible, setVisible] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  // Отдельно от hasDownloaded: ловит скачивание, случившееся уже после
+  // рендера страницы (сервер узнает об этом только на следующей загрузке).
+  const [downloadedThisSession, setDownloadedThisSession] = useState(false);
 
   useEffect(() => {
-    if (!hasDownloaded) return;
+    const handler = () => setDownloadedThisSession(true);
+    window.addEventListener("forzadj:download", handler);
+    return () => window.removeEventListener("forzadj:download", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!hasDownloaded && !downloadedThisSession) return;
 
     const state = readState();
     if (state.dismissedForever) return;
@@ -61,7 +70,7 @@ export function DonationNudge({
       writeState({ lastShownAt: Date.now() });
     }, SHOW_AFTER_MS);
     return () => clearTimeout(timer);
-  }, [hasDownloaded]);
+  }, [hasDownloaded, downloadedThisSession]);
 
   if (!visible) return null;
 
