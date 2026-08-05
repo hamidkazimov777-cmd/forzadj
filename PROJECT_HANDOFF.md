@@ -414,13 +414,13 @@ artwork/
 ### ForzaDJ Admin Bot (внешний репозиторий `forzadj-admin-bot`)
 
 Отдельный Node.js процесс (grammY, polling). Принимает MP3 от администратора,
-анализирует через Groq AI, выбирает брендовую обложку и публикует трек напрямую
+анализирует через Gemini 2.5 Flash, выбирает брендовую обложку и публикует трек напрямую
 в каталог через `POST /api/bot/upload`.
 
 **Пайплайн при загрузке трека:**
 1. Скачивает MP3 от Telegram
 2. Извлекает метаданные (ID3 → парсинг имени файла → Telegram performer/title)
-3. Groq AI (llama-3.3-70b, 1–3 сек): genre / mood / version / rating
+3. Gemini 2.5 Flash: genre / mood / version / rating
 4. Выбирает PNG-обложку по жанру из `assets/artwork/`
 5. Показывает превью + кнопки `✅ Publish | ✏️ Edit | ❌ Cancel`
 6. При необходимости: редактирование Artist или Title прямо в чате
