@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Heart, X } from "lucide-react";
+import { HeartPulse, Zap, Headphones, ServerCog, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SupportButton } from "./support-button";
 import type { SupportSubmitFn } from "@/types/donation";
 
 /**
- * Ненавязчивое напоминание о поддержке проекта. Показывается один раз за
- * визит, спустя время активности на сайте — и только тем, кто уже реально
- * пользуется сервисом (есть хотя бы одно скачивание). Cooldown и постоянный
- * отказ хранятся в localStorage — без похода на сервер и лишних таблиц.
+ * Напоминание о поддержке проекта. Показывается один раз за визит, спустя
+ * время активности на сайте — и только тем, кто уже реально пользуется
+ * сервисом (есть хотя бы одно скачивание). Cooldown и постоянный отказ
+ * хранятся в localStorage — без похода на сервер и лишних таблиц.
  */
 
 const STORAGE_KEY = "forzadj_donation_nudge";
@@ -72,58 +73,92 @@ export function DonationNudge({
     return () => clearTimeout(timer);
   }, [hasDownloaded, downloadedThisSession]);
 
-  if (!visible) return null;
+  function dismiss(forever: boolean) {
+    setVisible(false);
+    if (forever) writeState({ dismissedForever: true });
+  }
 
   return (
     <>
-      <div
-        role="complementary"
-        aria-label="Напоминание о поддержке"
-        className="fixed bottom-20 right-4 z-40 w-[calc(100vw-2rem)] max-w-sm rounded-xl border bg-background/95 p-4 shadow-lg backdrop-blur animate-in fade-in slide-in-from-bottom-4 md:bottom-6 md:right-6"
-      >
-        <button
-          type="button"
-          aria-label="Закрыть"
-          onClick={() => setVisible(false)}
-          className="absolute right-2 top-2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <X className="size-4" />
-        </button>
+      <Dialog open={visible} onOpenChange={(open) => !open && dismiss(false)}>
+        <DialogContent className="sm:max-w-lg">
+          <div className="flex flex-col items-center gap-6 py-2 text-center">
+            <HeartPulse className="size-16 text-primary" strokeWidth={1.5} />
 
-        <div className="flex gap-3 pr-5">
-          <Heart className="mt-0.5 size-5 shrink-0 fill-primary text-primary" />
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium leading-snug">
-              ForzaDJ держится на комьюнити
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Хостинг и новые треки — на плечах таких же диджеев, как вы.
-              Если сайт пригодился — можно поддержать.
-            </p>
-            <div className="mt-1 flex gap-2">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-2xl font-semibold leading-tight">
+                ForzaDJ существует
+              </h2>
+              <h2 className="bg-gradient-to-r from-primary to-teal-400 bg-clip-text text-2xl font-semibold leading-tight text-transparent">
+                благодаря своему сообществу
+              </h2>
+            </div>
+
+            <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+              <p>
+                Мы постоянно работаем над новыми функциями, каталогом и
+                скоростью платформы.
+              </p>
+              <p>
+                Если сервис стал частью твоей работы — поддержка поможет
+                развивать его ещё быстрее.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Zap className="size-5" />
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  Новые функции
+                  <br />и возможности
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex size-11 items-center justify-center rounded-xl bg-teal-500/10 text-teal-500">
+                  <Headphones className="size-5" />
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  Пополнение
+                  <br />
+                  каталога
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex size-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+                  <ServerCog className="size-5" />
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  Скорость и
+                  <br />
+                  стабильность
+                </span>
+              </div>
+            </div>
+
+            <div className="flex w-full flex-col gap-2">
               <Button
-                size="sm"
+                className="w-full bg-gradient-to-r from-primary to-teal-400 text-primary-foreground hover:opacity-90"
                 onClick={() => {
                   setDialogOpen(true);
                   setVisible(false);
                 }}
               >
-                Поддержать
+                Поддержать развитие →
               </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setVisible(false);
-                  writeState({ dismissedForever: true });
-                }}
-              >
-                Не показывать
+              <Button variant="outline" onClick={() => dismiss(false)}>
+                Не сейчас
               </Button>
             </div>
+
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Lock className="size-3" />
+              Поддержка добровольная. Спасибо, что ты с нами! 🙏
+            </p>
           </div>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
 
       <SupportButton
         submit={submit}
