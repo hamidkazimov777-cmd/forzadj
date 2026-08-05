@@ -5,6 +5,12 @@
  *
  * Это ручные переводы (без платёжных провайдеров): пользователь переводит
  * сам и оставляет заявку, владелец сверяет вручную.
+ *
+ * ВАЖНО: каждая ссылка на `process.env.NEXT_PUBLIC_*` должна быть записана
+ * статически (через точку, буквальным именем) — Next.js встраивает значения
+ * NEXT_PUBLIC_-переменных в клиентский бандл только при статическом анализе
+ * такого вида. Обёртка вида `process.env[name]` с переменной в скобках не
+ * распознаётся сборщиком и в браузере всегда даёт undefined.
  */
 
 export interface CopyableField {
@@ -33,10 +39,6 @@ export interface InternationalMethod {
   swift: CopyableField[];
 }
 
-function env(name: string): string {
-  return process.env[name] ?? "";
-}
-
 /** Убирает всё, кроме цифр и ведущего "+" — для копируемых значений карт/телефонов. */
 function digitsOnly(value: string): string {
   return value.replace(/[^\d+]/g, "");
@@ -47,46 +49,39 @@ export const donationThankYou = {
   text: "Каждый донат помогает оплачивать серверы, покупать эксклюзивную музыку, развивать каталог и выпускать новые функции.",
 } as const;
 
+const ruCard = process.env.NEXT_PUBLIC_DONATE_RU_CARD ?? "";
+const ruSbpPhone = process.env.NEXT_PUBLIC_DONATE_RU_SBP_PHONE ?? "";
+const intlCard = process.env.NEXT_PUBLIC_DONATE_INTL_CARD ?? "";
+const swiftIban = process.env.NEXT_PUBLIC_DONATE_SWIFT_IBAN ?? "";
+const swiftBank = process.env.NEXT_PUBLIC_DONATE_SWIFT_BANK ?? "";
+
 export const domesticMethod: DomesticMethod = {
   region: "RU",
   flag: "🇷🇺",
   title: "Россия",
-  bank: env("NEXT_PUBLIC_DONATE_RU_BANK"),
-  card: {
-    number: env("NEXT_PUBLIC_DONATE_RU_CARD"),
-    copyValue: digitsOnly(env("NEXT_PUBLIC_DONATE_RU_CARD")),
-  },
-  sbp: {
-    phone: env("NEXT_PUBLIC_DONATE_RU_SBP_PHONE"),
-    copyValue: digitsOnly(env("NEXT_PUBLIC_DONATE_RU_SBP_PHONE")),
-  },
+  bank: process.env.NEXT_PUBLIC_DONATE_RU_BANK ?? "",
+  card: { number: ruCard, copyValue: digitsOnly(ruCard) },
+  sbp: { phone: ruSbpPhone, copyValue: digitsOnly(ruSbpPhone) },
 };
 
 export const internationalMethod: InternationalMethod = {
   region: "INTL",
   flag: "🌍",
   title: "Международный перевод",
-  bank: env("NEXT_PUBLIC_DONATE_INTL_BANK"),
+  bank: process.env.NEXT_PUBLIC_DONATE_INTL_BANK ?? "",
   system: "Visa",
-  card: {
-    number: env("NEXT_PUBLIC_DONATE_INTL_CARD"),
-    copyValue: digitsOnly(env("NEXT_PUBLIC_DONATE_INTL_CARD")),
-  },
+  card: { number: intlCard, copyValue: digitsOnly(intlCard) },
   swift: [
-    { label: "Получатель", value: env("NEXT_PUBLIC_DONATE_SWIFT_RECIPIENT") },
-    { label: "Банк", value: env("NEXT_PUBLIC_DONATE_SWIFT_BANK") },
-    { label: "Код филиала", value: env("NEXT_PUBLIC_DONATE_SWIFT_BRANCH") },
-    { label: "Валюта", value: env("NEXT_PUBLIC_DONATE_SWIFT_CURRENCY") },
-    { label: "ИНН", value: env("NEXT_PUBLIC_DONATE_SWIFT_INN") },
-    { label: "SWIFT", value: env("NEXT_PUBLIC_DONATE_SWIFT_CODE") },
-    {
-      label: "IBAN",
-      value: env("NEXT_PUBLIC_DONATE_SWIFT_IBAN"),
-      copyValue: env("NEXT_PUBLIC_DONATE_SWIFT_IBAN"),
-    },
-    { label: "Банк-корреспондент", value: env("NEXT_PUBLIC_DONATE_SWIFT_CORR_BANK") },
-    { label: "SWIFT корреспондента", value: env("NEXT_PUBLIC_DONATE_SWIFT_CORR_CODE") },
-    { label: "Счёт банка-корреспондента", value: env("NEXT_PUBLIC_DONATE_SWIFT_CORR_ACCOUNT") },
+    { label: "Получатель", value: process.env.NEXT_PUBLIC_DONATE_SWIFT_RECIPIENT ?? "" },
+    { label: "Банк", value: swiftBank.replace(/\\n/g, "\n") },
+    { label: "Код филиала", value: process.env.NEXT_PUBLIC_DONATE_SWIFT_BRANCH ?? "" },
+    { label: "Валюта", value: process.env.NEXT_PUBLIC_DONATE_SWIFT_CURRENCY ?? "" },
+    { label: "ИНН", value: process.env.NEXT_PUBLIC_DONATE_SWIFT_INN ?? "" },
+    { label: "SWIFT", value: process.env.NEXT_PUBLIC_DONATE_SWIFT_CODE ?? "" },
+    { label: "IBAN", value: swiftIban, copyValue: swiftIban },
+    { label: "Банк-корреспондент", value: process.env.NEXT_PUBLIC_DONATE_SWIFT_CORR_BANK ?? "" },
+    { label: "SWIFT корреспондента", value: process.env.NEXT_PUBLIC_DONATE_SWIFT_CORR_CODE ?? "" },
+    { label: "Счёт банка-корреспондента", value: process.env.NEXT_PUBLIC_DONATE_SWIFT_CORR_ACCOUNT ?? "" },
   ],
 };
 
