@@ -127,7 +127,14 @@ export async function POST(req: NextRequest) {
   try {
     const versionType: VersionType = VERSION_MAP[meta.version ?? ""] ?? "ORIGINAL";
     const trackMood: TrackMood | null = MOOD_MAP[meta.mood ?? ""] ?? null;
-    const title = meta.title || meta.fileName.replace(/\.[^.]+$/, "");
+    // Normalize: underscores → spaces (filename fallback uses raw file_name),
+    // then strip DJ service tags (Muzvizor Intro/Outro etc.) that the bot may
+    // not have caught when the track was uploaded before the cleaning fix.
+    const DJ_SERVICE_TAGS =
+      /\s*[\(\[][^\)\]]*\b(intro|outro|muzvizor|radio\s*edit|club\s*edit)\b[^\)\]]*[\)\]]|\s*[-–—]+\s*\b(muzvizor\s+)?(intro|outro|muzvizor)\b\s*$|\s+\b(muzvizor(?:\s+(?:intro|outro))?|intro|outro)\b\s*$/gi;
+    const rawTitle = (meta.title || meta.fileName.replace(/\.[^.]+$/, ""))
+      .replace(/_/g, " ").replace(/\s+/g, " ").trim();
+    const title = rawTitle.replace(DJ_SERVICE_TAGS, "").replace(DJ_SERVICE_TAGS, "").trim().replace(/\s+/g, " ") || rawTitle;
 
     // 1. Create draft track + version
     const track = await trackRepository.createDraft({ title, versionType });
