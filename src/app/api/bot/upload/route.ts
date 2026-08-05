@@ -181,6 +181,8 @@ export async function POST(req: NextRequest) {
       // Re-embed branded artwork into the original audio so downloads contain it.
       const taggedBuffer = await embedArtworkIntoAudio(fileBuffer, artworkBuffer, ext);
       await getStorage().put("audio", storageKey, taggedBuffer, { contentType: meta.mimeType });
+      // Update sizeBytes so Content-Length on download matches the re-encoded file.
+      await assetRepository.setStatus(asset.id, "READY", { sizeBytes: BigInt(taggedBuffer.length) });
 
       const artworkKey = `tracks/${track.id}/${version.id}/artwork.png`;
       await getStorage().put("artwork", artworkKey, artworkBuffer, { contentType: "image/png" });
