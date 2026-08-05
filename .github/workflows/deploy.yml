@@ -47,6 +47,13 @@ jobs:
             npx prisma generate
             npx prisma migrate deploy
 
+            # Останавливаем перед сборкой: этот VPS (3.8GB RAM, без swap) не
+            # тянет одновременно живой процесс и next build — проверено на
+            # практике, при совместной работе сервер уходит в OOM-подобное
+            # зависание (недоступен даже по SSH). Контролируемый даунтайм на
+            # время сборки — меньшее зло.
+            sudo pm2 stop forzadj || true
+
             npm run build
 
-            sudo pm2 restart forzadj
+            sudo pm2 start forzadj || sudo pm2 restart forzadj
