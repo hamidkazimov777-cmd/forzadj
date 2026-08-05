@@ -147,11 +147,15 @@ export async function POST(req: NextRequest) {
     await getStorage().put("audio", storageKey, fileBuffer, { contentType: meta.mimeType });
 
     // 3. Create asset record (status defaults to UPLOADED)
+    // Use a clean filename (artist - title.ext) instead of the raw upload
+    // filename which may contain service tags, underscores, or DJ pool marks.
+    const artistPrefix = meta.artist ? `${meta.artist} - ` : "";
+    const cleanOriginalName = `${artistPrefix}${title}.${ext}`;
     const asset = await assetRepository.create({
       versionId: version.id,
       type: "ORIGINAL",
       storageKey,
-      originalName: meta.fileName,
+      originalName: cleanOriginalName,
       mime: meta.mimeType,
       sizeBytes: BigInt(fileBuffer.length),
     });
