@@ -14,23 +14,30 @@ import { join } from "path";
 
 const execFileAsync = promisify(execFile);
 
+// Re-encodes the uploaded audio, optionally embedding branded artwork, and
+// always overwrites the title/artist ID3 tags with the clean values shown on
+// the site. ffmpeg copies ALL metadata from the input by default (including
+// the original, un-cleaned tags, e.g. "Track Name (Musvisor Intro)"), so
+// without the explicit `-metadata` overrides below the catalog would show a
+// clean title while the downloaded file still carried the dirty one.
 async function embedArtworkIntoAudio(
   audioBuffer: Buffer,
-  artworkBuffer: Buffer,
+  artworkBuffer: Buffer | null,
   ext: string,
+  tags: { title: string; artist?: string },
 ): Promise<Buffer> {
   const tmp = tmpdir();
   const inAudio = join(tmp, `forzadj-in-${Date.now()}.${ext}`);
-  const inArt = join(tmp, `forzadj-art-${Date.now()}.png`);
+  const inArt = artworkBuffer ? join(tmp, `forzadj-art-${Date.now()}.png`) : null;
   const outAudio = join(tmp, `forzadj-out-${Date.now()}.${ext}`);
   await writeFile(inAudio, audioBuffer);
-  await writeFile(inArt, artworkBuffer);
-  try {
-    await execFileAsync("ffmpeg", [
-      "-y",
-      "-i", inAudio,
-      "-i", inArt,
-      "-map", "0:a",
+  if (inArt && artworkBuffer) await writeFile(inArt, artworkBuffer);
+
+  const args = ["-y", "-i", inAudio];
+  if (inArt) args.push("-i", inArt);
+  args.push("-map", "0:a");
+  if (inArt) {
+    args.push(
       "-map", "1:v",
       "-c:a", "copy",
       "-c:v", "mjpeg",
@@ -38,11 +45,23 @@ async function embedArtworkIntoAudio(
       "-metadata:s:v", "title=Album cover",
       "-metadata:s:v", "comment=Cover (front)",
       "-disposition:v", "attached_pic",
-      outAudio,
-    ]);
+    );
+  } else {
+    args.push("-c:a", "copy", "-id3v2_version", "3");
+  }
+  args.push("-metadata", `title=${tags.title}`);
+  if (tags.artist) args.push("-metadata", `artist=${tags.artist}`);
+  args.push(outAudio);
+
+  try {
+    await execFileAsync("ffmpeg", args);
     return await readFile(outAudio);
   } finally {
-    await Promise.all([unlink(inAudio), unlink(inArt), unlink(outAudio).catch(() => {})]);
+    await Promise.all([
+      unlink(inAudio),
+      inArt ? unlink(inArt) : Promise.resolve(),
+      unlink(outAudio).catch(() => {}),
+    ]);
   }
 }
 
@@ -173,17 +192,21 @@ export async function POST(req: NextRequest) {
     await assetRepository.setStatus(asset.id, "PROCESSING");
     await getJobQueue().enqueue("asset.process", { assetId: asset.id });
 
-    // 11. Upload branded artwork AFTER asset.process so it overwrites the embedded cover.
-    //    Then run artwork.optimize so the catalog gets WebP variants of the branded cover.
-    if (artworkFile) {
-      const artworkBuffer = Buffer.from(await artworkFile.arrayBuffer());
+    // 11. Re-encode AFTER asset.process (so branded artwork overwrites the embedded
+    //    cover) and always rewrite the title/artist ID3 tags to the clean values —
+    //    not just when artwork is present — so the downloaded file always matches
+    //    what the catalog displays. Then run artwork.optimize for WebP variants.
+    const artworkBuffer = artworkFile ? Buffer.from(await artworkFile.arrayBuffer()) : null;
 
-      // Re-embed branded artwork into the original audio so downloads contain it.
-      const taggedBuffer = await embedArtworkIntoAudio(fileBuffer, artworkBuffer, ext);
-      await getStorage().put("audio", storageKey, taggedBuffer, { contentType: meta.mimeType });
-      // Update sizeBytes so Content-Length on download matches the re-encoded file.
-      await assetRepository.setStatus(asset.id, "READY", { sizeBytes: BigInt(taggedBuffer.length) });
+    const taggedBuffer = await embedArtworkIntoAudio(fileBuffer, artworkBuffer, ext, {
+      title,
+      artist: meta.artist,
+    });
+    await getStorage().put("audio", storageKey, taggedBuffer, { contentType: meta.mimeType });
+    // Update sizeBytes so Content-Length on download matches the re-encoded file.
+    await assetRepository.setStatus(asset.id, "READY", { sizeBytes: BigInt(taggedBuffer.length) });
 
+    if (artworkFile && artworkBuffer) {
       const artworkKey = `tracks/${track.id}/${version.id}/artwork.png`;
       await getStorage().put("artwork", artworkKey, artworkBuffer, { contentType: "image/png" });
       await assetRepository.softDeleteByVersionAndType(version.id, "ARTWORK");
