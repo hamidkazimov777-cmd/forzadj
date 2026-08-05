@@ -12,6 +12,15 @@ export const downloadRepository = {
     });
   },
 
+  /** Есть ли у пользователя хотя бы одно скачивание (сигнал реального использования). */
+  async hasAny(userId: string): Promise<boolean> {
+    const row = await prisma.download.findFirst({
+      where: { userId },
+      select: { id: true },
+    });
+    return row !== null;
+  },
+
   /**
    * Батч: число скачиваний пользователя по набору треков (для пака).
    * Один groupBy вместо N отдельных count — исключает N+1.

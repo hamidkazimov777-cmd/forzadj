@@ -2,9 +2,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DjSidebar } from "@/components/layout/dj-nav";
 import { TopBar } from "@/components/layout/top-bar";
+import { DonationNudge } from "@/components/support/donation-nudge";
 import { submitSupportRequestAction } from "@/server/actions/donation.actions";
 import { getCurrentUser } from "@/server/auth/core/session";
 import { can } from "@/server/auth/core/permissions";
+import { downloadRepository } from "@/server/repositories/download.repository";
 
 /**
  * Публичная витрина (shared): страницы, доступные и гостю, и авторизованному
@@ -25,6 +27,7 @@ export default async function SharedLayout({
 
   if (user) {
     const showStudio = can(user, "studio.access");
+    const hasDownloaded = await downloadRepository.hasAny(user.id);
     return (
       <div className="flex min-h-screen">
         <DjSidebar showStudio={showStudio} />
@@ -39,6 +42,10 @@ export default async function SharedLayout({
             {children}
           </main>
         </div>
+        <DonationNudge
+          submit={submitSupportRequestAction}
+          hasDownloaded={hasDownloaded}
+        />
       </div>
     );
   }

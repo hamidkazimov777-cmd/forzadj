@@ -31,28 +31,38 @@ export function SupportButton({
   variant = "default",
   className,
   label,
+  open,
+  onOpenChange,
+  hideTrigger = false,
 }: {
   submit: SupportSubmitFn;
   variant?: "default" | "outline" | "secondary" | "ghost";
   className?: string;
   /** Текст/иконка на кнопке-триггере. По умолчанию — полная подпись. */
   label?: React.ReactNode;
+  /** Управление извне (например, донат-напоминанием). Без них — обычная кнопка. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Скрыть кнопку-триггер — диалог открывается только программно через `open`. */
+  hideTrigger?: boolean;
 }) {
   const [swiftOpen, setSwiftOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant={variant} className={className}>
-          {label ?? (
-            <>
-              <Heart className="size-4 fill-current" />
-              Поддержать ForzaDJ
-            </>
-          )}
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button variant={variant} className={className}>
+            {label ?? (
+              <>
+                <Heart className="size-4 fill-current" />
+                Поддержать ForzaDJ
+              </>
+            )}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{donationThankYou.title}</DialogTitle>

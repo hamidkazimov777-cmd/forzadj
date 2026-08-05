@@ -1,8 +1,10 @@
 import { DjSidebar } from "@/components/layout/dj-nav";
 import { TopBar } from "@/components/layout/top-bar";
+import { DonationNudge } from "@/components/support/donation-nudge";
 import { submitSupportRequestAction } from "@/server/actions/donation.actions";
 import { requireUser } from "@/server/auth/core/session";
 import { can } from "@/server/auth/core/permissions";
+import { downloadRepository } from "@/server/repositories/download.repository";
 
 /**
  * Зона DJ: app-shell с сайдбаром слева и верхней панелью.
@@ -16,6 +18,7 @@ export default async function DjLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const user = await requireUser();
   const showStudio = can(user, "studio.access");
+  const hasDownloaded = await downloadRepository.hasAny(user.id);
 
   return (
     <div className="flex min-h-screen">
@@ -31,6 +34,7 @@ export default async function DjLayout({
           {children}
         </main>
       </div>
+      <DonationNudge submit={submitSupportRequestAction} hasDownloaded={hasDownloaded} />
     </div>
   );
 }
