@@ -3,7 +3,7 @@
 > **Основной технический документ.** Обновляется при каждом архитектурном,
 > функциональном или структурном изменении. Отражает ТЕКУЩЕЕ состояние репозитория.
 >
-> Последнее обновление: 2026-08-05 (ревизия по HEAD — включает исправление multipart upload)
+> Последнее обновление: 2026-08-05 (ревизия по HEAD — бот-загрузка полностью завершена)
 
 ---
 
@@ -391,7 +391,31 @@ artwork/
 
 ## 11. Архитектура Telegram-бота
 
-Бот — **только для входа** (deep-link auth). Никаких других команд нет.
+### ForzaDJ Admin Bot (внешний репозиторий `forzadj-admin-bot`)
+
+Отдельный Node.js процесс (grammY, polling). Принимает MP3 от администратора,
+анализирует через Groq AI, выбирает брендовую обложку и публикует трек напрямую
+в каталог через `POST /api/bot/upload`.
+
+**Пайплайн при загрузке трека:**
+1. Скачивает MP3 от Telegram
+2. Извлекает метаданные (ID3 → парсинг имени файла → Telegram performer/title)
+3. Groq AI (llama-3.3-70b, 1–3 сек): genre / mood / version / rating
+4. Выбирает PNG-обложку по жанру из `assets/artwork/`
+5. Показывает превью + кнопки `✅ Publish | ✏️ Edit | ❌ Cancel`
+6. При необходимости: редактирование Artist или Title прямо в чате
+7. По `Publish` → `POST /api/bot/upload`
+
+**`POST /api/bot/upload` (этот репозиторий):**
+- Создаёт трек как PUBLISHED (сразу в каталоге, без Studio)
+- Запускает `asset.process` синхронно (preview + waveform + embedded cover)
+- Загружает брендовую PNG после `asset.process` → ARTWORK asset → READY
+- `artwork.optimize` генерирует WebP-варианты брендовой обложки
+- ffmpeg перезаписывает оригинальный MP3 с брендовой обложкой в ID3 (для скачивания)
+
+### Встроенный Telegram-бот (этот репозиторий) — только для входа
+
+Deep-link auth. Никаких других команд нет.
 
 ### Схема deep-link входа
 
@@ -524,9 +548,16 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
-| *(pending)* | 2026-08-05 | Map AI energy to Studio: add energy field to bot/upload route and metadata |
-| `7669647` | 2026-08-05 | Fix multipart upload: formData parse error log in bot/upload route |
-| `2260e9d` | 2026-08-04 | Complete first real publication test: BOT_UPLOAD_SECRET, HANDOFF update |
+| `ec3bca4` | 2026-08-05 | Embed branded artwork into audio via ffmpeg at upload time       |
+| `2874c5c` | 2026-08-05 | Auto-publish bot-uploaded tracks to catalog (DRAFT → PUBLISHED)  |
+| `b8b1c91` | 2026-08-05 | Fix body size limit config key (middlewareClientMaxBodySize)     |
+| `e3217db` | 2026-08-05 | Run artwork.optimize on branded cover after upload               |
+| `25ba607` | 2026-08-05 | Fix branded artwork overwritten by asset.process (ordering fix)  |
+| `64a950c` | 2026-08-05 | Increase bot upload body size limit to 150MB                     |
+| `a530a28` | 2026-08-05 | Accept branded artwork in bot upload endpoint                    |
+| `ec94447` | 2026-08-05 | Map AI energy to Studio: energy field in bot/upload route        |
+| `7669647` | 2026-08-05 | Fix multipart upload: formData parse error log                   |
+| `2260e9d` | 2026-08-04 | Complete first real publication test: BOT_UPLOAD_SECRET          |
 | `a4b4db5` | 2026-08-04 | Verify complete publication pipeline: bot upload endpoint + .env.example |
 | `b3a1c5e` | 2026-08-04 | Add one-time artwork WebP migration endpoint                      |
 | `d8ef060` | 2026-08-04 | Add automatic artwork optimization                                |
@@ -540,13 +571,18 @@ npm_config_cache=.npm-cache npm install
 
 ---
 
-## 17. Недавно изменённые файлы (незакоммиченное)
+## 17. Ключевые файлы бот-интеграции
 
 ```
-M  .env                                        # добавлен BOT_UPLOAD_SECRET (gitignore)
-M  src/app/api/bot/upload/route.ts             # добавлено поле energy + trackVersionRepository.update
-M  PROJECT_HANDOFF.md                          # этот документ
+src/app/api/bot/upload/route.ts   # Endpoint загрузки от бота (auth: x-bot-secret)
+next.config.ts                    # middlewareClientMaxBodySize: 150MB (для аудио + PNG)
 ```
+
+**Критичные детали `bot/upload/route.ts`:**
+- `asset.process` запускается синхронно (`await enqueue(...)`) — иначе `softDeleteByVersionAndType` перезапишет брендовую обложку
+- После создания ARTWORK-ассета обязателен `setStatus(artworkAsset.id, "READY")` — иначе `findReadyByVersionAndType` его не найдёт
+- ffmpeg re-encode: `-c:a copy` (аудио не перекодируется), только обложка в ID3
+- Auto-publish: `trackRepository.update(id, { status: "PUBLISHED" })` + `trackVersionRepository.update(id, { status: "PUBLISHED" })`
 
 ---
 
