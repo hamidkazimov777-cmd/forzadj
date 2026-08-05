@@ -3,7 +3,7 @@
 > **Основной технический документ.** Обновляется при каждом архитектурном,
 > функциональном или структурном изменении. Отражает ТЕКУЩЕЕ состояние репозитория.
 >
-> Последнее обновление: 2026-08-05 (ревизия по HEAD — бот-загрузка полностью завершена)
+> Последнее обновление: 2026-08-05 (ревизия по HEAD — миграция БД на Timeweb, переход на Telegram-polling, донат-напоминание, обновлены юр. документы)
 
 ---
 
@@ -34,9 +34,10 @@
 | Паки (Editorial)         | Публичная витрина + ZIP-скачивание                                       |
 | Крейты                   | Личные + публичные (/c/[slug])                                            |
 | Чарты                    | Авто-генерация по скачиваниям                                             |
-| Донаты                   | Доменная модель готова, UI для ручных переводов; платёжные API — нет      |
+| Донаты                   | Доменная модель + UI для ручных переводов; ненавязчивое напоминание (тост) для активных пользователей; платёжные API — нет |
 | Настроение трека (Mood)  | WARM_UP / PRIME_TIME / AFTER_PARTY — в Studio и фильтре каталога          |
 | Оптимизация обложек      | WebP-варианты (1200/600/300/120px) генерируются при загрузке через Sharp  |
+| Юридические документы    | Terms + Privacy обновлены под Telegram-only auth, донаты, хранение в РФ (Timeweb) — 2026-08-05 |
 
 ---
 
@@ -47,9 +48,9 @@
 | Framework           | Next.js 15.5 (App Router, Turbopack, Server Components)            |
 | Language            | TypeScript 5                                                        |
 | Styling             | Tailwind CSS v4, shadcn/ui (Radix UI)                               |
-| ORM / DB            | Prisma 7 → Postgres (Supabase)                                      |
+| ORM / DB            | Prisma 7 → PostgreSQL 16, локально на VPS (Timeweb, РФ) — см. §7.1  |
 | Auth                | Supabase Auth v1 (magic-link сессии), собственный слой поверх      |
-| Storage             | Supabase Storage (3 бакета: audio / previews / artwork)             |
+| Storage             | Supabase Storage (3 бакета: audio / previews / artwork) — за пределами РФ, не персональные данные |
 | Audio analysis      | essentia.js (WASM, Node runtime)                                    |
 | Audio metadata      | music-metadata                                                      |
 | Image processing    | sharp 0.35 (WebP resize при загрузке обложек)                       |
@@ -220,6 +221,25 @@ SUPER_ADMIN определяется по `FORZADJ_OWNER_TELEGRAM_ID` — рол
 ---
 
 ## 7. Архитектура базы данных
+
+### 7.1 Локализация данных (152-ФЗ) — миграция на Timeweb
+
+**С 2026-08-05 БД перенесена с Supabase Postgres на локальный PostgreSQL 16
+на VPS Timeweb (Россия).** Причина — требование ст. 18.1 152-ФЗ о хранении
+персональных данных граждан РФ на территории РФ.
+
+- `DATABASE_URL` / `DIRECT_URL` в `/opt/forzadj/.env` на сервере указывают на
+  `127.0.0.1:5432` (локальный Postgres, `pg_hba.conf` → `trust` для локали).
+- Данные перенесены через `pg_dump`/`psql` (22 пользователя, 207 скачиваний,
+  без потерь).
+- **Supabase Storage (audio/previews/artwork) НЕ перенесён** — это файлы
+  треков и обложек, не персональные данные, требование локализации на них
+  не распространяется. Supabase Auth (для выпуска сессий через magic-link)
+  тоже остаётся — хранит только email/id, не является объектом 152-ФЗ в
+  прежнем смысле, но при полном аудите стоит пересмотреть.
+- PM2 требует **пересоздания процесса** (`pm2 delete` + `pm2 start`) при
+  смене `.env` — `--update-env` не всегда подхватывает новые переменные из
+  файла (наблюдалось на этом сервере).
 
 ### Ключевые связи
 
@@ -417,6 +437,33 @@ artwork/
 
 Deep-link auth. Никаких других команд нет.
 
+**⚠️ С 2026-08-05: webhook заменён на long-polling.** Timeweb блокирует
+входящие соединения от IP-адресов Telegram на уровне сети/файрвола —
+`POST /api/telegram/webhook` физически недостижим снаружи (подтверждено:
+0 обращений в логах Caddy, `getWebhookInfo` → `"last_error_message":
+"Connection timed out"`). Маршрут `/api/telegram/webhook` в коде остаётся
+(не используется в проде, но рабочий — на случай хостинга без этого
+ограничения), а реальную обработку `/start <nonce>` на проде выполняет:
+
+```
+scripts/tg-poll.mjs   — отдельный процесс, PM2 name: "tg-poll"
+```
+
+- Каждые ~10 сек опрашивает `GET /bot<token>/getUpdates` напрямую (Node
+  `fetch`, без Next.js).
+- При `/start <nonce>` — сам обновляет `telegram_login_tokens` через `pg`
+  (raw SQL, **snake_case**: `telegram_login_tokens`, `telegram_user_id`,
+  `expires_at` — не Prisma-модель, имена table/columns из миграции).
+- Отвечает пользователю в Telegram напрямую (`sendMessage`).
+- Читает `.env` вручную при старте (тот же файл, что и Next.js-процесс).
+- HTTP 409 от `getUpdates` — конфликт двух активных long-poll сессий
+  (например, сразу после `pm2 restart`); скрипт ждёт 15 сек и повторяет —
+  это штатное поведение, не ошибка.
+
+**Если сайт переедет на хостинг без блокировки Telegram IP** — можно
+вернуться на webhook (`setWebhook` + `TELEGRAM_WEBHOOK_SECRET`), код
+`/api/telegram/webhook/route.ts` не удалён и рабочий.
+
 ### Схема deep-link входа
 
 ```
@@ -425,8 +472,8 @@ Deep-link auth. Никаких других команд нет.
    → telegramLoginRepository.createToken()  // nonce + browserToken cookie
    → deepLink: t.me/<bot>?start=<nonce>
 3. Пользователь открывает Telegram → нажимает /start
-4. Telegram → POST /api/telegram/webhook { message.text: "/start <nonce>", from }
-   → telegramLoginRepository.confirm(nonce, telegramUserId)
+4. [ПРОД] tg-poll.mjs получает /start <nonce> через getUpdates (не webhook!)
+   → UPDATE telegram_login_tokens SET status='CONFIRMED' WHERE nonce=...
    → бот отвечает "✅ Вход подтверждён. Вернитесь на сайт."
 5. Браузер поллит pollTelegramBotLogin() (каждые 2.5 сек)
    → status = "authenticated"
@@ -434,8 +481,9 @@ Deep-link auth. Никаких других команд нет.
    → redirect /dashboard
 ```
 
-TelegramLoginToken: одноразовый, TTL 10 минут.
-Webhook верификация: `X-Telegram-Bot-Api-Secret-Token` (опционально).
+TelegramLoginToken: одноразовый, TTL 3 минуты (`TTL_MS` в
+`telegram-login.actions.ts`).
+Webhook верификация (если используется): `X-Telegram-Bot-Api-Secret-Token`.
 
 ---
 
@@ -478,9 +526,9 @@ STORAGE_BUCKET_ARTWORK="artwork"
 BOT_UPLOAD_SECRET="<secret>"               # shared secret с ботом; мин. 32 символа
 
 # Telegram Login
-TELEGRAM_BOT_TOKEN="<token>"
+TELEGRAM_BOT_TOKEN="<token>"                # используется и Next.js, и scripts/tg-poll.mjs
 NEXT_PUBLIC_TELEGRAM_BOT_USERNAME="<username>"
-TELEGRAM_WEBHOOK_SECRET="<secret>"        # опционально
+TELEGRAM_WEBHOOK_SECRET="<secret>"        # не используется в проде (см. §11 — polling), задел на смену хостинга
 FORZADJ_OWNER_TELEGRAM_ID="727850088"    # числовой ID → SUPER_ADMIN
 
 # Приложение
@@ -541,6 +589,11 @@ npm_config_cache=.npm-cache npm install
 | WebP через job queue, не per-request| Генерация при загрузке (1 раз) — не замедляет ответы API           |
 | Fallback PNG без миграции           | try/catch в artwork route: старые треки без WebP работают прозрачно |
 | Vary: Accept на artwork route       | CDN кэширует WebP и PNG раздельно; нет проблем с подменой кэша     |
+| БД перенесена на локальный Postgres (Timeweb) | 152-ФЗ: персональные данные граждан РФ обязаны храниться в РФ; Supabase — не РФ-регион |
+| Storage (audio/artwork) остался на Supabase | Файлы треков/обложек — не персональные данные, требование локализации не применимо; экономия на миграции |
+| Telegram-вход через polling, не webhook | Timeweb блокирует входящие от IP Telegram; webhook физически недостижим. Код webhook-роута не удалён — задел на смену хостинга |
+| Донат-нудж через localStorage, без БД | Cooldown/dismiss — чисто клиентское состояние, не требует новой таблицы или похода на сервер |
+| SupportButton: controlled `open`/`hideTrigger` | Донат-нудж переиспользует тот же Dialog, что и кнопка в шапке — без дублирования UI и логики отправки заявки |
 
 ---
 
@@ -548,7 +601,10 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
-| см. HEAD  | 2026-08-05 | feat(pool): вся строка трека — ссылка; play только через кнопку  |
+| `1eb0d9d` | 2026-08-05 | Add non-intrusive donation reminder toast for active users       |
+| `20cc51a` | 2026-08-05 | Update legal docs (Telegram-only, донаты, Timeweb); add tg-poll.mjs |
+| `bdfb9bd` | 2026-08-05 | feat(pool): вся строка трека — ссылка; play только через кнопку  |
+| `cac69f8` | 2026-08-05 | Fix silent failures in Telegram bot login flow                    |
 | `ec3bca4` | 2026-08-05 | Embed branded artwork into audio via ffmpeg at upload time       |
 | `2874c5c` | 2026-08-05 | Auto-publish bot-uploaded tracks to catalog (DRAFT → PUBLISHED)  |
 | `b8b1c91` | 2026-08-05 | Fix body size limit config key (middlewareClientMaxBodySize)     |
@@ -605,9 +661,10 @@ next.config.ts                    # middlewareClientMaxBodySize: 150MB (для �
    в `dashboard/page.tsx`. MiniPlayer показывает обложку вместо волны.
    Нужно расширить `downloadRepository.listForUser()` чтобы подтягивать WAVEFORM-ассеты.
 
-3. **Telegram Bot webhook** — необходимо убедиться что на VPS установлен
-   webhook: `POST https://api.telegram.org/bot<token>/setWebhook`.
-   Без этого deep-link вход не будет работать.
+2. **Telegram-вход работает через polling, не webhook** — см. §11. Если
+   процесс `tg-poll` в PM2 упадёт и не перезапустится, вход через Telegram
+   сломается молча (сайт продолжит работать, просто никто не сможет войти).
+   Стоит добавить мониторинг/алерт на этот процесс.
 
 3. **VK/Google/Apple входы** — `AuthProvider` enum готов, реализации нет.
    VK требует ИП для OAuth-приложения (отложено).
@@ -659,11 +716,11 @@ next.config.ts                    # middlewareClientMaxBodySize: 150MB (для �
 
 ## 21. Рекомендуемые следующие шаги разработки
 
-1. **Telegram Bot**: убедиться что webhook установлен на продакшне:
-   ```
-   POST https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook
-   {"url": "https://forzadj.ru/api/telegram/webhook", "secret_token": "<TELEGRAM_WEBHOOK_SECRET>"}
-   ```
+1. **Telegram Bot**: вход работает через **polling** (`scripts/tg-poll.mjs`,
+   PM2 `tg-poll`), не webhook — см. §11. Стоит добавить health-check/алерт
+   на процесс `tg-poll`, иначе падение будет тихим (сайт работает, вход —
+   нет). Если хостинг сменится на не блокирующий Telegram IP — можно
+   вернуться на webhook (код есть, не удалён).
 
 2. **Waveform в истории**: расширить `downloadRepository.listForUser()` —
    включить WAVEFORM-ассеты версии в запрос, передать `hasWaveform: true`.
