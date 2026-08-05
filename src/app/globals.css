@@ -200,6 +200,24 @@ select:not([multiple]):not([size]) {
   }
 }
 
+/* Декоративный дрейф точечной волны в hero-карточках (transform-only — дёшево для GPU). */
+@keyframes hero-dot-drift {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-16px, -10px);
+  }
+}
+.animate-hero-dot-drift {
+  animation: hero-dot-drift 14s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-dot-drift {
+    animation: none;
+  }
+}
+
 #landing-page-wrapper {
   background-color: color-mix(in oklch, var(--background), oklch(0.20 0.006 277) var(--bg-mix, 0%));
   transition: background-color 0.2s ease-out;
