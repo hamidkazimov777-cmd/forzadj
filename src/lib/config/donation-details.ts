@@ -1,6 +1,7 @@
 /**
- * Банковские реквизиты для поддержки проекта. Централизованно — не внутри
- * компонентов. Меняются здесь; UI и Studio берут отсюда.
+ * Банковские реквизиты для поддержки проекта. Значения читаются из
+ * переменных окружения (NEXT_PUBLIC_*), а не хранятся в исходном коде —
+ * это личные банковские данные владельца, им не место в публичном git.
  *
  * Это ручные переводы (без платёжных провайдеров): пользователь переводит
  * сам и оставляет заявку, владелец сверяет вручную.
@@ -32,6 +33,15 @@ export interface InternationalMethod {
   swift: CopyableField[];
 }
 
+function env(name: string): string {
+  return process.env[name] ?? "";
+}
+
+/** Убирает всё, кроме цифр и ведущего "+" — для копируемых значений карт/телефонов. */
+function digitsOnly(value: string): string {
+  return value.replace(/[^\d+]/g, "");
+}
+
 export const donationThankYou = {
   title: "Спасибо за поддержку проекта ❤️",
   text: "Каждый донат помогает оплачивать серверы, покупать эксклюзивную музыку, развивать каталог и выпускать новые функции.",
@@ -41,29 +51,42 @@ export const domesticMethod: DomesticMethod = {
   region: "RU",
   flag: "🇷🇺",
   title: "Россия",
-  bank: "Сбербанк",
-  card: { number: "2202 2085 8278 7686", copyValue: "2202208582787686" },
-  sbp: { phone: "+7 930 226 80 36", copyValue: "+79302268036" },
+  bank: env("NEXT_PUBLIC_DONATE_RU_BANK"),
+  card: {
+    number: env("NEXT_PUBLIC_DONATE_RU_CARD"),
+    copyValue: digitsOnly(env("NEXT_PUBLIC_DONATE_RU_CARD")),
+  },
+  sbp: {
+    phone: env("NEXT_PUBLIC_DONATE_RU_SBP_PHONE"),
+    copyValue: digitsOnly(env("NEXT_PUBLIC_DONATE_RU_SBP_PHONE")),
+  },
 };
 
 export const internationalMethod: InternationalMethod = {
   region: "INTL",
   flag: "🌍",
   title: "Международный перевод",
-  bank: "Kapital Bank",
+  bank: env("NEXT_PUBLIC_DONATE_INTL_BANK"),
   system: "Visa",
-  card: { number: "4169 7388 0286 9234", copyValue: "4169738802869234" },
+  card: {
+    number: env("NEXT_PUBLIC_DONATE_INTL_CARD"),
+    copyValue: digitsOnly(env("NEXT_PUBLIC_DONATE_INTL_CARD")),
+  },
   swift: [
-    { label: "Получатель", value: "KAZIMOV HƏMİD ELÇİN OĞLU" },
-    { label: "Банк", value: "KapitalBank ASC\n7 s Baki Asan f" },
-    { label: "Код филиала", value: "201489" },
-    { label: "Валюта", value: "USD" },
-    { label: "ИНН", value: "9900003611" },
-    { label: "SWIFT", value: "AIIBAZ2X" },
-    { label: "IBAN", value: "AZ34AIIB38817840000142531100", copyValue: "AZ34AIIB38817840000142531100" },
-    { label: "Банк-корреспондент", value: "Bank of New York Mellon" },
-    { label: "SWIFT корреспондента", value: "IRVTUS3N" },
-    { label: "Счёт банка-корреспондента", value: "8901723762" },
+    { label: "Получатель", value: env("NEXT_PUBLIC_DONATE_SWIFT_RECIPIENT") },
+    { label: "Банк", value: env("NEXT_PUBLIC_DONATE_SWIFT_BANK") },
+    { label: "Код филиала", value: env("NEXT_PUBLIC_DONATE_SWIFT_BRANCH") },
+    { label: "Валюта", value: env("NEXT_PUBLIC_DONATE_SWIFT_CURRENCY") },
+    { label: "ИНН", value: env("NEXT_PUBLIC_DONATE_SWIFT_INN") },
+    { label: "SWIFT", value: env("NEXT_PUBLIC_DONATE_SWIFT_CODE") },
+    {
+      label: "IBAN",
+      value: env("NEXT_PUBLIC_DONATE_SWIFT_IBAN"),
+      copyValue: env("NEXT_PUBLIC_DONATE_SWIFT_IBAN"),
+    },
+    { label: "Банк-корреспондент", value: env("NEXT_PUBLIC_DONATE_SWIFT_CORR_BANK") },
+    { label: "SWIFT корреспондента", value: env("NEXT_PUBLIC_DONATE_SWIFT_CORR_CODE") },
+    { label: "Счёт банка-корреспондента", value: env("NEXT_PUBLIC_DONATE_SWIFT_CORR_ACCOUNT") },
   ],
 };
 
