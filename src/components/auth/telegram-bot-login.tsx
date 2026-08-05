@@ -50,14 +50,24 @@ export function TelegramBotLogin({
   // Поллинг статуса подтверждения по текущему nonce.
   useEffect(() => {
     if (!deepLink) return;
+    let attempts = 0;
     const id = setInterval(async () => {
-      const res = await poll();
-      if (res.status === "authenticated") {
-        clearInterval(id);
-        window.location.href = res.next ?? "/dashboard";
-      } else if (res.status === "expired") {
-        clearInterval(id);
-        setExpired(true); // не перевыпускаем автоматически — покажем кнопку
+      try {
+        const res = await poll();
+        attempts = 0;
+        if (res.status === "authenticated") {
+          clearInterval(id);
+          window.location.href = res.next ?? "/dashboard";
+        } else if (res.status === "expired") {
+          clearInterval(id);
+          setExpired(true);
+        }
+      } catch {
+        // Временный сбой сервера — повторим через 2.5с, но не бесконечно.
+        if (++attempts >= 5) {
+          clearInterval(id);
+          setExpired(true);
+        }
       }
     }, 2500);
     return () => clearInterval(id);

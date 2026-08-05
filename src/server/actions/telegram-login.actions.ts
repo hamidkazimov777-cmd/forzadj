@@ -100,20 +100,29 @@ export async function pollTelegramBotLogin(): Promise<PollResult> {
       username?: string | null;
       photo_url?: string | null;
     };
-    const session = await issueTelegramSession({
-      id: token.telegramUserId,
-      first_name: data.first_name ?? null,
-      last_name: data.last_name ?? null,
-      username: data.username ?? null,
-      photo_url: data.photo_url ?? null,
-    });
+    let session: { tokenHash: string; isNew: boolean };
+    try {
+      session = await issueTelegramSession({
+        id: token.telegramUserId,
+        first_name: data.first_name ?? null,
+        last_name: data.last_name ?? null,
+        username: data.username ?? null,
+        photo_url: data.photo_url ?? null,
+      });
+    } catch (err) {
+      console.error("[tg-login] issueTelegramSession failed:", err);
+      return { status: "expired" };
+    }
 
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.verifyOtp({
       type: "magiclink",
       token_hash: session.tokenHash,
     });
-    if (error) return { status: "expired" };
+    if (error) {
+      console.error("[tg-login] verifyOtp failed:", error.message);
+      return { status: "expired" };
+    }
 
     await telegramLoginRepository.markConsumed(token.id);
   }
