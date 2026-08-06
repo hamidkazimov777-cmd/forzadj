@@ -194,13 +194,10 @@ export async function POST(req: NextRequest) {
     });
 
     // 8. Auto-publish: bot uploads go straight to catalog without manual Studio step.
-    // releaseDate — на TrackVersion (каталожный фильтр releasedWithinDays
-    // сравнивается именно с ним через versions:{some:...} в catalog.repository).
-    // NULL там никогда не проходит gte, поэтому трек навсегда выпадает из
-    // "Новинок" в боковом меню, даже оставаясь видимым на дашборде (там
-    // сортировка по дате создания трека, без этого фильтра).
+    // releaseDate on TrackVersion drives the "releasedWithinDays" catalog filter —
+    // without it tracks never appear in the "Новинки" sidebar (filter uses gte, NULL never passes).
     const releaseDate = new Date();
-    await trackRepository.update(track.id, { status: "PUBLISHED", releaseDate });
+    await trackRepository.update(track.id, { status: "PUBLISHED" });
     await trackVersionRepository.update(version.id, {
       status: "PUBLISHED",
       releaseDate,
