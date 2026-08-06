@@ -25,6 +25,7 @@ const SOFT_DELETE_MODELS = new Set<string>([
   "TrackVersion",
   "Asset",
   "Collection",
+  "TrackSubmission",
 ]);
 
 function createBaseClient() {

@@ -7,7 +7,13 @@
  * "audio/<releaseId>/<versionId>/original.wav" внутри логического бакета.
  */
 
-export type StorageBucket = "audio" | "previews" | "artwork" | "receipts";
+export type StorageBucket =
+  | "audio"
+  | "previews"
+  | "artwork"
+  | "receipts"
+  | "submissions"
+  | "support";
 
 export interface SignedUploadUrl {
   /** URL, на который клиент загружает файл напрямую (PUT/POST). */

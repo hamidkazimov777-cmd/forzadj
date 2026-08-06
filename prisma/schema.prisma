@@ -54,12 +54,14 @@ model User {
   deletedAt   DateTime? @map("deleted_at")
   deletedById String?   @map("deleted_by_id") @db.Uuid
 
-  identities  AuthIdentity[]
-  downloads   Download[]
-  favorites   Favorite[]
-  collections Collection[]
-  follows     CollectionFollow[]
-  donations   Donation[]
+  identities     AuthIdentity[]
+  downloads      Download[]
+  favorites      Favorite[]
+  collections    Collection[]
+  follows        CollectionFollow[]
+  donations      Donation[]
+  submissions    TrackSubmission[]
+  supportTickets SupportTicket[]
 
   @@map("users")
 }
@@ -253,12 +255,12 @@ model TrackArtist {
 }
 
 model TrackGenre {
-  trackId String @map("track_id") @db.Uuid
-  track   Track  @relation(fields: [trackId], references: [id])
-  genreId String @map("genre_id") @db.Uuid
-  genre   Genre  @relation(fields: [genreId], references: [id])
+  trackId  String @map("track_id") @db.Uuid
+  track    Track  @relation(fields: [trackId], references: [id])
+  genreId  String @map("genre_id") @db.Uuid
+  genre    Genre  @relation(fields: [genreId], references: [id])
   /// Порядок выбора жанров редактором: position 0 — основной жанр трека.
-  position Int @default(0)
+  position Int    @default(0)
 
   @@id([trackId, genreId])
   @@index([genreId])
@@ -683,4 +685,123 @@ model DonationReward {
   donations Donation[]
 
   @@map("donation_rewards")
+}
+
+// ─── Пользовательские заявки на публикацию (модерация) ──────────────────────
+//
+// DJ загружает свой трек через форму в ЛК → заявка со статусом ON_MODERATION.
+// Модерация выполняется в отдельном Telegram-боте (@forzadj_creator_bot):
+// администратор правит метаданные и публикует (Publish → /api/bot/upload) либо
+// отклоняет (Reject + причина). Статус у пользователя меняется ТОЛЬКО по решению
+// модератора. Аудио лежит в приватном бакете "submissions", выдаётся по signed URL.
+
+enum SubmissionStatus {
+  ON_MODERATION // отправлено, ожидает решения модератора
+  PUBLISHED // одобрено и опубликовано в каталоге
+  REJECTED // отклонено модератором (с причиной)
+}
+
+/// Тип пользовательской работы (шире, чем VersionType каталога — это заявка).
+enum SubmissionWorkType {
+  REMIX
+  EDIT
+  MASHUP
+  BLEND
+  BOOTLEG
+  REWORK
+  VIP
+  TRANSITION
+}
+
+/// Заявка пользователя на публикацию собственного трека.
+model TrackSubmission {
+  id     String @id @default(uuid(7)) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
+
+  // Метаданные из формы (черновик карточки — модератор может изменить в боте).
+  title        String
+  artist       String
+  versionLabel String?            @map("version_label")
+  workType     SubmissionWorkType @map("work_type")
+  genre        String?
+  bpm          Int?
+  musicalKey   String?            @map("musical_key")
+  description  String?            @db.Text
+  author       String?
+  contacts     String?            @db.Text
+  /// Ссылки на соцсети (массив строк) и прочие произвольные поля формы.
+  socials      Json?
+
+  // Аудиофайл заявки в приватном бакете "submissions".
+  audioKey       String @map("audio_key")
+  audioMime      String @map("audio_mime")
+  audioSizeBytes BigInt @map("audio_size_bytes")
+
+  status           SubmissionStatus @default(ON_MODERATION)
+  rejectReason     String?          @map("reject_reason") @db.Text
+  moderatorNote    String?          @map("moderator_note") @db.Text
+  /// id опубликованного трека (после Publish), для ссылки на карточку.
+  publishedTrackId String?          @map("published_track_id") @db.Uuid
+
+  reviewedAt   DateTime? @map("reviewed_at")
+  reviewedById String?   @map("reviewed_by_id") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("track_submissions")
+}
+
+// ─── Обращения в поддержку (Support) ───────────────────────────────────────
+//
+// Форма Support в ЛК → тикет сохраняется в БД (стабильный ID + аудит) и
+// доставляется в Telegram-бот поддержки (@forza_sup_bot). Вложения — в приватном
+// бакете "support". Обращения правообладателей принимаются только через эту форму.
+
+enum SupportCategory {
+  GENERAL // общий вопрос
+  ACCOUNT // проблема с аккаунтом
+  SUBSCRIPTION // проблема с подпиской
+  SITE_BUG // ошибка сайта
+  UPLOAD_ISSUE // проблема с загрузкой
+  SUGGESTION // предложение
+  COMPLAINT // жалоба
+  VIOLATION // нарушение
+  COPYRIGHT // правообладатель
+  OTHER // другое
+}
+
+enum SupportStatus {
+  OPEN
+  CLOSED
+}
+
+/// Обращение пользователя в поддержку.
+model SupportTicket {
+  id     String  @id @default(uuid(7)) @db.Uuid
+  /// Автор обращения (форма доступна залогиненным из ЛК); nullable — задел.
+  userId String? @map("user_id") @db.Uuid
+  user   User?   @relation(fields: [userId], references: [id])
+
+  name        String
+  email       String
+  telegram    String?
+  category    SupportCategory
+  subject     String
+  message     String          @db.Text
+  /// Массив storageKey вложений в бакете "support".
+  attachments Json?
+
+  status SupportStatus @default(OPEN)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, createdAt])
+  @@index([category, status])
+  @@map("support_tickets")
 }
