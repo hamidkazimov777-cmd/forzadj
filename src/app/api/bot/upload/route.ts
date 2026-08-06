@@ -194,8 +194,17 @@ export async function POST(req: NextRequest) {
     });
 
     // 8. Auto-publish: bot uploads go straight to catalog without manual Studio step.
-    await trackRepository.update(track.id, { status: "PUBLISHED" });
-    await trackVersionRepository.update(version.id, { status: "PUBLISHED" });
+    // releaseDate — на TrackVersion (каталожный фильтр releasedWithinDays
+    // сравнивается именно с ним через versions:{some:...} в catalog.repository).
+    // NULL там никогда не проходит gte, поэтому трек навсегда выпадает из
+    // "Новинок" в боковом меню, даже оставаясь видимым на дашборде (там
+    // сортировка по дате создания трека, без этого фильтра).
+    const releaseDate = new Date();
+    await trackRepository.update(track.id, { status: "PUBLISHED", releaseDate });
+    await trackVersionRepository.update(version.id, {
+      status: "PUBLISHED",
+      releaseDate,
+    });
 
     // 10. Trigger asset processing (preview + waveform + embedded artwork extraction).
     // Must run BEFORE branded artwork upload: asset.process soft-deletes any existing

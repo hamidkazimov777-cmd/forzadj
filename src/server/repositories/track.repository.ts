@@ -84,6 +84,7 @@ export const trackRepository = {
       isrc?: string | null;
       mood?: TrackMood | null;
       status?: ContentStatus;
+      releaseDate?: Date | null;
     },
   ) {
     return prisma.track.update({ where: { id }, data });
