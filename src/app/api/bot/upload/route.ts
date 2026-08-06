@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { CATALOG_CACHE_TAG } from "@/server/services/search.service";
 import { getStorage } from "@/server/storage";
 import { getJobQueue } from "@/server/jobs";
 import { trackRepository, trackVersionRepository } from "@/server/repositories/track.repository";
@@ -238,6 +240,12 @@ export async function POST(req: NextRequest) {
       await assetRepository.setStatus(artworkAsset.id, "READY");
       await getJobQueue().enqueue("artwork.optimize", { storageKey: artworkKey });
     }
+
+    // Invalidate the catalog cache so the new track appears immediately across
+    // all views (dashboard "Новинки" grid, /new, /pool). Studio actions do the
+    // same via revalidateTag; without it, bot-published tracks show up only when
+    // each cache key's 5-min TTL expires — inconsistently across pages.
+    revalidateTag(CATALOG_CACHE_TAG);
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://forzadj.ru";
     return NextResponse.json({
