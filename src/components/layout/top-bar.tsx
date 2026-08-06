@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DjNavMobile } from "@/components/layout/dj-nav";
 import { SupportButton } from "@/components/support/support-button";
 import type { SupportSubmitFn } from "@/types/donation";
+import type { SubmissionSubmitFn } from "@/types/submission";
 
 /**
  * Верхняя панель DJ-зоны: мобильный бургер, поддержка и аватар.
@@ -16,15 +17,17 @@ export function TopBar({
   displayName,
   avatarUrl,
   submitSupport,
+  submitTrack,
 }: {
   showStudio: boolean;
   displayName: string;
   avatarUrl: string | null;
   submitSupport: SupportSubmitFn;
+  submitTrack?: SubmissionSubmitFn;
 }) {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur md:px-6">
-      <DjNavMobile showStudio={showStudio} />
+      <DjNavMobile showStudio={showStudio} submitTrack={submitTrack} />
       <div className="ml-auto flex items-center gap-1 sm:gap-2">
         <SupportButton
           submit={submitSupport}

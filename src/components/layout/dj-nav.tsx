@@ -23,6 +23,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { PublishNavItem } from "@/components/submissions/publish-nav-item";
+import type { SubmissionSubmitFn } from "@/types/submission";
 
 interface NavItem {
   href: string;
@@ -82,9 +84,11 @@ function NavRow({
 
 function NavSections({
   showStudio,
+  submitTrack,
   onNavigate,
 }: {
   showStudio: boolean;
+  submitTrack?: SubmissionSubmitFn;
   onNavigate?: () => void;
 }) {
   const isActive = useIsActive();
@@ -102,6 +106,7 @@ function NavSections({
         {PERSONAL.map((i) => (
           <NavRow key={i.href} item={i} active={isActive(i.href)} onClick={onNavigate} />
         ))}
+        {submitTrack && <PublishNavItem submit={submitTrack} onNavigate={onNavigate} />}
       </div>
       {showStudio && (
         <div className="mt-auto flex flex-col gap-0.5">
@@ -138,7 +143,13 @@ export function DjNavDesktop({ showStudio = false }: { showStudio?: boolean }) {
 }
 
 /** Десктопный сайдбар (скрыт на мобайле). */
-export function DjSidebar({ showStudio = false }: { showStudio?: boolean }) {
+export function DjSidebar({
+  showStudio = false,
+  submitTrack,
+}: {
+  showStudio?: boolean;
+  submitTrack?: SubmissionSubmitFn;
+}) {
   return (
     <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r bg-sidebar px-3 pb-24 pt-4 md:flex">
       <Link
@@ -147,13 +158,19 @@ export function DjSidebar({ showStudio = false }: { showStudio?: boolean }) {
       >
         ForzaDJ
       </Link>
-      <NavSections showStudio={showStudio} />
+      <NavSections showStudio={showStudio} submitTrack={submitTrack} />
     </aside>
   );
 }
 
 /** Мобильная навигация: бургер + выезжающий сайдбар (скрыт на десктопе). */
-export function DjNavMobile({ showStudio = false }: { showStudio?: boolean }) {
+export function DjNavMobile({
+  showStudio = false,
+  submitTrack,
+}: {
+  showStudio?: boolean;
+  submitTrack?: SubmissionSubmitFn;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -170,7 +187,11 @@ export function DjNavMobile({ showStudio = false }: { showStudio?: boolean }) {
           </SheetTitle>
         </SheetHeader>
         <div className="mt-5 flex flex-1 flex-col">
-          <NavSections showStudio={showStudio} onNavigate={() => setOpen(false)} />
+          <NavSections
+            showStudio={showStudio}
+            submitTrack={submitTrack}
+            onNavigate={() => setOpen(false)}
+          />
         </div>
       </SheetContent>
     </Sheet>

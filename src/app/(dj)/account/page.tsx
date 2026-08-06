@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -67,13 +68,13 @@ export default async function AccountPage() {
       </Card>
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Опубликовать свой трек</CardTitle>
+          <CardTitle>Опубликовать свою работу</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
-              Загрузите свой ремикс, эдит или мэшап — после модерации трек появится
-              в каталоге ForzaDJ.
+              Загрузите свой ремикс, эдит или мэшап — после модерации работа
+              появится в каталоге ForzaDJ.
             </p>
             <div className="shrink-0">
               <SubmitTrackButton submit={submitTrackAction} defaultAuthor={user.displayName} />
@@ -103,7 +104,11 @@ export default async function AccountPage() {
         <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             Вопрос, проблема или обращение правообладателя — напишите нам через
-            официальную форму поддержки.
+            официальную форму поддержки. Ответы на частые вопросы — в{" "}
+            <Link href="/faq" className="underline">
+              FAQ
+            </Link>
+            .
           </p>
           <div className="shrink-0">
             <SupportRequestButton

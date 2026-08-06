@@ -6,9 +6,8 @@ export const metadata = {
     "Как ForzaDJ обрабатывает и защищает персональные данные пользователей в соответствии с законодательством РФ.",
 };
 
-const UPDATED = "5 августа 2026 г.";
+const UPDATED = "7 августа 2026 г.";
 const OPERATOR = "Администрация сайта «ForzaDJ»";
-const CONTACT = "support@forzadj.ru";
 const SITE = "forzadj.ru";
 
 export default function PrivacyPage() {
@@ -195,7 +194,7 @@ export default function PrivacyPage() {
         <li>требовать уточнения, блокирования или удаления данных;</li>
         <li>
           отозвать согласие на обработку и удалить учётную запись, направив
-          обращение на <strong>{CONTACT}</strong>;
+          обращение через форму <strong>«Support»</strong> в личном кабинете;
         </li>
         <li>
           обжаловать действия Оператора в уполномоченном органе
@@ -212,7 +211,9 @@ export default function PrivacyPage() {
 
       <h2>12. Контакты</h2>
       <p>
-        По вопросам обработки персональных данных: <strong>{CONTACT}</strong>.
+        По вопросам обработки персональных данных обращайтесь через форму{" "}
+        <strong>«Support»</strong> в личном кабинете — это официальный канал
+        связи с Администрацией.
       </p>
       <p>
         См. также{" "}

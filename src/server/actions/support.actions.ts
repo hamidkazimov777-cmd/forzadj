@@ -34,6 +34,7 @@ const schema = z.object({
   telegram: z.string().trim().max(120).optional(),
   subject: z.string().trim().min(1, "Укажите тему").max(200),
   message: z.string().trim().min(1, "Введите сообщение").max(5000),
+  consent: z.literal("on", { message: "Необходимо согласие на обработку данных" }),
 });
 
 export async function submitSupportTicketAction(
@@ -48,6 +49,7 @@ export async function submitSupportTicketAction(
     telegram: (formData.get("telegram") as string) || undefined,
     subject: (formData.get("subject") as string) || undefined,
     message: (formData.get("message") as string) || undefined,
+    consent: formData.get("consent"),
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Проверьте поля" };

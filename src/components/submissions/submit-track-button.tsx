@@ -39,14 +39,14 @@ export function SubmitTrackButton({
           {label ?? (
             <>
               <UploadCloud className="size-4" />
-              Опубликовать свой трек
+              Опубликовать свою работу
             </>
           )}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Опубликовать свой трек</DialogTitle>
+          <DialogTitle>Опубликовать свою работу</DialogTitle>
           <DialogDescription>
             Загрузите MP3 и заполните информацию. Трек пройдёт модерацию — о решении
             мы сообщим в Telegram.

@@ -2,6 +2,7 @@ import { DjSidebar } from "@/components/layout/dj-nav";
 import { TopBar } from "@/components/layout/top-bar";
 import { DonationNudge } from "@/components/support/donation-nudge";
 import { submitSupportRequestAction } from "@/server/actions/donation.actions";
+import { submitTrackAction } from "@/server/actions/submission.actions";
 import { requireUser } from "@/server/auth/core/session";
 import { can } from "@/server/auth/core/permissions";
 import { downloadRepository } from "@/server/repositories/download.repository";
@@ -22,13 +23,14 @@ export default async function DjLayout({
 
   return (
     <div className="flex min-h-screen">
-      <DjSidebar showStudio={showStudio} />
+      <DjSidebar showStudio={showStudio} submitTrack={submitTrackAction} />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
           showStudio={showStudio}
           displayName={user.displayName}
           avatarUrl={user.avatarUrl}
           submitSupport={submitSupportRequestAction}
+          submitTrack={submitTrackAction}
         />
         <main className="w-full flex-1 px-4 py-6 pb-28 md:px-6 lg:px-8">
           {children}

@@ -2,10 +2,12 @@
 
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { SUPPORT_CATEGORIES } from "@/lib/config/support-request";
 import type { SupportTicketSubmitFn } from "@/types/support-request";
 
@@ -27,8 +29,14 @@ export function SupportRequestForm({
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
   const [done, setDone] = useState(false);
+  const [agree, setAgree] = useState(false);
 
   function handleSubmit(formData: FormData) {
+    if (!agree) {
+      toast.error("Подтвердите согласие на обработку данных");
+      return;
+    }
+    formData.set("consent", agree ? "on" : "");
     startTransition(async () => {
       const res = await submit(formData);
       if (res.ok) {
@@ -140,7 +148,23 @@ export function SupportRequestForm({
         </p>
       </div>
 
-      <Button type="submit" disabled={pending} className="mt-1">
+      <label className="flex items-start gap-2.5 text-sm">
+        <Checkbox
+          checked={agree}
+          onCheckedChange={(v) => setAgree(v === true)}
+          className="mt-0.5"
+        />
+        <span className="text-muted-foreground">
+          Я подтверждаю указанные контактные данные и соглашаюсь на их обработку
+          для рассмотрения обращения в соответствии с{" "}
+          <Link href="/legal/privacy" className="underline" target="_blank">
+            Политикой конфиденциальности
+          </Link>
+          .
+        </span>
+      </label>
+
+      <Button type="submit" disabled={pending || !agree} className="mt-1">
         {pending ? "Отправка…" : "Отправить обращение"}
       </Button>
     </form>
