@@ -298,6 +298,7 @@ revisions              (audit log всех изменений)
 20260730120000  add_mashup_version_and_hip_hop_genre
 20260731130000  add_oauth_providers
 20260802120000  track_mood
+20260806180000  track_submissions_and_support
 ```
 
 ---
@@ -502,6 +503,7 @@ Webhook верификация (если используется): `X-Telegram-
 | GET   | `/api/packs/[slug]/download`          | ZIP редакционного пака                      |
 | GET   | `/yandex/suggest/token`               | Yandex OAuth helper (устаревший, оставлен)  |
 | POST  | `/api/bot/upload`                     | Загрузка трека через ForzaDJ Admin Bot (auth: `x-bot-secret` = `BOT_UPLOAD_SECRET`) |
+| POST  | `/api/submissions/[id]/moderate`      | Колбэк решения модерации от бота (auth: `x-bot-secret` = `MODERATION_API_SECRET`) |
 
 ---
 
@@ -731,6 +733,65 @@ next.config.ts                    # middlewareClientMaxBodySize: 150MB (для �
 4. **Производительность каталога**: при > 1000 треков — профилировать запросы
    `catalog.repository.ts`, убедиться что индексы по `status`, `releaseDate`,
    `genreId` используются.
+
+---
+
+## 22. Пользовательские заявки на публикацию + Support (2026-08-07)
+
+Две новые пользовательские функции сайта и два новых Telegram-бота
+(репозиторий `forzadj-bots`, деплой на **Railway**).
+
+### Функция «Опубликовать свою работу»
+- Кнопка в личном кабинете (`/account`) и в боковом меню (после «Скачивания»,
+  `PublishNavItem`) — открывает модалку `SubmitTrackForm` (Drag&Drop MP3, поля:
+  название, артист, версия, тип работы Remix/Edit/Mashup/Blend/Bootleg/Rework/
+  VIP/Transition, жанр, BPM, Key, описание, автор, контакты, соцсети) +
+  обязательное соглашение (права, модерация, редактирование карточки, отказ,
+  удаление, запрет нарушения авторских прав, **15 дней эксклюзивности**).
+- `submitTrackAction` (`src/server/actions/submission.actions.ts`): zod →
+  MP3 в приватный бакет `submissions` → `TrackSubmission` (status
+  `ON_MODERATION`) → POST на HTTP-ingest бота модерации (`MODERATION_INGEST_URL`,
+  base64 MP3, `x-ingest-secret`).
+- История заявок в ЛК (`SubmissionsHistory`) со статусами На модерации /
+  Опубликован / Отклонён.
+- `POST /api/submissions/[id]/moderate` (auth `x-bot-secret` =
+  `MODERATION_API_SECRET`): колбэк от бота модерации → меняет статус +
+  уведомляет пользователя через login-бот `TELEGRAM_BOT_TOKEN`.
+
+### Функция «Support»
+- Кнопка «Support» в ЛК (отдельно от донат-кнопки «Поддержать ForzaDJ»).
+  Форма `SupportRequestForm` (категории, имя/email/telegram/тема/сообщение,
+  вложения, обязательный чекбокс согласия на обработку данных).
+- `submitSupportTicketAction`: zod → вложения в бакет `support` →
+  `SupportTicket` в БД → доставка в `@forza_sup_bot` напрямую по
+  `SUPPORT_BOT_TOKEN` (процесс бота для доставки не требуется).
+
+### Боты (репозиторий `forzadj-bots`, Railway)
+- Один сервис, комбинированный вход `dist/index.js` — оба бота polling + HTTP-
+  ingest. Публичный домен: `https://forzadj-bots-production.up.railway.app`.
+- **Бот модерации `@forzadj_creator_bot`**: ingest принимает заявку → шлёт
+  админу аудио (проигрывается) + карточку **Edit / Publish / Reject**. Publish
+  публикует через существующий `POST /api/bot/upload` (логика публикации НЕ
+  дублируется; `FORZADJ_BOT_SECRET` == сайтовый `BOT_UPLOAD_SECRET`). Reject —
+  причина + колбэк. Переиспользует брендовые обложки по жанру.
+- **Бот поддержки `@forza_sup_bot`**: минимальный процесс присутствия.
+- Существующий бот публикации (`forzadj-admin-bot`) НЕ изменялся.
+
+### БД, storage, конфиг
+- Новые модели: `TrackSubmission`, `SupportTicket` (+ enum-ы
+  `SubmissionStatus`/`SubmissionWorkType`, `SupportCategory`/`SupportStatus`).
+  Миграция `20260806180000_track_submissions_and_support`.
+- Новые приватные бакеты Supabase: `submissions`, `support`.
+- **`next.config.ts`: `experimental.serverActions.bodySizeLimit: "120mb"`** —
+  загрузки идут через Server Actions (дефолтный лимит 1 МБ ронял отправку);
+  `middlewareClientMaxBodySize` покрывает только route-хендлеры.
+- Юр. документы: разделы о загрузке своих работ и о Support как официальном
+  канале; **обращения по авторским правам — только через форму Support**
+  (email убран). Новая публичная страница `/faq`.
+
+### Ключевые env сайта (в `/opt/forzadj/.env`)
+`MODERATION_INGEST_URL`, `MODERATION_INGEST_SECRET`, `MODERATION_API_SECRET`,
+`SUPPORT_BOT_TOKEN`, `SUPPORT_ADMIN_CHAT_ID` (общие секреты совпадают с Railway).
 
 ---
 
