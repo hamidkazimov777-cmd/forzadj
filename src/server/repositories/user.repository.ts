@@ -23,6 +23,15 @@ export const userRepository = {
     return prisma.user.findFirst({ where: { id } });
   },
 
+  /** Telegram ID пользователя (для уведомлений через login-бота). */
+  async getTelegramId(userId: string): Promise<string | null> {
+    const identity = await prisma.authIdentity.findFirst({
+      where: { userId, provider: "TELEGRAM" },
+      select: { providerUserId: true },
+    });
+    return identity?.providerUserId ?? null;
+  },
+
   /** Список пользователей для Studio (управление ролями). */
   listUsers(opts?: { take?: number; skip?: number }) {
     return prisma.user.findMany({

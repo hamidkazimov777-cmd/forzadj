@@ -4,11 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SupportButton } from "@/components/support/support-button";
 import { SupportRequestButton } from "@/components/support-request/support-request-button";
+import { SubmitTrackButton } from "@/components/submissions/submit-track-button";
+import { SubmissionsHistory } from "@/components/submissions/submissions-history";
 import { requireUser } from "@/server/auth/core/session";
 import { signOut } from "@/server/actions/auth.actions";
 import { submitSupportRequestAction } from "@/server/actions/donation.actions";
 import { submitSupportTicketAction } from "@/server/actions/support.actions";
+import { submitTrackAction } from "@/server/actions/submission.actions";
+import { submissionRepository } from "@/server/repositories/submission.repository";
 import { donationThankYou } from "@/lib/config/donation-details";
+import type { SubmissionRow } from "@/types/submission";
 
 export const metadata = { title: "Аккаунт" };
 
@@ -21,6 +26,17 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default async function AccountPage() {
   const user = await requireUser();
+
+  const submissions = await submissionRepository.listForUser(user.id, { take: 20 });
+  const submissionRows: SubmissionRow[] = submissions.map((s) => ({
+    id: s.id,
+    title: s.title,
+    artist: s.artist,
+    workType: s.workType,
+    status: s.status,
+    rejectReason: s.rejectReason,
+    createdAt: s.createdAt.toISOString(),
+  }));
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -47,6 +63,26 @@ export default async function AccountPage() {
               Выйти
             </Button>
           </form>
+        </CardContent>
+      </Card>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Опубликовать свой трек</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Загрузите свой ремикс, эдит или мэшап — после модерации трек появится
+              в каталоге ForzaDJ.
+            </p>
+            <div className="shrink-0">
+              <SubmitTrackButton submit={submitTrackAction} defaultAuthor={user.displayName} />
+            </div>
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-medium">Мои заявки</p>
+            <SubmissionsHistory items={submissionRows} />
+          </div>
         </CardContent>
       </Card>
       <Card className="mt-6">
