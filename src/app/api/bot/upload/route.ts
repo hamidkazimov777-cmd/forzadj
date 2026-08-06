@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
     // then strip DJ service tags (Muzvizor Intro/Outro etc.) that the bot may
     // not have caught when the track was uploaded before the cleaning fix.
     const DJ_SERVICE_TAGS =
-      /\s*[\(\[][^\)\]]*\b(intro|outro|muzvizor|radio\s*edit|club\s*edit)\b[^\)\]]*[\)\]]|\s*[-–—]+\s*\b(muzvizor\s+)?(intro|outro|muzvizor)\b\s*$|\s+\b(muzvizor(?:\s+(?:intro|outro))?|intro|outro)\b\s*$/gi;
+      /\s*[\(\[][^\)\]]*\b(intro|outro|muzvizor|radio\s*edit|club\s*edit|dirty|clean)\b[^\)\]]*[\)\]]|\s*[-–—]+\s*\b(muzvizor\s+)?(intro|outro|muzvizor|dirty|clean)\b\s*$|\s+\b(muzvizor(?:\s+(?:intro|outro))?|intro|outro|dirty|clean)\b\s*$/gi;
     const rawTitle = (meta.title || meta.fileName.replace(/\.[^.]+$/, ""))
       .replace(/_/g, " ").replace(/\s+/g, " ").trim();
     const title = rawTitle.replace(DJ_SERVICE_TAGS, "").replace(DJ_SERVICE_TAGS, "").trim().replace(/\s+/g, " ") || rawTitle;
