@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import type { Prisma } from "@/generated/prisma/client";
+import type { Prisma, TrackSubmission } from "@/generated/prisma/client";
 import type { SubmissionStatus, SubmissionWorkType } from "@/generated/prisma/enums";
 
 /** JSON-коэрция к типу Prisma (совместимо с InputJsonValue). */
@@ -58,7 +58,10 @@ export const submissionRepository = {
   },
 
   /** История заявок пользователя для ЛК. */
-  listForUser(userId: string, opts?: { skip?: number; take?: number }) {
+  listForUser(
+    userId: string,
+    opts?: { skip?: number; take?: number },
+  ): Promise<TrackSubmission[]> {
     return prisma.trackSubmission.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
