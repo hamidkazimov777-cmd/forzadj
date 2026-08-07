@@ -4,6 +4,9 @@
 
 **Free DJ pool platform — download exclusive tracks without subscriptions**
 
+🌐 **Live:** [forzadj.ru](https://forzadj.ru)
+
+[![Website](https://img.shields.io/badge/Live-forzadj.ru-6E56CF?style=flat-square&logo=googlechrome&logoColor=white)](https://forzadj.ru)
 [![Next.js](https://img.shields.io/badge/Next.js-15.5-black?style=flat-square&logo=next.js)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
