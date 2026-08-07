@@ -47,19 +47,34 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --shadow-2xs: var(--shadow-2xs-val);
+  --shadow-xs: var(--shadow-xs-val);
+  --shadow-sm: var(--shadow-sm-val);
+  --shadow-md: var(--shadow-md-val);
+  --shadow-lg: var(--shadow-lg-val);
+  --shadow-xl: var(--shadow-xl-val);
+  --shadow-glow: var(--shadow-glow-val);
 }
 
 :root {
   color-scheme: dark;
+  /* Базовое скругление — фундамент всей визуальной системы (ранее не было
+     задано → все rounded-* схлопывались в 0). 0.75rem = мягкий премиум. */
+  --radius: 0.75rem;
   /* Глубокий графит с едва заметным холодным подтоном (не чистый #000). */
   --background: oklch(0.165 0.006 277);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0.006 277);
+  /* Карточка чуть теплее фона + едва заметный violet-подтон = ощущение
+     «поднятой» стеклянной поверхности. */
+  --card: oklch(0.212 0.008 277);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0.006 277);
+  --popover: oklch(0.216 0.009 277);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.6 0.2 277);
   --primary-foreground: oklch(0.99 0 0);
+  /* Более яркий «сигнальный» акцент для градиентов/свечения. */
+  --primary-bright: oklch(0.68 0.19 274);
+  --primary-deep: oklch(0.52 0.21 279);
   --secondary: oklch(0.255 0.006 277);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.255 0.006 277);
@@ -69,9 +84,10 @@
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-soft: oklch(0.3 0.075 22);
   --destructive-soft-hover: oklch(0.35 0.09 22);
-  /* Hairline-границы — интерфейс «шепчет» линиями. */
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 12%);
+  /* Hairline-границы — интерфейс «шепчет» линиями (чуть контрастнее для
+     премиальной чёткости краёв). */
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
   --ring: oklch(0.6 0.2 277);
   --energy: oklch(0.78 0.15 75);
   --chart-1: oklch(0.87 0 0);
@@ -88,6 +104,16 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: oklch(0.6 0.2 277);
+  /* Слоистые тени: мягкая геометрия глубины вместо плоскости.
+     Тёплый чёрный с холодным подтоном, не резкий. */
+  --shadow-2xs-val: 0 1px 2px 0 oklch(0 0 0 / 0.24);
+  --shadow-xs-val: 0 1px 3px 0 oklch(0 0 0 / 0.28), 0 1px 2px -1px oklch(0 0 0 / 0.24);
+  --shadow-sm-val: 0 2px 6px -1px oklch(0 0 0 / 0.3), 0 1px 3px -1px oklch(0 0 0 / 0.26);
+  --shadow-md-val: 0 6px 16px -4px oklch(0 0 0 / 0.34), 0 3px 6px -3px oklch(0 0 0 / 0.28);
+  --shadow-lg-val: 0 14px 32px -8px oklch(0 0 0 / 0.42), 0 6px 12px -6px oklch(0 0 0 / 0.32);
+  --shadow-xl-val: 0 28px 60px -12px oklch(0 0 0 / 0.55), 0 10px 20px -10px oklch(0 0 0 / 0.38);
+  /* Фирменное violet-свечение под primary-элементами. */
+  --shadow-glow-val: 0 8px 28px -6px oklch(0.6 0.2 277 / 0.5), 0 2px 8px -2px oklch(0.6 0.2 277 / 0.35);
 }
 
 @layer base {
@@ -96,9 +122,88 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Тонкая глубина: два едва заметных violet-ореола сверху + виньетка.
+       fixed — фон не «плывёт» при скролле длинных страниц. */
+    background-image:
+      radial-gradient(80rem 44rem at 12% -8%, oklch(0.6 0.2 277 / 0.1), transparent 60%),
+      radial-gradient(70rem 40rem at 100% 0%, oklch(0.68 0.19 274 / 0.07), transparent 55%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    /* Премиальная отрисовка шрифта. */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
   html {
     @apply font-sans;
+  }
+  /* Заголовки — плотный оптический трекинг, ощущение «набрано студией». */
+  h1, h2, h3 {
+    letter-spacing: -0.02em;
+  }
+  /* Фирменное violet-выделение текста. */
+  ::selection {
+    background: oklch(0.6 0.2 277 / 0.32);
+    color: oklch(0.99 0 0);
+  }
+  /* Тонкий кастомный скроллбар вместо системного «глянца». */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(1 0 0 / 0.14) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: oklch(1 0 0 / 0.12);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: oklch(1 0 0 / 0.22);
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  /* Настоящее «студийное стекло»: размытие фона + вертикальный градиент
+     поверхности + hairline-рамка со световым верхом. */
+  .glass {
+    background:
+      linear-gradient(180deg, oklch(1 0 0 / 0.06), oklch(1 0 0 / 0.02)),
+      color-mix(in oklch, var(--card), transparent 22%);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border: 1px solid oklch(1 0 0 / 0.1);
+    box-shadow: var(--shadow-md), inset 0 1px 0 0 oklch(1 0 0 / 0.06);
+  }
+  /* Градиентная primary-поверхность (violet→indigo) с фирменным свечением —
+     для hero-CTA и брендовых акцентов. */
+  .btn-gradient {
+    background-image: linear-gradient(135deg, var(--primary-bright), var(--primary-deep));
+    box-shadow: var(--shadow-glow), inset 0 1px 0 0 oklch(1 0 0 / 0.18);
+    transition: box-shadow 0.25s ease, transform 0.15s ease, filter 0.25s ease;
+  }
+  .btn-gradient:hover {
+    filter: brightness(1.06);
+    box-shadow:
+      0 12px 36px -6px oklch(0.6 0.2 277 / 0.6),
+      0 4px 12px -2px oklch(0.6 0.2 277 / 0.42),
+      inset 0 1px 0 0 oklch(1 0 0 / 0.22);
+  }
+  .btn-gradient:active {
+    transform: translateY(1px);
+  }
+  /* Мягкое поднятие карточки по наведению (для интерактивных карточек). */
+  .lift {
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .lift:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+    border-color: oklch(1 0 0 / 0.16);
   }
 }
 

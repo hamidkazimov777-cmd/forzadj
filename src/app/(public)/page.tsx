@@ -153,7 +153,7 @@ export default async function HomePage({
 
       {/* ── ПРИЗЫВ ── */}
       <section className="mx-auto w-full max-w-6xl px-4">
-        <div className="relative overflow-hidden rounded-2xl border p-8 text-center sm:p-12">
+        <div className="glass relative overflow-hidden rounded-3xl p-8 text-center sm:p-12">
           <div
             aria-hidden
             className="pointer-events-none absolute left-1/2 top-0 size-[28rem] max-w-[90vw] -translate-x-1/2 rounded-full opacity-25 blur-3xl"
@@ -170,7 +170,7 @@ export default async function HomePage({
             ограничений и подписок.
           </p>
           <div className="relative mt-5 flex justify-center">
-            <Button asChild size="lg">
+            <Button asChild size="lg" className="btn-gradient border-0 px-6 text-primary-foreground">
               <Link href="#hero">
                 Начать бесплатно
                 <ArrowRight className="size-4" />

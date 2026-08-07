@@ -199,7 +199,7 @@ export function MiniPlayer() {
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 backdrop-blur">
+    <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/85 shadow-[0_-8px_32px_-12px_oklch(0_0_0/0.55)] backdrop-blur-xl before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/15 before:to-transparent">
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2 md:gap-4">
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon" onClick={player.prev} aria-label="Предыдущий">

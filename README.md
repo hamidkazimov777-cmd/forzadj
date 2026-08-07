@@ -39,7 +39,7 @@ ForzaDJ is a full-stack DJ pool platform where DJs can discover, preview, and do
 - Telegram authentication — no passwords, one-tap login
 - Three-tier role system — DJ, Admin, Super Admin
 - Integrated [Telegram Admin Bot](https://github.com/hamidkazimov777-cmd/forzadj-admin-bot) for one-command AI-powered content publishing
-- Dark-only UI with a global mini-player that persists across navigation
+- Premium dark "studio glass" UI — signal-violet accent, layered depth, glassmorphism, and a global mini-player that persists across navigation
 
 ---
 
@@ -146,6 +146,15 @@ ForzaDJ is a full-stack DJ pool platform where DJs can discover, preview, and do
 
 ### Environment note
 - Track/Support uploads go through **Server Actions** → `experimental.serverActions.bodySizeLimit` is raised in `next.config.ts` (the 1 MB default is too small for MP3s)
+
+### Design system
+A single **design-token layer** in `src/app/globals.css` drives the entire premium "studio glass" look — every page and all 20+ UI-kit components inherit from it:
+- **Brand** — "signal violet" accent (`oklch(0.6 0.2 277)`) on a deep cold-graphite base; dark-only, OKLCH throughout for perceptually even shades
+- **Depth** — a layered shadow scale (`--shadow-xs … --shadow-xl`) plus a branded violet `--shadow-glow`; a fixed radial violet aura + vignette gives the background dimension
+- **Radius** — one `--radius` root (`0.75rem`) feeds the whole `rounded-*` scale, so corner rounding is consistent everywhere
+- **Glass & gradient utilities** — `.glass` (backdrop-blur surface with a hairline gradient border) and `.btn-gradient` (violet→indigo CTA with glow) are reusable component classes
+- **Polish** — antialiased type with optical heading tracking, violet text selection, a custom thin scrollbar, and spring-eased hover/active micro-interactions (`.lift`)
+- **Motion-safe** — all decorative animations are gated behind `prefers-reduced-motion`
 
 ---
 

@@ -34,10 +34,7 @@ export function PublishNavItem({
     <>
       <button
         type="button"
-        onClick={() => {
-          setOpen(true);
-          onNavigate?.();
-        }}
+        onClick={() => setOpen(true)}
         className={cn(
           "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-foreground",
           large &&
@@ -56,7 +53,16 @@ export function PublishNavItem({
               решении мы сообщим в Telegram.
             </DialogDescription>
           </DialogHeader>
-          <SubmitTrackForm submit={submit} onDone={() => setOpen(false)} />
+          <SubmitTrackForm
+            submit={submit}
+            onDone={() => {
+              // Успешная отправка: закрываем модалку и, если открыта, сам
+              // Sheet (на мобайле). Закрытие Sheet здесь безопасно — модалка
+              // уже закрыта, размонтирование не прерывает открытый Dialog.
+              setOpen(false);
+              onNavigate?.();
+            }}
+          />
         </DialogContent>
       </Dialog>
     </>
