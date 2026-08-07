@@ -434,6 +434,33 @@ artwork/
 - `artwork.optimize` генерирует WebP-варианты брендовой обложки
 - ffmpeg перезаписывает оригинальный MP3 с брендовой обложкой в ID3 (для скачивания)
 
+### Брендирование обложки по жанру при публикации из студии
+
+То же поведение, что у бота, но для ручной загрузки через `/studio`. При
+публикации трека (`saveVersionAndPublishAction`) ставится фоновый job
+**`artwork.brand`**, который по жанру трека:
+
+1. подбирает нашу обложку `assets/genre-artwork/<slug>.png` (fallback —
+   `open-format.png`), имя файла = slug жанра;
+2. перекодирует оригинал через ffmpeg (`-c:a copy` + чистые ID3-теги
+   title/artist), вшивая нашу обложку → скачанный файл несёт нашу обложку;
+3. заменяет показываемую обложку (ARTWORK-ассет, ключ
+   `tracks/<t>/<v>/cover.png`) и ставит `artwork.optimize` для WebP.
+
+Жанр берётся из БД в момент выполнения job'а, поэтому его нужно сохранить
+(форма метаданных трека) **до** публикации — иначе применится fallback.
+
+**Единый источник правды:** функция вшивания `embedArtworkIntoAudio` вынесена
+в `src/server/services/branded-artwork.ts` и используется И в `api/bot/upload`,
+И в job'е `artwork.brand` — бот и сайт не расходятся и не конфликтуют (разные
+точки входа, общий код, одни треки не пересекаются). Обложки
+`assets/genre-artwork/` — та же копия набора, что в репозитории `forzadj-bots`.
+
+Ключевые файлы:
+- `src/server/services/branded-artwork.ts` — `resolveBrandedCover` + `embedArtworkIntoAudio`
+- `src/server/jobs/handlers/artwork-brand.ts` — job-хендлер
+- `src/server/actions/content.actions.ts` — enqueue в `saveVersionAndPublishAction`
+
 ### Встроенный Telegram-бот (этот репозиторий) — только для входа
 
 Deep-link auth. Никаких других команд нет.
@@ -603,6 +630,7 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
+| `a4f79ca` | 2026-08-07 | feat(studio): авто-брендирование обложки по жанру при публикации (job `artwork.brand`, общий `embedArtworkIntoAudio`) |
 | `1eb0d9d` | 2026-08-05 | Add non-intrusive donation reminder toast for active users       |
 | `20cc51a` | 2026-08-05 | Update legal docs (Telegram-only, донаты, Timeweb); add tg-poll.mjs |
 | `bdfb9bd` | 2026-08-05 | feat(pool): вся строка трека — ссылка; play только через кнопку  |

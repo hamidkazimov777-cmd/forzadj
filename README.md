@@ -130,6 +130,7 @@ ForzaDJ is a full-stack DJ pool platform where DJs can discover, preview, and do
 - WebP content negotiation — `Accept: image/webp` aware, `Vary: Accept` header set
 - Signed download URLs (60 s TTL) with daily and per-track quotas
 - Downloadable MP3 includes branded cover art embedded in ID3 tags via FFmpeg
+- Genre-based artwork branding on Studio publish — the `artwork.brand` job strips the original cover and embeds our per-genre artwork (`assets/genre-artwork/<slug>.png`) into both the catalog cover and the downloadable file, mirroring the admin bot (shared `embedArtworkIntoAudio`)
 
 ### Authentication
 - **Telegram Login Widget** — HMAC-verified browser login
