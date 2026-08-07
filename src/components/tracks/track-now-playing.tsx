@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { Heart, Pause, Play, SkipBack, SkipForward } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { usePlayer } from "@/components/player/player-provider";
 import { ScrollingWaveform } from "@/components/player/scrolling-waveform";
 import { DownloadButton } from "@/components/tracks/download-button";
@@ -14,6 +16,7 @@ import { MOOD_ICONS, MOOD_LABELS } from "@/lib/mood";
 import type { TrackCardDto } from "@/types/catalog";
 import type { PlayerTrack } from "@/types/player";
 import type { RequestDownloadFn } from "@/types/download";
+import type { ToggleFavoriteFn } from "@/types/favorite";
 
 function fmt(sec: number | null): string {
   if (sec == null) return "--:--";
@@ -112,6 +115,8 @@ export function TrackNowPlaying({
   queue,
   contextQuery,
   requestDownload,
+  toggleFavorite,
+  initialFavoritedVersionIds = [],
 }: {
   initialTrack: TrackCardDto;
   initialRelated: TrackCardDto[];
@@ -119,6 +124,10 @@ export function TrackNowPlaying({
   queue: PlayerTrack[];
   contextQuery: string;
   requestDownload: RequestDownloadFn;
+  /** Экшен избранного; отсутствует у гостя — сердце не показываем. */
+  toggleFavorite?: ToggleFavoriteFn;
+  /** Версии текущего трека, уже отмеченные ♥ (для начального состояния). */
+  initialFavoritedVersionIds?: string[];
 }) {
   const player = usePlayer();
   const [track, setTrack] = useState(initialTrack);
@@ -126,6 +135,12 @@ export function TrackNowPlaying({
   const [selectedId, setSelectedId] = useState<string | undefined>(
     defaultVersionOf(initialTrack)?.id,
   );
+  // Избранное в рамках открытого трека (по версиям). Обновляется оптимистично
+  // и пересинхронизируется при смене трека без перезагрузки (loadTrack).
+  const [favoritedIds, setFavoritedIds] = useState<Set<string>>(
+    () => new Set(initialFavoritedVersionIds),
+  );
+  const [favPending, startFavTransition] = useTransition();
 
   const cq = contextQuery ? `?${contextQuery}` : "";
   const abortRef = useRef<AbortController | null>(null);
@@ -142,10 +157,12 @@ export function TrackNowPlaying({
       const data = (await res.json()) as {
         track: TrackCardDto;
         related: TrackCardDto[];
+        favoritedVersionIds?: string[];
       };
       setTrack(data.track);
       setRelated(data.related);
       setSelectedId(defaultVersionOf(data.track)?.id);
+      setFavoritedIds(new Set(data.favoritedVersionIds ?? []));
     } catch {
       /* отменённый запрос — игнорируем */
     }
@@ -239,6 +256,33 @@ export function TrackNowPlaying({
     player.play(item, queue.length ? queue : [item]);
   }
 
+  const selectedFavorited = favoritedIds.has(selected.id);
+
+  function toggleSelectedFavorite() {
+    if (!toggleFavorite) return;
+    const versionId = selected.id;
+    startFavTransition(async () => {
+      // Оптимистично переключаем, откатываем при ошибке.
+      setFavoritedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(versionId)) next.delete(versionId);
+        else next.add(versionId);
+        return next;
+      });
+      try {
+        await toggleFavorite(versionId);
+      } catch {
+        setFavoritedIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(versionId)) next.delete(versionId);
+          else next.add(versionId);
+          return next;
+        });
+        toast.error("Не удалось обновить избранное");
+      }
+    });
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -294,6 +338,28 @@ export function TrackNowPlaying({
             >
               <SkipForward className="size-4 fill-current" />
             </Button>
+
+            {toggleFavorite && (
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label={
+                  selectedFavorited ? "Убрать из избранного" : "В избранное"
+                }
+                title={selectedFavorited ? "В избранном" : "В избранное"}
+                disabled={favPending}
+                onClick={toggleSelectedFavorite}
+                className={cn(
+                  selectedFavorited
+                    ? "text-red-500 hover:text-red-500"
+                    : "text-muted-foreground hover:text-red-500",
+                )}
+              >
+                <Heart
+                  className={cn("size-4", selectedFavorited && "fill-current")}
+                />
+              </Button>
+            )}
           </div>
 
           <div className="min-w-0 flex-1">

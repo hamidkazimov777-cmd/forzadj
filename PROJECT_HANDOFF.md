@@ -630,6 +630,7 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
+| `<pending>` | 2026-08-07 | feat(track): кнопка ♥ на странице трека (TrackNowPlaying); `/api/track/[slug]` отдаёт `favoritedVersionIds` |
 | `a4f79ca` | 2026-08-07 | feat(studio): авто-брендирование обложки по жанру при публикации (job `artwork.brand`, общий `embedArtworkIntoAudio`) |
 | `1eb0d9d` | 2026-08-05 | Add non-intrusive donation reminder toast for active users       |
 | `20cc51a` | 2026-08-05 | Update legal docs (Telegram-only, донаты, Timeweb); add tg-poll.mjs |

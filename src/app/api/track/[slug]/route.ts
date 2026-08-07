@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getCurrentUser } from "@/server/auth/core/session";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
+import { favoriteRepository } from "@/server/repositories/favorite.repository";
 
 /**
  * Детали трека (карточка + похожие) для клиентской смены трека на странице
@@ -19,5 +20,15 @@ export async function GET(
   if (!track) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const related = await catalogRepository.findRelated(track);
-  return NextResponse.json({ track, related });
+  // Избранное текущего трека — чтобы сердце было корректным и после смены
+  // трека без перезагрузки (next/prev на странице трека).
+  const favorited = await favoriteRepository.getFavoritedVersionIds(
+    user.id,
+    track.versions.map((v) => v.id),
+  );
+  return NextResponse.json({
+    track,
+    related,
+    favoritedVersionIds: [...favorited],
+  });
 }

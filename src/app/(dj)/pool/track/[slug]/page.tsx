@@ -8,6 +8,9 @@ import {
   parseCatalogParams,
 } from "@/server/services/search.service";
 import { requestDownloadAction } from "@/server/actions/download.actions";
+import { toggleFavoriteAction } from "@/server/actions/favorite.actions";
+import { getCurrentUser } from "@/server/auth/core/session";
+import { favoriteRepository } from "@/server/repositories/favorite.repository";
 import { artistLineOf } from "@/lib/player-track";
 
 export async function generateMetadata({
@@ -33,10 +36,18 @@ export default async function TrackPage({
   if (!track) notFound();
 
   const filters = parseCatalogParams(await searchParams);
-  // Единая очередь каталога (с текущими фильтрами/сортировкой) + похожие.
-  const [related, queue] = await Promise.all([
+  const user = await getCurrentUser();
+  // Единая очередь каталога (с текущими фильтрами/сортировкой) + похожие +
+  // избранное текущего трека (для сердца, только у залогиненного).
+  const [related, queue, favorited] = await Promise.all([
     catalogRepository.findRelated(track),
     catalogQueue(filters),
+    user
+      ? favoriteRepository.getFavoritedVersionIds(
+          user.id,
+          track.versions.map((v) => v.id),
+        )
+      : Promise.resolve(new Set<string>()),
   ]);
 
   return (
@@ -46,6 +57,8 @@ export default async function TrackPage({
       queue={queue}
       contextQuery={filtersToQuery(filters)}
       requestDownload={requestDownloadAction}
+      toggleFavorite={user ? toggleFavoriteAction : undefined}
+      initialFavoritedVersionIds={[...favorited]}
     />
   );
 }

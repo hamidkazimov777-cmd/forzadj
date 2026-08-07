@@ -108,6 +108,7 @@ ForzaDJ is a full-stack DJ pool platform where DJs can discover, preview, and do
 - **Global mini-player** — plays full tracks; survives page navigation without interruption
 - **Preview streaming** — 30-second no-auth previews; full playback after login
 - **Downloads** — original MP3 files via signed URLs; rate-limited (75/day, 2 per track)
+- **Favorites** — ♥ any track (from catalog rows and the track page) into a personal `/favorites` list
 - **Crates** — personal + public playlists with shareable `/c/[slug]` links
 - **Editorial packs** — curated ZIP collections, downloadable in one click
 - **Charts** — auto-generated weekly charts based on download counts
