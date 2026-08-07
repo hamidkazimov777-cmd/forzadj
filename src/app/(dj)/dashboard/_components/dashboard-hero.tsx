@@ -8,13 +8,9 @@ interface DashboardHeroProps {
   stats: DashboardStat[];
 }
 
-/** Приветствие по времени суток (серверная TZ — приемлемо для каркаса). */
+/** Единое приветствие, без привязки ко времени суток. */
 function greeting(): string {
-  const h = new Date().getHours();
-  if (h < 5) return "Доброй ночи";
-  if (h < 12) return "Доброе утро";
-  if (h < 18) return "Добрый день";
-  return "Добрый вечер";
+  return "Добро пожаловать";
 }
 
 /**
