@@ -3,7 +3,7 @@
 > **Основной технический документ.** Обновляется при каждом архитектурном,
 > функциональном или структурном изменении. Отражает ТЕКУЩЕЕ состояние репозитория.
 >
-> Последнее обновление: 2026-08-05 (ревизия по HEAD — миграция БД на Timeweb, переход на Telegram-polling, донат-напоминание, обновлены юр. документы)
+> Последнее обновление: 2026-08-07 (ревизия по HEAD — премиальный блок «Моё» в мобильном меню, §23)
 
 ---
 
@@ -103,7 +103,7 @@ forzadjbeta/
 │   ├── components/
 │   │   ├── auth/      # AuthPanel, TelegramBotLogin, TelegramLoginButton
 │   │   ├── brand/     # Wordmark (белый векторный логотип)
-│   │   ├── layout/    # DjSidebar, TopBar
+│   │   ├── layout/    # DjSidebar, DjNavMobile (премиальный блок «Моё», §23), TopBar
 │   │   ├── marketing/ # HeroCovers, PacksShowcase, ScrollTransitionManager
 │   │   ├── player/    # PlayerProvider, MiniPlayer, Waveform
 │   │   ├── studio/    # TrackUploader, PackForms, GenrePicker, …
@@ -792,6 +792,28 @@ next.config.ts                    # middlewareClientMaxBodySize: 150MB (для �
 ### Ключевые env сайта (в `/opt/forzadj/.env`)
 `MODERATION_INGEST_URL`, `MODERATION_INGEST_SECRET`, `MODERATION_API_SECRET`,
 `SUPPORT_BOT_TOKEN`, `SUPPORT_ADMIN_CHAT_ID` (общие секреты совпадают с Railway).
+
+---
+
+## 23. Мобильное меню: премиальный блок «Моё» (2026-08-07)
+
+Переработан мобильный сайдбар (`DjNavMobile`, `src/components/layout/dj-nav.tsx`)
+по референсу «МОЁ»: персональный раздел поднят вверх меню и визуально
+отделён от основной навигации.
+
+- **`MineBlockMobile` / `MineRow`** (внутри `dj-nav.tsx`): премиальная карточка
+  `rounded-xl border bg-card` в верхней части мобильного меню. Крупные
+  touch-friendly строки (`min-h-12`, иконка `size-5` слева, подпись справа,
+  текст `text-[15px]`). Содержимое: Плейлисты, Избранное, Скачивания,
+  «Опубликовать работу».
+- `NavSections` получил проп `mobile` (по умолчанию `false`): на мобайле
+  рендерит блок «Моё» сверху + группу «Разделы» с основной навигацией.
+- **Десктопный `DjSidebar` не изменился** — компактные строки и прежний
+  порядок секций сохранены.
+- `PublishNavItem` получил опциональный проп `large` (по умолчанию `false`:
+  стили без изменений) — крупная строка для мобильного блока.
+- Новых токенов, цветов и зависимостей не добавлено — использованы
+  существующие `--card`, `--border`, `--sidebar-accent`.
 
 ---
 

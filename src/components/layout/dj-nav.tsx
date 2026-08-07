@@ -82,32 +82,105 @@ function NavRow({
   );
 }
 
-function NavSections({
-  showStudio,
+/**
+ * Премиальный блок «Моё» для мобильного меню: карточка с крупными
+ * touch-friendly строками (иконка слева, подпись справа).
+ */
+function MineRow({
+  item,
+  active,
+  onClick,
+}: {
+  item: NavItem;
+  active: boolean;
+  onClick?: () => void;
+}) {
+  const Icon = item.icon;
+  return (
+    <Link
+      href={item.href}
+      onClick={onClick}
+      className={cn(
+        "flex min-h-12 items-center gap-3.5 rounded-lg px-3.5 py-3 text-[15px] transition-colors",
+        active
+          ? "bg-sidebar-accent font-medium text-foreground"
+          : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
+      )}
+    >
+      <Icon className="size-5 shrink-0" />
+      {item.label}
+    </Link>
+  );
+}
+
+function MineBlockMobile({
   submitTrack,
   onNavigate,
 }: {
-  showStudio: boolean;
   submitTrack?: SubmissionSubmitFn;
   onNavigate?: () => void;
 }) {
   const isActive = useIsActive();
   return (
-    <nav className="flex flex-1 flex-col gap-6">
+    <div className="rounded-xl border bg-card p-2">
+      <p className="px-3.5 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground/70">
+        Моё
+      </p>
       <div className="flex flex-col gap-0.5">
+        {PERSONAL.map((i) => (
+          <MineRow
+            key={i.href}
+            item={i}
+            active={isActive(i.href)}
+            onClick={onNavigate}
+          />
+        ))}
+        {submitTrack && (
+          <PublishNavItem large submit={submitTrack} onNavigate={onNavigate} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NavSections({
+  showStudio,
+  submitTrack,
+  onNavigate,
+  mobile = false,
+}: {
+  showStudio: boolean;
+  submitTrack?: SubmissionSubmitFn;
+  onNavigate?: () => void;
+  mobile?: boolean;
+}) {
+  const isActive = useIsActive();
+  return (
+    <nav className="flex flex-1 flex-col gap-6">
+      {mobile && (
+        <MineBlockMobile submitTrack={submitTrack} onNavigate={onNavigate} />
+      )}
+      <div className="flex flex-col gap-0.5">
+        {mobile && (
+          <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70">
+            Разделы
+          </p>
+        )}
         {PRIMARY.map((i) => (
           <NavRow key={i.href} item={i} active={isActive(i.href)} onClick={onNavigate} />
         ))}
       </div>
-      <div className="flex flex-col gap-0.5">
-        <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70">
-          Моё
-        </p>
-        {PERSONAL.map((i) => (
-          <NavRow key={i.href} item={i} active={isActive(i.href)} onClick={onNavigate} />
-        ))}
-        {submitTrack && <PublishNavItem submit={submitTrack} onNavigate={onNavigate} />}
-      </div>
+      {!mobile && (
+        <div className="flex flex-col gap-0.5">
+          <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70">
+            Моё
+          </p>
+          {PERSONAL.map((i) => (
+            <NavRow key={i.href} item={i} active={isActive(i.href)} onClick={onNavigate} />
+          ))}
+          {submitTrack && <PublishNavItem submit={submitTrack} onNavigate={onNavigate} />}
+        </div>
+      )}
       {showStudio && (
         <div className="mt-auto flex flex-col gap-0.5">
           <NavRow item={STUDIO} active={isActive(STUDIO.href)} onClick={onNavigate} />
@@ -191,6 +264,7 @@ export function DjNavMobile({
             showStudio={showStudio}
             submitTrack={submitTrack}
             onNavigate={() => setOpen(false)}
+            mobile
           />
         </div>
       </SheetContent>

@@ -21,9 +21,12 @@ import type { SubmissionSubmitFn } from "@/types/submission";
 export function PublishNavItem({
   submit,
   onNavigate,
+  large = false,
 }: {
   submit: SubmissionSubmitFn;
   onNavigate?: () => void;
+  /** Крупная touch-friendly строка для мобильного блока «Моё». */
+  large?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -37,6 +40,8 @@ export function PublishNavItem({
         }}
         className={cn(
           "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-foreground",
+          large &&
+            "min-h-12 gap-3.5 rounded-lg px-3.5 py-3 text-[15px] [&_svg]:size-5",
         )}
       >
         <UploadCloud className="size-[18px] shrink-0" />
