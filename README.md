@@ -112,6 +112,9 @@ ForzaDJ is a full-stack DJ pool platform where DJs can discover, preview, and do
 - **Editorial packs** — curated ZIP collections, downloadable in one click
 - **Charts** — auto-generated weekly charts based on download counts
 - **Dashboard** — personalized home with stats, new releases, download history
+- **Publish your own work** — DJs submit their own edits/remixes (MP3, drag & drop) with a mandatory agreement; tracks go through moderation and appear in the catalog once approved. Submission history with live status (On moderation / Published / Rejected)
+- **Support** — official contact form (categories, attachments, consent) delivered to a Telegram support bot
+- **FAQ** — public help page (`/faq`)
 
 ### For Admins (Studio)
 - **Track upload** — batch upload with immediate audio analysis
@@ -133,6 +136,16 @@ ForzaDJ is a full-stack DJ pool platform where DJs can discover, preview, and do
 - **Telegram Bot deep-link** — one-tap login via `t.me/<bot>?start=<nonce>`
 - Both flows share a single `issueTelegramSession()` function
 - Supabase Auth magic-link OTP under the hood — no passwords stored
+
+### Track Submission & Moderation
+- DJs submit tracks via the site → stored in a private `submissions` bucket + a `TrackSubmission` record (status `ON_MODERATION`)
+- Delivered to a **moderation Telegram bot**, where the admin reviews the playable audio and picks **Edit / Publish / Reject**
+- **Publish** reuses the same publishing endpoint as the Admin Bot (`POST /api/bot/upload`) — no duplicated publish logic; **Reject** captures a reason
+- The bot calls `POST /api/submissions/[id]/moderate`, which updates the status and notifies the user via the login bot
+- **Support** tickets are stored (`SupportTicket` + `support` bucket) and delivered to a support Telegram bot
+
+### Environment note
+- Track/Support uploads go through **Server Actions** → `experimental.serverActions.bodySizeLimit` is raised in `next.config.ts` (the 1 MB default is too small for MP3s)
 
 ---
 
@@ -330,7 +343,9 @@ donations    → donation_events, donation_rewards
 
 ## Related
 
-**[ForzaDJ Admin Bot](https://github.com/hamidkazimov777-cmd/forzadj-admin-bot)** — Telegram bot for one-command track publishing. Receives MP3 → extracts metadata → AI genre/mood classification via Groq → selects branded artwork → publishes to the platform via a secret-authenticated API. Built with grammY, TypeScript, and Groq `llama-3.3-70b-versatile`.
+**[ForzaDJ Admin Bot](https://github.com/hamidkazimov777-cmd/forzadj-admin-bot)** — Telegram bot for one-command track publishing. Receives MP3 → extracts metadata → AI genre/mood classification → selects branded artwork → publishes to the platform via a secret-authenticated API. Built with grammY, TypeScript.
+
+**[ForzaDJ Bots](https://github.com/hamidkazimov777-cmd/forzadj-bots)** — moderation bot (reviews user-submitted tracks: Edit / Publish / Reject) and support bot, deployed on Railway. Built with grammY and TypeScript.
 
 ---
 
