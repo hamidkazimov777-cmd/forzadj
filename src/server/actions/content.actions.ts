@@ -4,6 +4,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { requirePermission } from "@/server/auth/core/session";
 import { contentService } from "@/server/services/content.service";
 import { uploadService, type UploadTicket } from "@/server/services/upload.service";
+import { getJobQueue } from "@/server/jobs";
 import { CATALOG_CACHE_TAG } from "@/server/services/search.service";
 import {
   trackMetadataSchema,
@@ -77,6 +78,11 @@ export async function saveVersionAndPublishAction(
     isExplicit: parsed.isExplicit,
   });
   await contentService.setTrackStatus(user.id, trackId, "PUBLISHED");
+  // Брендируем обложку по жанру (как бот публикации): удаляем оригинальную
+  // обложку, ставим нашу по жанру и перевшиваем её в скачиваемый файл. Жанр
+  // уже сохранён к моменту публикации (updateTrackAction), берётся из трека
+  // в самом job'е. Фоном — не блокируем ответ студии.
+  await getJobQueue().enqueue("artwork.brand", { versionId });
   revalidatePath(`/studio/tracks/${trackId}`);
   revalidatePath("/studio/tracks");
   revalidateTag(CATALOG_CACHE_TAG);

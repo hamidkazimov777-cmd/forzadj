@@ -4,6 +4,7 @@ import { InlineJobQueue } from "./adapters/inline";
 import "./handlers/asset-process";
 import "./handlers/audio-analyze";
 import "./handlers/artwork-optimize";
+import "./handlers/artwork-brand";
 
 export type { JobQueue, JobName, JobPayloads } from "./jobs.interface";
 export { registerJobHandler } from "./registry";

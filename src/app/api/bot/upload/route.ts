@@ -8,64 +8,11 @@ import { assetRepository } from "@/server/repositories/asset.repository";
 import { taxonomyRepository } from "@/server/repositories/taxonomy.repository";
 import { revisionRepository } from "@/server/repositories/revision.repository";
 import type { VersionType, TrackMood } from "@/types/db";
-import { execFile } from "child_process";
-import { promisify } from "util";
-import { writeFile, readFile, unlink } from "fs/promises";
-import { tmpdir } from "os";
-import { join } from "path";
-
-const execFileAsync = promisify(execFile);
-
-// Re-encodes the uploaded audio, optionally embedding branded artwork, and
-// always overwrites the title/artist ID3 tags with the clean values shown on
-// the site. ffmpeg copies ALL metadata from the input by default (including
-// the original, un-cleaned tags, e.g. "Track Name (Musvisor Intro)"), so
-// without the explicit `-metadata` overrides below the catalog would show a
-// clean title while the downloaded file still carried the dirty one.
-async function embedArtworkIntoAudio(
-  audioBuffer: Buffer,
-  artworkBuffer: Buffer | null,
-  ext: string,
-  tags: { title: string; artist?: string },
-): Promise<Buffer> {
-  const tmp = tmpdir();
-  const inAudio = join(tmp, `forzadj-in-${Date.now()}.${ext}`);
-  const inArt = artworkBuffer ? join(tmp, `forzadj-art-${Date.now()}.png`) : null;
-  const outAudio = join(tmp, `forzadj-out-${Date.now()}.${ext}`);
-  await writeFile(inAudio, audioBuffer);
-  if (inArt && artworkBuffer) await writeFile(inArt, artworkBuffer);
-
-  const args = ["-y", "-i", inAudio];
-  if (inArt) args.push("-i", inArt);
-  args.push("-map", "0:a");
-  if (inArt) {
-    args.push(
-      "-map", "1:v",
-      "-c:a", "copy",
-      "-c:v", "mjpeg",
-      "-id3v2_version", "3",
-      "-metadata:s:v", "title=Album cover",
-      "-metadata:s:v", "comment=Cover (front)",
-      "-disposition:v", "attached_pic",
-    );
-  } else {
-    args.push("-c:a", "copy", "-id3v2_version", "3");
-  }
-  args.push("-metadata", `title=${tags.title}`);
-  if (tags.artist) args.push("-metadata", `artist=${tags.artist}`);
-  args.push(outAudio);
-
-  try {
-    await execFileAsync("ffmpeg", args);
-    return await readFile(outAudio);
-  } finally {
-    await Promise.all([
-      unlink(inAudio),
-      inArt ? unlink(inArt) : Promise.resolve(),
-      unlink(outAudio).catch(() => {}),
-    ]);
-  }
-}
+// Re-encode + branded-artwork embed is shared with the studio publish flow
+// (single source of truth so bot and site never diverge). It re-encodes the
+// uploaded audio, optionally embedding branded artwork, and always overwrites
+// the title/artist ID3 tags with the clean values shown on the site.
+import { embedArtworkIntoAudio } from "@/server/services/branded-artwork";
 
 // Internal endpoint for the ForzaDJ Admin Telegram Bot.
 // Auth: X-Bot-Secret header must match BOT_UPLOAD_SECRET env var.
