@@ -631,6 +631,7 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
+| `b30ee39` | 2026-08-10 | fix(build): const вместо let в asset-process — prefer-const валил next build (сайт лежал 502) + AI_GUIDE.md для ИИ-ассистентов |
 | `ac1f3fe` | 2026-08-09 | fix: resolve TypeScript Buffer assignment error in asset-process |
 | `e2d1bae` | 2026-08-09 | feat: automatically convert lossless audio to MP3 during studio upload processing |
 | `4230628` | 2026-08-09 | feat: add api/bot/history endpoint for AI RAG                    |
