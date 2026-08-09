@@ -125,6 +125,7 @@ ForzaDJ is a full-stack DJ pool platform where DJs can discover, preview, and do
 - **User management** — role assignment (Super Admin only)
 
 ### Audio Pipeline
+- Lossless auto-conversion — Studio uploads of WAV/FLAC/AIFF are transcoded to 320k MP3 in the `asset.process` job (file-to-file via FFmpeg, output duration validated against input), the original lossless object is deleted from storage, and the rest of the pipeline runs on the MP3
 - BPM and musical key detection via **Essentia.js (WASM)** — runs in Node.js, no Python dependency
 - MP3 preview generation (30 s) and peak waveform JSON via **FFmpeg**
 - Artwork optimization — 4 WebP sizes generated asynchronously via **Sharp**

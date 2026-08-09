@@ -631,6 +631,7 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
+| `<pending>` | 2026-08-10 | feat(studio): авто-конвертация lossless (WAV/FLAC/AIFF)→MP3 320k в asset.process — файл→файл + валидация длительности (фикс «5-сек обрезки» от прежнего pipe), удаление оригинала из бакета |
 | `b30ee39` | 2026-08-10 | fix(build): const вместо let в asset-process — prefer-const валил next build (сайт лежал 502) + AI_GUIDE.md для ИИ-ассистентов |
 | `ac1f3fe` | 2026-08-09 | fix: resolve TypeScript Buffer assignment error in asset-process |
 | `e2d1bae` | 2026-08-09 | feat: automatically convert lossless audio to MP3 during studio upload processing |

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
-import { writeFile, unlink, mkdtemp } from "node:fs/promises";
+import { writeFile, readFile, unlink, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseBuffer } from "music-metadata";
@@ -122,14 +122,87 @@ registerJobHandler("asset.process", async ({ assetId }) => {
 
   try {
     const bytes = await storage.get("audio", asset.storageKey);
-    const buffer = Buffer.from(bytes);
+    let buffer = Buffer.from(bytes);
 
-    const meta = await parseBuffer(buffer, { mimeType: asset.mime ?? undefined }).catch((e) => {
+    let meta = await parseBuffer(buffer, { mimeType: asset.mime ?? undefined }).catch((e) => {
       console.warn(`[asset.process] metadata parse failed: ${e.message}`);
       return null;
     });
 
+    // ── Авто-конвертация Lossless → MP3 ──────────────────────────────────
+    // Крупные lossless (WAV/FLAC/AIFF) грузятся через Studio. Храним только MP3
+    // 320k: конвертируем ФАЙЛ→ФАЙЛ (не через пайп — пайп раньше давал обрезанный
+    // ~5-секундный файл на больших входах), ВАЛИДИРУЕМ длительность выхода
+    // (должна совпасть с входом ±2с — иначе не сохраняем битый файл), УДАЛЯЕМ
+    // исходный lossless из бакета, и дальше весь пайплайн идёт по MP3.
+    const isLossless = ["WAVE", "FLAC", "AIFF"].includes(meta?.format.container ?? "");
+    if (isLossless && (await ffmpegAvailable())) {
+      const inDuration = meta?.format.duration ?? null;
+      const dir = await mkdtemp(join(tmpdir(), "forzadj-conv-"));
+      const src = join(dir, "src");
+      const out = join(dir, "out.mp3");
+      await writeFile(src, buffer);
+      try {
+        console.log(
+          `[asset.process] конвертация lossless ${asset.storageKey} → MP3 (вход ~${inDuration ? Math.round(inDuration) : "?"}s)…`,
+        );
+        // Файл→файл: ffmpeg сам читает/пишет на диск, полный трек.
+        await runFfmpeg([
+          "-y", "-i", src,
+          "-map_metadata", "0",
+          "-id3v2_version", "3",
+          "-c:a", "libmp3lame",
+          "-b:a", "320k",
+          out,
+        ]);
+        const mp3 = await readFile(out);
 
+        // Валидация: mp3 читается и длительность не обрезана.
+        const outMeta = await parseBuffer(mp3, { mimeType: "audio/mpeg" }).catch(() => null);
+        const outDuration = outMeta?.format.duration ?? null;
+        if (mp3.length < 1024) {
+          throw new Error(`пустой выход конвертации (${mp3.length} байт)`);
+        }
+        if (inDuration && outDuration && outDuration < inDuration - 2) {
+          throw new Error(
+            `конвертация обрезана: вход ${Math.round(inDuration)}s, выход ${Math.round(outDuration)}s`,
+          );
+        }
+
+        const newStorageKey = asset.storageKey.replace(/\.[^.]+$/, ".mp3");
+        await storage.put("audio", newStorageKey, mp3, { contentType: "audio/mpeg" });
+
+        // Удаляем оригинальный lossless (только если ключ реально другой).
+        if (newStorageKey !== asset.storageKey) {
+          await storage.delete("audio", asset.storageKey).catch((e) =>
+            console.error(`[asset.process] не удалить оригинал ${asset.storageKey}:`, e),
+          );
+        }
+
+        await assetRepository.update(asset.id, {
+          storageKey: newStorageKey,
+          mime: "audio/mpeg",
+          sizeBytes: BigInt(mp3.length),
+          originalName: asset.originalName
+            ? asset.originalName.replace(/\.[^.]+$/, ".mp3")
+            : null,
+        });
+        asset.storageKey = newStorageKey;
+
+        buffer = mp3;
+        meta = outMeta;
+        console.log(
+          `[asset.process] сконвертировано → ${newStorageKey} (${(mp3.length / 1024 / 1024).toFixed(2)} MB, ~${outDuration ? Math.round(outDuration) : "?"}s)`,
+        );
+      } catch (err) {
+        // Конвертация/валидация не удалась — оставляем оригинал как есть,
+        // задачу не роняем (лучше исходный lossless, чем битый mp3).
+        console.error(`[asset.process] lossless-конвертация не удалась (${assetId}):`, err);
+      } finally {
+        await unlink(src).catch(() => {});
+        await unlink(out).catch(() => {});
+      }
+    }
 
     const checksum = createHash("sha256").update(buffer).digest("hex");
 
