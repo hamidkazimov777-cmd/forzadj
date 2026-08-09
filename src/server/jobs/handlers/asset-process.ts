@@ -161,7 +161,7 @@ registerJobHandler("asset.process", async ({ assetId }) => {
           originalName: asset.originalName ? asset.originalName.replace(/\.[^.]+$/, ".mp3") : null
         });
         
-        buffer = mp3Pcm;
+        buffer = Buffer.from(mp3Pcm);
         
         meta = await parseBuffer(buffer, { mimeType: "audio/mpeg" }).catch(() => null);
         console.log(`[asset.process] Successfully converted and saved as ${newStorageKey}`);
