@@ -122,15 +122,59 @@ registerJobHandler("asset.process", async ({ assetId }) => {
 
   try {
     const bytes = await storage.get("audio", asset.storageKey);
-    const buffer = Buffer.from(bytes);
+    let buffer = Buffer.from(bytes);
+
+    let meta = await parseBuffer(buffer, { mimeType: asset.mime ?? undefined }).catch((e) => {
+      console.warn(`[asset.process] metadata parse failed: ${e.message}`);
+      return null;
+    });
+
+    // ── Авто-конвертация Lossless → MP3 ──────────────────────────────────
+    const isLossless = ["WAVE", "FLAC", "AIFF"].includes(meta?.format.container ?? "");
+    if (isLossless && await ffmpegAvailable()) {
+      const dir = await mkdtemp(join(tmpdir(), "forzadj-an-"));
+      const src = join(dir, "src");
+      await writeFile(src, buffer);
+      
+      try {
+        console.log(`[asset.process] Converting lossless ${asset.storageKey} to MP3...`);
+        const mp3Pcm = await runFfmpeg([
+          "-y", "-i", src,
+          "-map_metadata", "0",
+          "-id3v2_version", "3",
+          "-c:a", "libmp3lame",
+          "-b:a", "320k",
+          "-f", "mp3", "pipe:1"
+        ]);
+        
+        const newStorageKey = asset.storageKey.replace(/\.[^.]+$/, ".mp3");
+        await storage.put("audio", newStorageKey, mp3Pcm, { contentType: "audio/mpeg" });
+        
+        await storage.delete("audio", asset.storageKey).catch(e => 
+          console.error(`[asset.process] Failed to delete original lossless file ${asset.storageKey}:`, e)
+        );
+        
+        await assetRepository.update(asset.id, {
+          storageKey: newStorageKey,
+          mime: "audio/mpeg",
+          sizeBytes: BigInt(mp3Pcm.length),
+          originalName: asset.originalName ? asset.originalName.replace(/\.[^.]+$/, ".mp3") : null
+        });
+        
+        buffer = mp3Pcm;
+        
+        meta = await parseBuffer(buffer, { mimeType: "audio/mpeg" }).catch(() => null);
+        console.log(`[asset.process] Successfully converted and saved as ${newStorageKey}`);
+      } catch (err) {
+        console.error(`[asset.process] Lossless conversion failed for ${assetId}:`, err);
+      } finally {
+        await unlink(src).catch(() => {});
+      }
+    }
+
     const checksum = createHash("sha256").update(buffer).digest("hex");
 
     // ── Метаданные ────────────────────────────────────────────────────────
-    const meta = await parseBuffer(buffer, { mimeType: asset.mime ?? undefined })
-      .catch((e) => {
-        console.warn(`[asset.process] metadata parse failed: ${e.message}`);
-        return null;
-      });
 
     const version = asset.version;
     const durationSeconds = meta?.format.duration

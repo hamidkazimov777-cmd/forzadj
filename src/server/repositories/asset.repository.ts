@@ -22,6 +22,10 @@ export const assetRepository = {
     return prisma.asset.create({ data: input });
   },
 
+  update(id: string, data: Partial<{ storageKey: string; originalName: string | null; mime: string; sizeBytes: bigint }>) {
+    return prisma.asset.update({ where: { id }, data });
+  },
+
   setStatus(
     id: string,
     status: AssetStatus,
