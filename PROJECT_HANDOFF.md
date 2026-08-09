@@ -529,6 +529,7 @@ Webhook верификация (если используется): `X-Telegram-
 | GET   | `/api/collections/[id]/download`      | ZIP крейта                                  |
 | GET   | `/api/packs/[slug]/download`          | ZIP редакционного пака                      |
 | GET   | `/yandex/suggest/token`               | Yandex OAuth helper (устаревший, оставлен)  |
+| GET   | `/api/bot/history`                    | RAG статистика артистов/ремиксеров для бота (auth: `x-bot-secret` = `BOT_UPLOAD_SECRET`) |
 | POST  | `/api/bot/upload`                     | Загрузка трека через ForzaDJ Admin Bot (auth: `x-bot-secret` = `BOT_UPLOAD_SECRET`) |
 | POST  | `/api/submissions/[id]/moderate`      | Колбэк решения модерации от бота (auth: `x-bot-secret` = `MODERATION_API_SECRET`) |
 
@@ -630,6 +631,9 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
+| `ac1f3fe` | 2026-08-09 | fix: resolve TypeScript Buffer assignment error in asset-process |
+| `e2d1bae` | 2026-08-09 | feat: automatically convert lossless audio to MP3 during studio upload processing |
+| `4230628` | 2026-08-09 | feat: add api/bot/history endpoint for AI RAG                    |
 | `3056f67` | 2026-08-07 | feat(track): кнопка ♥ на странице трека (TrackNowPlaying); `/api/track/[slug]` отдаёт `favoritedVersionIds` |
 | `a4f79ca` | 2026-08-07 | feat(studio): авто-брендирование обложки по жанру при публикации (job `artwork.brand`, общий `embedArtworkIntoAudio`) |
 | `1eb0d9d` | 2026-08-05 | Add non-intrusive donation reminder toast for active users       |
@@ -666,10 +670,11 @@ src/app/api/bot/upload/route.ts   # Endpoint загрузки от бота (aut
 next.config.ts                    # middlewareClientMaxBodySize: 150MB (для аудио + PNG)
 ```
 
-**Критичные детали `bot/upload/route.ts`:**
+**Критичные детали `bot/upload/route.ts` и `asset.process`:**
 - `asset.process` запускается синхронно (`await enqueue(...)`) — иначе `softDeleteByVersionAndType` перезапишет брендовую обложку
+- Внутри `asset.process` происходит авто-конвертация lossless (WAV/FLAC) форматов в MP3 (через ffmpeg) с удалением оригинала, чтобы экономить место и не хранить тяжёлые исходники
 - После создания ARTWORK-ассета обязателен `setStatus(artworkAsset.id, "READY")` — иначе `findReadyByVersionAndType` его не найдёт
-- ffmpeg re-encode: `-c:a copy` (аудио не перекодируется), только обложка в ID3
+- ffmpeg re-encode: `-c:a copy` (аудио не перекодируется, если это уже mp3), только обложка в ID3
 - Auto-publish: `trackRepository.update(id, { status: "PUBLISHED" })` + `trackVersionRepository.update(id, { status: "PUBLISHED" })`
 
 ---
