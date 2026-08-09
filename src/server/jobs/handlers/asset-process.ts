@@ -122,9 +122,9 @@ registerJobHandler("asset.process", async ({ assetId }) => {
 
   try {
     const bytes = await storage.get("audio", asset.storageKey);
-    let buffer = Buffer.from(bytes);
+    const buffer = Buffer.from(bytes);
 
-    let meta = await parseBuffer(buffer, { mimeType: asset.mime ?? undefined }).catch((e) => {
+    const meta = await parseBuffer(buffer, { mimeType: asset.mime ?? undefined }).catch((e) => {
       console.warn(`[asset.process] metadata parse failed: ${e.message}`);
       return null;
     });
