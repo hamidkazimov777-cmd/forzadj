@@ -106,9 +106,10 @@ export class R2StorageAdapter implements StorageProvider {
       // Node fetch принимает Uint8Array/Buffer как тело; тип BodyInit его не
       // включает в текущей конфигурации lib — приводим явно.
       body: body as unknown as BodyInit,
-      headers: opts?.contentType
-        ? { "content-type": opts.contentType }
-        : undefined,
+      headers: {
+        ...(opts?.contentType ? { "content-type": opts.contentType } : {}),
+        "content-length": String(body.byteLength ?? body.length),
+      },
     });
     if (!res.ok) {
       throw new Error(`R2 put failed: HTTP ${res.status} ${await res.text().catch(() => "")}`);
