@@ -631,7 +631,7 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
-| `<pending>` | 2026-08-10 | feat(storage): миграция Storage на Cloudflare R2 (S3 через aws4fetch, один бакет `forzadj` с префиксами, нулевой egress) — `STORAGE_DRIVER=r2`; Supabase Storage выведен из строя (заморозка проекта) |
+| `232ee38` | 2026-08-10 | feat(storage): миграция Storage на Cloudflare R2 (S3 через aws4fetch, один бакет `forzadj` с префиксами, нулевой egress) — `STORAGE_DRIVER=r2`; Supabase Storage выведен из строя (заморозка проекта) |
 | `3afd4f9` | 2026-08-10 | feat(auth): свой session-слой (подписанный httpOnly cookie, `SESSION_SECRET`) вместо Supabase Auth — Supabase заморозил проект за превышение квот; вход больше не зависит от Supabase. Storage → следующим шагом на Cloudflare R2 |
 | `c978c75` | 2026-08-10 | feat(studio): авто-конвертация lossless (WAV/FLAC/AIFF)→MP3 320k в asset.process — файл→файл + валидация длительности (фикс «5-сек обрезки» от прежнего pipe), удаление оригинала из бакета |
 | `b30ee39` | 2026-08-10 | fix(build): const вместо let в asset-process — prefer-const валил next build (сайт лежал 502) + AI_GUIDE.md для ИИ-ассистентов |
