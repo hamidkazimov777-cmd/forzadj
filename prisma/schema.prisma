@@ -39,9 +39,10 @@ enum AuthProvider {
 
 model User {
   id             String    @id @default(uuid(7)) @db.Uuid
-  /// Ссылка на auth.users Supabase Auth (v1). При смене провайдера auth
-  /// связь переезжает в auth_identities без изменения этой таблицы.
-  supabaseUserId String    @unique @map("supabase_user_id") @db.Uuid
+  /// Легаси: ссылка на auth.users Supabase Auth (v1). Больше не используется —
+  /// сессии выпускаются собственным слоем (session-cookie.ts). Оставлено
+  /// nullable для старых записей; новые пользователи создаются без него.
+  supabaseUserId String?   @unique @map("supabase_user_id") @db.Uuid
   displayName    String    @map("display_name")
   avatarUrl      String?   @map("avatar_url")
   role           UserRole  @default(DJ)

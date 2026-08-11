@@ -1,18 +1,13 @@
 import { verifyTelegramLogin } from "@/server/auth/providers/telegram";
-import {
-  createSessionTokenHash,
-  ensureSupabaseUser,
-  telegramSyntheticEmail,
-} from "@/server/auth/providers/supabase-admin-auth";
 import { userRepository } from "@/server/repositories/user.repository";
 import { isOwnerTelegramId } from "@/lib/config/owner";
 
 /**
  * Оркестрация входа через Telegram:
  * 1) HMAC-верификация данных виджета;
- * 2) upsert User + AuthIdentity (+ пользователь Supabase Auth);
- * 3) выпуск одноразового token_hash — сессию из него устанавливает
- *    route handler на cookie-привязанном клиенте.
+ * 2) upsert User + AuthIdentity;
+ * 3) возврат userId — сессию (свой подписанный cookie) ставит вызывающий
+ *    route handler / server action через createSession(userId).
  */
 
 function displayNameOf(profile: VerifiedTelegramUser): string {
@@ -25,7 +20,7 @@ function displayNameOf(profile: VerifiedTelegramUser): string {
 export async function loginWithTelegram(
   params: Record<string, string>,
 ): Promise<
-  { tokenHash: string; isNew: boolean } | { error: "invalid_signature" }
+  { userId: string; isNew: boolean } | { error: "invalid_signature" }
 > {
   const profile = verifyTelegramLogin(params);
   if (!profile) return { error: "invalid_signature" };
@@ -48,8 +43,7 @@ export interface VerifiedTelegramUser {
  */
 export async function issueTelegramSession(
   profile: VerifiedTelegramUser,
-): Promise<{ tokenHash: string; isNew: boolean }> {
-  const email = telegramSyntheticEmail(profile.id);
+): Promise<{ userId: string; isNew: boolean }> {
   // null вместо undefined: JSON-снапшот в БД не хранит undefined-полей.
   const profileSnapshot = {
     username: profile.username ?? null,
@@ -57,13 +51,6 @@ export async function issueTelegramSession(
     first_name: profile.first_name ?? null,
     last_name: profile.last_name ?? null,
   };
-
-  // Supabase Auth-пользователь гарантируется всегда (идемпотентно): и при
-  // первом входе (регистрация), и при повторном — чтобы выпуск сессии не
-  // зависел от рассинхрона между нашей БД и Supabase Auth.
-  const supabaseUserId = await ensureSupabaseUser(email, {
-    telegram_id: profile.id,
-  });
 
   // Владелец проекта (по Telegram ID из ENV) → SUPER_ADMIN; остальные → DJ.
   const isOwner = isOwnerTelegramId(profile.id);
@@ -88,8 +75,7 @@ export async function issueTelegramSession(
     await userRepository.touchLastLogin(existing.id);
   } else {
     // Первый вход: автоматическая регистрация (владелец → SUPER_ADMIN, иначе DJ).
-    await userRepository.createWithIdentity({
-      supabaseUserId,
+    const created = await userRepository.createWithIdentity({
       displayName: displayNameOf(profile),
       avatarUrl: profile.photo_url ?? null,
       role: isOwner ? "SUPER_ADMIN" : "DJ",
@@ -97,8 +83,8 @@ export async function issueTelegramSession(
       providerUserId: profile.id,
       profile: profileSnapshot,
     });
+    return { userId: created.id, isNew };
   }
 
-  const tokenHash = await createSessionTokenHash(email);
-  return { tokenHash, isNew };
+  return { userId: existing.id, isNew };
 }

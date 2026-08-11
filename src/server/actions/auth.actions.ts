@@ -1,10 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/server/auth/providers/supabase-server";
+import { clearSession } from "@/server/auth/core/session-cookie";
 
 export async function signOut(): Promise<never> {
-  const supabase = await createSupabaseServerClient();
-  await supabase.auth.signOut();
+  await clearSession();
   redirect("/");
 }

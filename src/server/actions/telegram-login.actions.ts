@@ -4,10 +4,7 @@ import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { telegramLoginRepository } from "@/server/repositories/telegram-login.repository";
 import { issueTelegramSession } from "@/server/services/auth.service";
-import {
-  createSupabaseServerClient,
-  isSupabaseConfigured,
-} from "@/server/auth/providers/supabase-server";
+import { createSession } from "@/server/auth/core/session-cookie";
 
 /**
  * Вход через Telegram-бота (deep-link). Пользователь открывает
@@ -91,7 +88,7 @@ export async function pollTelegramBotLogin(): Promise<PollResult> {
 
   // CONFIRMED или CONSUMED → выдаём/подтверждаем сессию.
   if (token.status === "CONFIRMED") {
-    if (!isSupabaseConfigured() || !token.telegramUserId) {
+    if (!token.telegramUserId) {
       return { status: "expired" };
     }
     const data = (token.telegramData ?? {}) as {
@@ -100,7 +97,7 @@ export async function pollTelegramBotLogin(): Promise<PollResult> {
       username?: string | null;
       photo_url?: string | null;
     };
-    let session: { tokenHash: string; isNew: boolean };
+    let session: { userId: string; isNew: boolean };
     try {
       session = await issueTelegramSession({
         id: token.telegramUserId,
@@ -114,15 +111,8 @@ export async function pollTelegramBotLogin(): Promise<PollResult> {
       return { status: "expired" };
     }
 
-    const supabase = await createSupabaseServerClient();
-    const { error } = await supabase.auth.verifyOtp({
-      type: "magiclink",
-      token_hash: session.tokenHash,
-    });
-    if (error) {
-      console.error("[tg-login] verifyOtp failed:", error.message);
-      return { status: "expired" };
-    }
+    // Ставим собственную подписанную сессию (httpOnly cookie).
+    await createSession(session.userId);
 
     await telegramLoginRepository.markConsumed(token.id);
   }

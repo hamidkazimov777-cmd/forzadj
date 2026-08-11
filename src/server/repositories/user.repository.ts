@@ -62,7 +62,6 @@ export const userRepository = {
   },
 
   createWithIdentity(input: {
-    supabaseUserId: string;
     displayName: string;
     avatarUrl?: string | null;
     role?: UserRole;
@@ -72,7 +71,6 @@ export const userRepository = {
   }) {
     return prisma.user.create({
       data: {
-        supabaseUserId: input.supabaseUserId,
         displayName: input.displayName,
         avatarUrl: input.avatarUrl ?? null,
         role: input.role ?? "DJ",

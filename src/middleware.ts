@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { updateSession } from "@/server/auth/providers/supabase-middleware";
+import { SESSION_COOKIE } from "@/server/auth/core/session-constants";
 
 /**
  * Первая линия защиты: наличие сессии для зоны DJ.
@@ -22,8 +22,9 @@ const PROTECTED_PREFIXES = [
   "/account",
 ];
 
-export async function middleware(request: NextRequest) {
-  const { response, isAuthenticated } = await updateSession(request);
+export function middleware(request: NextRequest) {
+  // Presence-проверка своей сессии (подпись/срок валидируются в server-guard'ах).
+  const isAuthenticated = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
 
   const path = request.nextUrl.pathname;
   const isProtected = PROTECTED_PREFIXES.some(
@@ -40,7 +41,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {

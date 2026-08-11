@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { loginWithTelegram } from "@/server/services/auth.service";
-import { createSupabaseServerClient } from "@/server/auth/providers/supabase-server";
+import { createSession } from "@/server/auth/core/session-cookie";
 
 /**
  * Приём redirect'а Telegram Login Widget (data-auth-url).
@@ -41,16 +41,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    // Устанавливаем сессию в куки через cookie-привязанный клиент.
-    const supabase = await createSupabaseServerClient();
-    const { error } = await supabase.auth.verifyOtp({
-      type: "magiclink",
-      token_hash: result.tokenHash,
-    });
-    if (error) {
-      loginUrl.searchParams.set("error", "session_failed");
-      return NextResponse.redirect(loginUrl);
-    }
+    // Устанавливаем собственную подписанную сессию (httpOnly cookie).
+    await createSession(result.userId);
 
     // Успех: сразу в личный кабинет (или туда, откуда пришёл гость).
     return NextResponse.redirect(new URL(next, baseUrl));
