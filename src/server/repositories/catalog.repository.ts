@@ -406,11 +406,20 @@ export const catalogRepository = {
   },
 
   listGenresWithCounts() {
+    // Глобальный soft-delete-фильтр (см. prisma.ts) патчит только
+    // ВЕРХНЕУРОВНЕВЫЕ операции ($allModels.findMany/count/…) — вложенный
+    // _count.select.tracks.where внутри Genre.findMany он не перехватывает,
+    // поэтому deletedAt здесь нужно фильтровать явно. Без этого архивные/
+    // удалённые треки продолжают учитываться в счётчиках жанров каталога.
     return prisma.genre.findMany({
       orderBy: { name: "asc" },
       include: {
         _count: {
-          select: { tracks: { where: { track: { status: "PUBLISHED" } } } },
+          select: {
+            tracks: {
+              where: { track: { status: "PUBLISHED", deletedAt: null } },
+            },
+          },
         },
       },
     });
