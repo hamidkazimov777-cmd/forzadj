@@ -2,374 +2,81 @@
 
 # ForzaDJ
 
-**Free DJ pool platform — download exclusive tracks without subscriptions**
+**Full-stack DJ platform & automation ecosystem**
 
 🌐 **Live:** [forzadj.ru](https://forzadj.ru)
 
-[![Website](https://img.shields.io/badge/Live-forzadj.ru-6E56CF?style=flat-square&logo=googlechrome&logoColor=white)](https://forzadj.ru)
-[![Next.js](https://img.shields.io/badge/Next.js-15.5-black?style=flat-square&logo=next.js)](https://nextjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?style=flat-square&logo=prisma)](https://www.prisma.io)
-[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20Storage-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org)
-[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
-[![Status](https://img.shields.io/badge/status-production-brightgreen?style=flat-square)]()
-
-[**Live Demo →**](https://forzadj.ru) · [Admin Bot →](https://github.com/hamidkazimov777-cmd/forzadj-admin-bot) · [Report Bug](https://github.com/hamidkazimov777-cmd/forzadj/issues)
+[![Next.js](https://img.shields.io/badge/Next.js-15.5-black?style=flat-square&logo=next.js)]()
+[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20Storage-3ECF8E?style=flat-square&logo=supabase&logoColor=white)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)]()
 
 </div>
 
 ---
 
-## Screenshots
+## 🎧 Overview
 
-| Landing | Editorial Packs |
-|:-------:|:----------------:|
-| ![landing](docs/screenshots/landing.png) | ![packs](docs/screenshots/packs.png) |
+ForzaDJ is a production-grade full-stack platform built for DJs to discover, preview, and download exclusive tracks. It operates entirely without subscriptions, driven by a voluntary donation model.
 
----
-
-## Overview
-
-ForzaDJ is a full-stack DJ pool platform where DJs can discover, preview, and download exclusive tracks — without subscriptions or hidden fees. The platform runs on a voluntary donation model.
-
-**Highlights:**
-- Full audio pipeline — preview generation, waveform visualization, BPM/Key auto-detection
-- Telegram authentication — no passwords, one-tap login
-- Three-tier role system — DJ, Admin, Super Admin
-- Integrated [Telegram Admin Bot](https://github.com/hamidkazimov777-cmd/forzadj-admin-bot) for one-command AI-powered content publishing
-- Premium dark "studio glass" UI — signal-violet accent, layered depth, glassmorphism, and a global mini-player that persists across navigation
+**Product Highlights:**
+- **Frictionless Onboarding**: Passwordless, one-tap authentication via Telegram.
+- **Uninterrupted UX**: A global, persistent mini-player that survives page navigation — built on a custom Next.js App Router architecture.
+- **Audio Intelligence**: Real-time extraction of BPM and musical key via Essentia.js (WebAssembly) and waveform generation via FFmpeg.
+- **Admin Automation**: Content ingestion is 100% automated. Track uploads, metadata tagging, and publishing are handled via an AI-assisted Telegram Admin Bot, streamlining the platform management.
 
 ---
 
-## Architecture
+## 📐 Architecture & Tech Stack
 
-```
+ForzaDJ is designed as a scalable ecosystem, separating the public-facing platform from the internal admin tooling.
+
+```text
 ┌─────────────────────────────────────────────────────────┐
-│                  forzadj.ru  (VPS + PM2)                │
+│                  forzadj.ru  (Next.js)                  │
 │                                                         │
-│  Next.js 15  App Router                                 │
-│  ├── (public)/          Landing page                    │
-│  ├── (dj)/              Authenticated DJ zone           │
-│  │   ├── /pool          Track catalog + filters         │
-│  │   ├── /dashboard     Post-login home                 │
-│  │   ├── /collections   Personal crates                 │
-│  │   └── /charts        Auto-generated charts           │
-│  ├── (studio)/          Admin content management        │
-│  └── api/               REST endpoints                  │
-│       ├── /bot/upload   ← Admin Bot integration         │
-│       ├── /stream       Preview MP3 streaming           │
-│       ├── /download     Signed download URLs            │
-│       └── /artwork      WebP-optimized covers           │
-│                                                         │
-│  Inline Job Queue (no Redis, no external dependencies)  │
-│  ├── asset.process    Preview MP3 + waveform + BPM/Key  │
-│  └── artwork.optimize WebP variants via Sharp (4 sizes) │
+│  ├── App Router (Server Components & Actions)           │
+│  ├── Global Persistent Audio Player                     │
+│  ├── Inline Job Queue (FFmpeg preview & waveform sync)  │
+│  └── API /bot/upload ← (Secret Webhook for Admin Bot)   │
 └──────────────┬──────────────────────────────────────────┘
                │
    ┌───────────┴────────────┐
    │       Supabase         │
-   │  Auth v1 (magic-link)  │
-   │  Storage (3 buckets)   │
-   │  PostgreSQL 16         │
+   │  Auth v1 (Magic-link)  │
+   │  Storage & PostgreSQL  │
    └────────────────────────┘
 ```
 
-**Admin Bot ↔ Platform** — two independent services communicate through a secret-authenticated HTTP endpoint (`POST /api/bot/upload`). The bot handles content ingestion; the platform handles storage, processing, and delivery.
+**Core Stack:**
+- **Framework**: Next.js 15.5 (App Router, Server Components)
+- **Database & Auth**: PostgreSQL 16 & Supabase Auth v1
+- **Styling**: Tailwind CSS v4, custom "Studio Glass" design token layer
+- **Audio Processing**: Essentia.js (WASM) for DSP, FFmpeg for transcoding/ID3
+- **Image Processing**: Sharp for asynchronous WebP variant generation
 
 ---
 
-## Tech Stack
+## ✨ Features
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 15.5 — App Router, Server Components, Turbopack |
-| Language | TypeScript 5 |
-| Styling | Tailwind CSS v4 · shadcn/ui (Radix UI primitives) |
-| ORM | Prisma 7 with `PrismaPg` driver adapter |
-| Database | PostgreSQL 16 via Supabase |
-| Auth | Supabase Auth v1 (magic-link OTP) |
-| Storage | Supabase Storage — `audio`, `previews`, `artwork` buckets |
-| Audio analysis | Essentia.js (WebAssembly) — BPM, musical key, Camelot Wheel |
-| Audio processing | FFmpeg — preview MP3, waveform peaks JSON, cover art embedding |
-| Image processing | Sharp 0.35 — WebP variants at 1200 / 600 / 300 / 120 px |
-| ZIP bundles | archiver v8 (ESM) |
-| Icons | lucide-react |
-| Notifications | sonner |
-| Deploy | VPS + PM2 · GitHub Actions → SSH |
-
----
-
-## Features
-
-### For DJs
-- **Catalog** — filter by genre, BPM range, Camelot key, mood, version type; full-text search
-- **Global mini-player** — plays full tracks; survives page navigation without interruption
-- **Preview streaming** — 30-second no-auth previews; full playback after login
-- **Downloads** — original MP3 files via signed URLs; rate-limited (75/day, 2 per track)
-- **Favorites** — ♥ any track (from catalog rows and the track page) into a personal `/favorites` list
-- **Crates** — personal + public playlists with shareable `/c/[slug]` links
-- **Editorial packs** — curated ZIP collections, downloadable in one click
-- **Charts** — auto-generated weekly charts based on download counts
-- **Dashboard** — personalized home with stats, new releases, download history
-- **Publish your own work** — DJs submit their own edits/remixes (MP3, drag & drop) with a mandatory agreement; tracks go through moderation and appear in the catalog once approved. Submission history with live status (On moderation / Published / Rejected)
-- **Support** — official contact form (categories, attachments, consent) delivered to a Telegram support bot
-- **FAQ** — public help page (`/faq`)
+### For Users (DJs)
+- **Rich Catalog**: High-performance filtering (BPM, Camelot Key, Genre, Mood).
+- **Audio Previews**: 30-second fast-streaming MP3 previews with interactive waveforms.
+- **Personal Crates**: Create, manage, and share personal track collections (`/c/[slug]`).
+- **Community Submissions**: DJs can submit their own edits/remixes, which are sent to a Telegram moderation bot.
 
 ### For Admins (Studio)
-- **Track upload** — batch upload with immediate audio analysis
-- **Metadata editor** — title, artists, genres, BPM, Camelot, energy, mood, version type
-- **One-command publishing** — via Telegram Admin Bot with AI classification
-- **Editorial packs** — create curated collections with custom covers
-- **User management** — role assignment (Super Admin only)
-
-### Audio Pipeline
-- Lossless auto-conversion — Studio uploads of WAV/FLAC/AIFF are transcoded to 320k MP3 in the `asset.process` job (file-to-file via FFmpeg, output duration validated against input), the original lossless object is deleted from storage, and the rest of the pipeline runs on the MP3
-- BPM and musical key detection via **Essentia.js (WASM)** — runs in Node.js, no Python dependency
-- MP3 preview generation (30 s) and peak waveform JSON via **FFmpeg**
-- Artwork optimization — 4 WebP sizes generated asynchronously via **Sharp**
-- WebP content negotiation — `Accept: image/webp` aware, `Vary: Accept` header set
-- Signed download URLs (60 s TTL) with daily and per-track quotas
-- Downloadable MP3 includes branded cover art embedded in ID3 tags via FFmpeg
-- Genre-based artwork branding on Studio publish — the `artwork.brand` job strips the original cover and embeds our per-genre artwork (`assets/genre-artwork/<slug>.png`) into both the catalog cover and the downloadable file, mirroring the admin bot (shared `embedArtworkIntoAudio`)
-
-### Authentication
-- **Telegram Login Widget** — HMAC-verified browser login
-- **Telegram Bot deep-link** — one-tap login via `t.me/<bot>?start=<nonce>`
-- Both flows share a single `issueTelegramSession()` function
-- Supabase Auth magic-link OTP under the hood — no passwords stored
-
-### Track Submission & Moderation
-- DJs submit tracks via the site → stored in a private `submissions` bucket + a `TrackSubmission` record (status `ON_MODERATION`)
-- Delivered to a **moderation Telegram bot**, where the admin reviews the playable audio and picks **Edit / Publish / Reject**
-- **Publish** reuses the same publishing endpoint as the Admin Bot (`POST /api/bot/upload`) — no duplicated publish logic; **Reject** captures a reason
-- The bot calls `POST /api/submissions/[id]/moderate`, which updates the status and notifies the user via the login bot
-- **Support** tickets are stored (`SupportTicket` + `support` bucket) and delivered to a support Telegram bot
-
-### Environment note
-- Track/Support uploads go through **Server Actions** → `experimental.serverActions.bodySizeLimit` is raised in `next.config.ts` (the 1 MB default is too small for MP3s)
-
-### Design system
-A single **design-token layer** in `src/app/globals.css` drives the entire premium "studio glass" look — every page and all 20+ UI-kit components inherit from it:
-- **Brand** — "signal violet" accent (`oklch(0.6 0.2 277)`) on a deep cold-graphite base; dark-only, OKLCH throughout for perceptually even shades
-- **Depth** — a layered shadow scale (`--shadow-xs … --shadow-xl`) plus a branded violet `--shadow-glow`; a fixed radial violet aura + vignette gives the background dimension
-- **Radius** — one `--radius` root (`0.75rem`) feeds the whole `rounded-*` scale, so corner rounding is consistent everywhere
-- **Glass & gradient utilities** — `.glass` (backdrop-blur surface with a hairline gradient border) and `.btn-gradient` (violet→indigo CTA with glow) are reusable component classes
-- **Polish** — antialiased type with optical heading tracking, violet text selection, a custom thin scrollbar, and spring-eased hover/active micro-interactions (`.lift`)
-- **Motion-safe** — all decorative animations are gated behind `prefers-reduced-motion`
+- **AI-Powered Publishing**: The dedicated [Telegram Admin Bot](https://github.com/hamidkazimov777-cmd/forzadj-admin-bot) accepts MP3 files, runs AI classification for genres, and pushes directly to the Next.js API.
+- **Studio Dashboard**: Web-based batch uploader and rich metadata editor.
+- **Asset Optimization**: Lossless files (WAV/FLAC) are automatically transcoded to high-quality 320k MP3s, with automated artwork branding embedded into ID3 tags.
 
 ---
 
-## Getting Started
+## 🚀 Ecosystem
 
-### Prerequisites
-
-- Node.js 20+
-- npm
-- FFmpeg in `PATH`
-- A [Supabase](https://supabase.com) project (free tier works for development)
-- A Telegram Bot token from [@BotFather](https://t.me/BotFather)
-
-### Installation
-
-```bash
-git clone https://github.com/hamidkazimov777-cmd/forzadj.git
-cd forzadj
-
-npm_config_cache=.npm-cache npm install
-
-cp .env.example .env
-# fill in your values — see the table below
-```
-
-### Database setup
-
-```bash
-npx prisma migrate deploy   # apply all migrations
-npx prisma generate         # generate Prisma client
-```
-
-### Run development server
-
-```bash
-npm run dev
-# → http://localhost:3000
-```
-
-### Build for production
-
-```bash
-npm run build
-npm start
-```
+This repository is part of a larger architecture. See the companion repositories:
+- **[ForzaDJ Admin Bot](https://github.com/hamidkazimov777-cmd/forzadj-admin-bot)**: The ingestion pipeline.
+- **[ForzaDJ Bots](https://github.com/hamidkazimov777-cmd/forzadj-bots)**: Moderation and support tooling.
 
 ---
-
-## Environment Variables
-
-Copy `.env.example` and fill in your values:
-
-```bash
-cp .env.example .env
-```
-
-| Variable | Required | Description |
-|----------|:--------:|-------------|
-| `DATABASE_URL` | ✅ | Supabase Postgres pooler URL (pgbouncer, port 6543) |
-| `DIRECT_URL` | ✅ | Direct Postgres URL (port 5432) — used by `prisma migrate` |
-| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase anon public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Supabase service role key (server-only, never expose to client) |
-| `TELEGRAM_BOT_TOKEN` | ✅ | Bot token from @BotFather |
-| `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` | ✅ | Bot username without `@` |
-| `FORZADJ_OWNER_TELEGRAM_ID` | ✅ | Your Telegram numeric ID — granted SUPER_ADMIN on first login |
-| `BOT_UPLOAD_SECRET` | ✅ | Shared secret with Admin Bot (min. 32 random chars) |
-| `NEXT_PUBLIC_APP_URL` | ✅ | Canonical origin (`https://yourdomain.com`) |
-| `STORAGE_BUCKET_AUDIO` | — | Bucket name, default `audio` |
-| `STORAGE_BUCKET_PREVIEWS` | — | Bucket name, default `previews` |
-| `STORAGE_BUCKET_ARTWORK` | — | Bucket name, default `artwork` |
-| `DOWNLOAD_DAILY_LIMIT` | — | Downloads per user per day, default `75` |
-| `DOWNLOAD_MAX_PER_TRACK` | — | Max downloads per track per user, default `2` |
-
-> **Security:** `SUPABASE_SERVICE_ROLE_KEY` and `BOT_UPLOAD_SECRET` must never be prefixed with `NEXT_PUBLIC_`.
-
----
-
-## Project Structure
-
-```
-forzadjbeta/
-├── prisma/
-│   ├── schema.prisma           # DB schema — single source of truth
-│   └── migrations/             # 15 versioned migrations
-├── src/
-│   ├── app/
-│   │   ├── (public)/           # Landing page + legal pages
-│   │   ├── (dj)/               # Authenticated DJ zone (middleware-protected)
-│   │   │   ├── dashboard/
-│   │   │   ├── pool/           # Track catalog
-│   │   │   ├── collections/    # Personal crates
-│   │   │   └── charts/
-│   │   ├── (shared)/           # Public routes without strict auth
-│   │   │   └── packs/          # Editorial packs showcase
-│   │   ├── (studio)/           # Admin zone (ADMIN+ only, 404 for others)
-│   │   │   └── studio/
-│   │   │       ├── tracks/     # Upload + metadata editor
-│   │   │       ├── collections/# Editorial packs management
-│   │   │       └── users/      # Role management (SUPER_ADMIN)
-│   │   └── api/
-│   │       ├── bot/upload/     # Admin Bot integration endpoint
-│   │       ├── stream/         # Preview MP3 streaming
-│   │       ├── download/       # Signed download delivery
-│   │       └── artwork/        # WebP-optimized cover serving
-│   ├── components/
-│   │   ├── player/             # Global mini-player + waveform
-│   │   ├── tracks/             # TrackList, DownloadButton, FavoriteButton
-│   │   ├── studio/             # TrackUploader, GenrePicker, metadata forms
-│   │   └── ui/                 # shadcn/ui primitives
-│   ├── server/
-│   │   ├── auth/               # Session management, permissions, Telegram providers
-│   │   ├── jobs/               # Inline job queue + handlers
-│   │   │   └── handlers/
-│   │   │       ├── asset-process.ts     # Preview + waveform + BPM/Key
-│   │   │       └── artwork-optimize.ts  # WebP variants via Sharp
-│   │   ├── repositories/       # Prisma data access layer
-│   │   └── storage/            # Supabase Storage adapter
-│   └── middleware.ts           # DJ-zone session guard
-├── .github/
-│   └── workflows/deploy.yml    # CI: push main → SSH → pm2 restart
-└── .env.example
-```
-
----
-
-## Deployment
-
-Runs on a VPS with **PM2**, deploying automatically on every push to `main` via **GitHub Actions** over SSH.
-
-```bash
-# Manual deploy
-git pull origin main
-npm_config_cache=.npm-cache npm install
-npm run build
-pm2 restart forzadj
-```
-
-### Supabase Storage buckets
-
-Create three buckets in your Supabase project:
-
-| Bucket | Access | Contents |
-|--------|--------|----------|
-| `audio` | Private | Original track files |
-| `previews` | Private | Preview MP3s + waveform JSON |
-| `artwork` | Public | Track covers + WebP variants |
-
----
-
-## Database Schema
-
-Key entities:
-
-```
-tracks
-  ├── track_artists    (MAIN | FEATURED | REMIXER)
-  ├── track_genres     (position 0 = primary genre)
-  └── track_versions   (ORIGINAL | EXTENDED | REMIX | MASHUP)
-       └── assets      (ORIGINAL | PREVIEW | WAVEFORM | ARTWORK)
-
-collections  (CRATE | EDITORIAL | CHART)
-users        (DJ | ADMIN | SUPER_ADMIN)
-donations    → donation_events, donation_rewards
-```
-
-- UUIDs v7 everywhere (time-sortable, URL-safe)
-- Soft delete on all content tables (`deleted_at`)
-- Partial unique indexes on slugs (`WHERE deleted_at IS NULL`)
-
----
-
-## Roadmap
-
-- [x] Telegram authentication (Login Widget + Bot deep-link)
-- [x] Track catalog with filters (genre, BPM, Camelot key, mood, version)
-- [x] Global mini-player with waveform visualization
-- [x] BPM and Camelot Key auto-detection via Essentia.js (WASM)
-- [x] Signed download URLs with rate limiting (75/day, 2/track)
-- [x] Studio — upload, metadata editor, publication
-- [x] Editorial packs with ZIP download
-- [x] Personal crates with public sharing
-- [x] Auto-generated weekly charts
-- [x] Post-login personalized dashboard
-- [x] WebP artwork optimization — 4 sizes via Sharp
-- [x] CI/CD — GitHub Actions → VPS + PM2
-- [x] Admin Telegram Bot with AI-powered content publishing
-- [ ] Donation payment integration (Telegram Stars / YooKassa)
-- [ ] Email notifications — new releases for pack subscribers
-- [ ] Studio analytics dashboard
-- [ ] External job queue (Redis + BullMQ) for high load
-- [ ] Mobile application
-
----
-
-## Related
-
-**[ForzaDJ Admin Bot](https://github.com/hamidkazimov777-cmd/forzadj-admin-bot)** — Telegram bot for one-command track publishing. Receives MP3 → extracts metadata → AI genre/mood classification → selects branded artwork → publishes to the platform via a secret-authenticated API. Built with grammY, TypeScript.
-
-**[ForzaDJ Bots](https://github.com/hamidkazimov777-cmd/forzadj-bots)** — moderation bot (reviews user-submitted tracks: Edit / Publish / Reject) and support bot, deployed on Railway. Built with grammY and TypeScript.
-
----
-
-## Author
-
-**Hamid Kazimov**
-
-[![Telegram](https://img.shields.io/badge/Telegram-@hamidkazim-2CA5E0?style=flat-square&logo=telegram&logoColor=white)](https://t.me/hamidkazim)
-[![GitHub](https://img.shields.io/badge/GitHub-hamidkazimov777--cmd-181717?style=flat-square&logo=github)](https://github.com/hamidkazimov777-cmd)
-
----
-
-## License
-
-MIT © 2026 Hamid Kazimov
+**Built by Hamid Kazimov** — Product Builder & Software Creator.  
+[Contact on Telegram](https://t.me/hamidkazim)
