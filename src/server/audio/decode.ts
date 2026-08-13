@@ -8,7 +8,8 @@ import { join } from "node:path";
  * уже используется для превью/waveform). Формат f32le удобен для Essentia.
  */
 
-export const ANALYSIS_SAMPLE_RATE = 44100;
+/** Convertra AudioCore contract: mono PCM at 22.05 kHz. */
+export const ANALYSIS_SAMPLE_RATE = 22_050;
 
 function runFfmpegToBuffer(args: string[]): Promise<Buffer> {
   return new Promise((resolve, reject) => {

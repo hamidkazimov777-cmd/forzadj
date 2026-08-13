@@ -1,5 +1,5 @@
 import type { AnalysisInput, AudioAnalyzer, AudioFeatures } from "./analysis.types";
-import { essentiaAnalyzer } from "./analyzers/essentia-analyzer";
+import { convertraAnalyzer } from "./analyzers/convertra-analyzer";
 
 /**
  * Пайплайн анализа: список анализаторов, результаты которых сливаются в
@@ -10,7 +10,7 @@ import { essentiaAnalyzer } from "./analyzers/essentia-analyzer";
  * Порядок важен только для конфликтов ключей: последующий анализатор
  * перекрывает уже заполненное поле (обычно наборы не пересекаются).
  */
-const ANALYZERS: AudioAnalyzer[] = [essentiaAnalyzer];
+const ANALYZERS: AudioAnalyzer[] = [convertraAnalyzer];
 
 export interface AnalysisRun {
   features: AudioFeatures;

@@ -944,6 +944,32 @@ Studio, публичной страницы и изображения облож
 
 ---
 
+## 26. Convertra DSP вместо Essentia.js (2026-08-13)
+
+Автоанализ ForzaDJ переведён с `essentia.js` на Linux/Node-порт алгоритма
+Convertra AudioCore. Причина: KeyExtractor Essentia возвращал нестабильный
+результат на части загрузок, а macOS-реализацию Convertra нельзя подключить
+напрямую на VPS (`AVAssetReader` и vDSP/Accelerate доступны только на macOS).
+
+- Новый `src/server/audio/analyzers/convertra-analyzer.ts` сохраняет контракт
+  `AudioAnalyzer`, поэтому upload/job/DB/API/UI не меняют интерфейсы.
+- Внутри: центральные 90 секунд аудио, mono PCM `22_050 Hz`, peak-based HPCP
+  (параболическая интерполяция спектральных пиков, гармоники, Sha'ath key
+  profiles, bias к minor) и multi-band onset + autocorrelation для BPM.
+- `src/server/audio/decode.ts` декодирует сразу в `22_050 Hz`; pipeline теперь
+  использует только `convertraAnalyzer`. `essentia.js`, его анализатор и
+  ambient types удалены из исходников и npm lock-файла.
+- При отсутствии уверенного результата Key поле остаётся `null`; это допустимо
+  и не блокирует BPM, статус анализа или отображение страницы.
+
+**Проверка:** `A minor / 128 BPM` синтетический PCM → `A minor`, `8A`, `128`
+за 270 мс на 16 секундах; `npx tsc --noEmit`, ESLint и `next build` проходят.
+Для оценки точности на реальном каталоге нужна отдельная выборка с ground truth
+(Mixed In Key/Rekordbox); синтетический тест подтверждает интеграцию, а не
+заявленную музыкальную точность.
+
+---
+
 *Этот документ — живой технический артефакт. Обновляется при любом изменении
 архитектуры, функциональности, деплоя, структуры БД или аутентификации.
 Актуальность сверяется по git HEAD ветки `main`.*
