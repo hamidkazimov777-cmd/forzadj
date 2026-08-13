@@ -631,7 +631,7 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
-| `<pending>` | 2026-08-13 | chore(cleanup): убраны хвосты Essentia (next.config externals, комментарии, README/HANDOFF стек/статус) — анализ полностью на Convertra AudioCore (TS) |
+| `0775872` | 2026-08-13 | chore(cleanup): убраны хвосты Essentia (next.config externals, комментарии, README/HANDOFF стек/статус) — анализ полностью на Convertra AudioCore (TS) |
 | `e42d15c` | 2026-08-11 | fix(downloads): убран `.bind` и из download-preflight/removeVersion (паки/крейты, ZipDownloadButton, TrackList) — превентивно от того же Turbopack-бага bound server actions; id передаётся аргументом |
 | `e5b371a` | 2026-08-11 | fix(studio): страница трека/пака падала («Server Reference ID did not match … Received x») — Turbopack-баг с `.bind()` server-actions в `<form>`; id передаём через hidden-input + formData |
 | `f0c312c` | 2026-08-11 | fix(catalog): счётчики жанров в фильтре/дашборде учитывали архивные (soft-deleted) треки — `listGenresWithCounts()` не фильтровал `deletedAt` во вложенном `_count` (глобальный soft-delete-патч не перехватывает вложенные relation-count) |
