@@ -631,7 +631,7 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
-| `<pending>` | 2026-08-11 | fix(studio): страница трека/пака падала («Server Reference ID did not match … Received x») — Turbopack-баг с `.bind()` server-actions в `<form>`; id передаём через hidden-input + formData |
+| `e5b371a` | 2026-08-11 | fix(studio): страница трека/пака падала («Server Reference ID did not match … Received x») — Turbopack-баг с `.bind()` server-actions в `<form>`; id передаём через hidden-input + formData |
 | `f0c312c` | 2026-08-11 | fix(catalog): счётчики жанров в фильтре/дашборде учитывали архивные (soft-deleted) треки — `listGenresWithCounts()` не фильтровал `deletedAt` во вложенном `_count` (глобальный soft-delete-патч не перехватывает вложенные relation-count) |
 | `c5ef3b0` | 2026-08-11 | fix(storage): add explicit content-length header to r2 put method to fix studio upload analysis (BPM/Key) |
 | `232ee38` | 2026-08-10 | feat(storage): миграция Storage на Cloudflare R2 (S3 через aws4fetch, один бакет `forzadj` с префиксами, нулевой egress) — `STORAGE_DRIVER=r2`; Supabase Storage выведен из строя (заморозка проекта) |
