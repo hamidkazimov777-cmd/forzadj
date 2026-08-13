@@ -8,7 +8,17 @@
 
 ---
 
-## 0. Три правила, нарушение которых ломало проект (реальные случаи)
+## 0. Правила, нарушение которых ломало проект (реальные случаи)
+
+0. **НЕ применяй `.bind(null, …)` к server actions.** Прод собирается Turbopack
+   (`next build --turbopack`), который битым кодирует bound-аргументы server
+   action → в `<form action={fn.bind(null, id)}>` и в пропах клиентских
+   компонентов клиент падает: «The Server Reference ID did not match the
+   expected format. Received "x"» → вся страница в client-side exception.
+   Вместо `.bind`: id через `<input type="hidden">` + экшен `(formData)`; или
+   несвязанный экшен + id отдельным пропом с вызовом `action(id, …)`. Прямой
+   вызов server action со строкой из клиентского компонента — безопасен.
+   Подробно: PROJECT_HANDOFF.md §27.
 
 1. **Любая ESLint-ошибка ВАЛИТ прод.** `next build` падает на ошибках линтера
    (`prefer-const`, `no-unused-vars` и т.п.). Упавшая сборка = нет `.next` =

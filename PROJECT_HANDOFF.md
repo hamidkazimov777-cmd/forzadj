@@ -972,6 +972,46 @@ Convertra AudioCore. Причина: KeyExtractor Essentia возвращал н
 
 ---
 
+## 27. ⚠️ Turbopack + bound server actions: НЕ использовать `.bind` (2026-08-11)
+
+**Критический класс багов прод-сборки.** Прод собирается `next build --turbopack`
+(Next 15.5.21). Turbopack **некорректно кодирует bound-аргументы серверного
+экшена**, если экшен передан через `.bind(null, id)`:
+- в `<form action={fn.bind(null, id)}>` — клиент при гидрации получает битый
+  server-reference (`Received "x"`) и **вся страница падает** с
+  «Application error: a client-side exception…»;
+- как проп в клиентский компонент (`<Btn action={fn.bind(null, id)}>`) — та же
+  битая ссылка при программном вызове.
+
+Серверный `server-reference-manifest.json` при этом **корректен** (хэши на
+месте) — ломается именно клиентская кодировка bound-ссылки. Ошибка в логах:
+`The Server Reference ID did not match the expected format. Received "x"`
+(`nextjs.org/docs/messages/failed-to-find-server-action`).
+
+**Симптом был:** Studio-страница трека/пака падала целиком при открытии;
+диагностика «пустая тональность» оказалась ложной (ключ определялся корректно).
+
+**ПРАВИЛО: не применять `.bind(null, …)` к server actions.** Вместо этого:
+- **формы** — id через `<input type="hidden" name="…">`, экшен `(formData)`
+  читает его из formData (см. `content.actions.ts`, `pack.actions.ts`);
+- **клиентские компоненты** — передавать НЕСВЯЗАННЫЙ экшен + id отдельным
+  пропом, вызывать `action(id, …)` (см. `ZipDownloadButton.preflightArg`,
+  `TrackList.removeFromCrate + crateId`);
+- **прямой программный вызов** из клиентского компонента со строковым
+  аргументом (`onDelete(trackId)`, `toggleFavorite(versionId)`) — безопасен,
+  bound-путь не задействуется.
+
+Затронутые и исправленные места: `studio/tracks/[id]`, `studio/collections/[id]`,
+`packs/[slug]`, `collections/[id]`, `ZipDownloadButton`, `TrackList`,
+`DeleteTrackButton`. На момент фикса `.bind(null` на server actions в `src/` не
+осталось (проверяется `grep -rn "Action.bind(null" src`).
+
+> Альтернатива-«корень» — собирать прод без Turbopack (`next build`, webpack).
+> Не выбрана: webpack-сборка тяжелее по RAM, а VPS (3.8 ГБ) при OOM оставляет
+> частичный `.next` → краш-луп. Пока держим Turbopack + запрет `.bind`.
+
+---
+
 *Этот документ — живой технический артефакт. Обновляется при любом изменении
 архитектуры, функциональности, деплоя, структуры БД или аутентификации.
 Актуальность сверяется по git HEAD ветки `main`.*
