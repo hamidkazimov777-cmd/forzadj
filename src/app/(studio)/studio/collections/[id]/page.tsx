@@ -78,10 +78,8 @@ export default async function PackEditPage({
           <CardTitle>Метаданные</CardTitle>
         </CardHeader>
         <CardContent>
-          <form
-            action={updatePackMetaAction.bind(null, pack.id)}
-            className="flex flex-col gap-3"
-          >
+          <form action={updatePackMetaAction} className="flex flex-col gap-3">
+            <input type="hidden" name="packId" value={pack.id} />
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="title">Название</Label>
               <Input id="title" name="title" defaultValue={pack.title} required />

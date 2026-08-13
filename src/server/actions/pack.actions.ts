@@ -50,10 +50,13 @@ export async function createPackAction(
   return { id: pack.id, slug: pack.slug ?? "" };
 }
 
-export async function updatePackMetaAction(
-  packId: string,
-  formData: FormData,
-): Promise<void> {
+export async function updatePackMetaAction(formData: FormData): Promise<void> {
+  // packId — через скрытое поле формы, НЕ через .bind (Turbopack-баг с
+  // bound server-action reference, см. content.actions.ts).
+  const packId = formData.get("packId");
+  if (typeof packId !== "string" || packId === "") {
+    throw new Error("Отсутствует поле формы: packId");
+  }
   const user = await requirePermission("collections.manage");
   const parsed = createSchema.parse({
     title: formData.get("title"),

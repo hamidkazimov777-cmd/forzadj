@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { GenrePicker } from "@/components/studio/genre-picker";
+import { DeleteTrackButton } from "@/components/studio/delete-track-button";
 import { requireStudioPermission } from "@/server/auth/core/session";
 import { trackRepository } from "@/server/repositories/track.repository";
 import { taxonomyRepository } from "@/server/repositories/taxonomy.repository";
@@ -85,13 +86,18 @@ export default async function TrackEditPage({
             {track.status === "PUBLISHED" ? "опубликован" : "черновик"}
           </Badge>
           {track.status === "PUBLISHED" && (
-            <form action={archiveTrackAction.bind(null, track.id)}>
+            <form action={archiveTrackAction}>
+              <input type="hidden" name="trackId" value={track.id} />
               <Button type="submit" variant="secondary">В архив</Button>
             </form>
           )}
-          <form action={deleteTrackAction.bind(null, track.id)}>
-            <Button type="submit" variant="destructive">Удалить</Button>
-          </form>
+          <DeleteTrackButton
+            trackId={track.id}
+            title={track.title}
+            onDelete={deleteTrackAction}
+            redirectTo="/studio/tracks"
+            label="Удалить"
+          />
         </div>
       </div>
 
@@ -101,10 +107,8 @@ export default async function TrackEditPage({
           <CardTitle>Метаданные</CardTitle>
         </CardHeader>
         <CardContent>
-          <form
-            action={updateTrackAction.bind(null, track.id)}
-            className="grid grid-cols-2 gap-4"
-          >
+          <form action={updateTrackAction} className="grid grid-cols-2 gap-4">
+            <input type="hidden" name="trackId" value={track.id} />
             <div className="col-span-2 flex flex-col gap-1.5">
               <Label htmlFor="title">Название</Label>
               <Input id="title" name="title" defaultValue={track.title} required />
@@ -186,9 +190,11 @@ export default async function TrackEditPage({
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <form
-              action={saveVersionAndPublishAction.bind(null, version.id, track.id)}
+              action={saveVersionAndPublishAction}
               className="grid grid-cols-3 gap-4"
             >
+              <input type="hidden" name="versionId" value={version.id} />
+              <input type="hidden" name="trackId" value={track.id} />
               <div className="flex flex-col gap-1.5">
                 <Label>Тип версии</Label>
                 <select
@@ -263,7 +269,9 @@ export default async function TrackEditPage({
             <div className="text-sm">
               <div className="mb-2 flex items-center gap-3">
                 <p className="font-medium">Файлы</p>
-                <form action={reprocessVersionAction.bind(null, version.id, track.id)}>
+                <form action={reprocessVersionAction}>
+                  <input type="hidden" name="versionId" value={version.id} />
+                  <input type="hidden" name="trackId" value={track.id} />
                   <Button type="submit" size="sm" variant="outline">
                     Переобработать
                   </Button>
