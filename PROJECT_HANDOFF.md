@@ -631,7 +631,7 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
-| `<pending>` | 2026-08-11 | fix(downloads): убран `.bind` и из download-preflight/removeVersion (паки/крейты, ZipDownloadButton, TrackList) — превентивно от того же Turbopack-бага bound server actions; id передаётся аргументом |
+| `e42d15c` | 2026-08-11 | fix(downloads): убран `.bind` и из download-preflight/removeVersion (паки/крейты, ZipDownloadButton, TrackList) — превентивно от того же Turbopack-бага bound server actions; id передаётся аргументом |
 | `e5b371a` | 2026-08-11 | fix(studio): страница трека/пака падала («Server Reference ID did not match … Received x») — Turbopack-баг с `.bind()` server-actions в `<form>`; id передаём через hidden-input + formData |
 | `f0c312c` | 2026-08-11 | fix(catalog): счётчики жанров в фильтре/дашборде учитывали архивные (soft-deleted) треки — `listGenresWithCounts()` не фильтровал `deletedAt` во вложенном `_count` (глобальный soft-delete-патч не перехватывает вложенные relation-count) |
 | `c5ef3b0` | 2026-08-11 | fix(storage): add explicit content-length header to r2 put method to fix studio upload analysis (BPM/Key) |
