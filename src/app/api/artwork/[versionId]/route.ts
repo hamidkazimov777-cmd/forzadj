@@ -57,12 +57,17 @@ export async function GET(
     }
   }
 
-  const bytes = await getStorage().get("artwork", asset.storageKey);
-  return new NextResponse(Buffer.from(bytes), {
-    headers: {
-      "content-type": asset.mime ?? "image/jpeg",
-      "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
-      vary: "Accept",
-    },
-  });
+  try {
+    const bytes = await getStorage().get("artwork", asset.storageKey);
+    return new NextResponse(Buffer.from(bytes), {
+      headers: {
+        "content-type": asset.mime ?? "image/jpeg",
+        "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+        vary: "Accept",
+      },
+    });
+  } catch (err) {
+    console.error(`[artwork] unavailable ${versionId}:`, err);
+    return NextResponse.json({ error: "artwork_unavailable" }, { status: 502 });
+  }
 }

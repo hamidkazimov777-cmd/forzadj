@@ -18,6 +18,7 @@ import {
   reprocessVersionAction,
 } from "@/server/actions/content.actions";
 import { VERSION_TYPES, CAMELOT_KEYS, TRACK_MOODS } from "@/lib/validators/content";
+import { normalizeCamelotKey } from "@/lib/camelot";
 
 /** Подписи настроений трека (сет-тайм) для редактора. */
 const MOOD_LABELS: Record<string, string> = {
@@ -214,7 +215,7 @@ export default async function TrackEditPage({
                 <Label>Camelot Key</Label>
                 <select
                   name="camelotKey"
-                  defaultValue={version.camelotKey ?? ""}
+                  defaultValue={normalizeCamelotKey(version.camelotKey) ?? ""}
                   className="h-9 rounded-md border bg-transparent px-3 text-sm"
                 >
                   <option value="">—</option>

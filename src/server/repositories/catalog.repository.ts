@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { camelotNeighbors } from "@/lib/camelot";
+import { camelotNeighbors, normalizeCamelotKey } from "@/lib/camelot";
 import type { CatalogFilters, CatalogPage, TrackCardDto } from "@/types/catalog";
 import type { PlayerTrack } from "@/types/player";
 import type { Prisma } from "@/generated/prisma/client";
@@ -46,7 +46,7 @@ function toCardDto(track: CatalogTrack): TrackCardDto {
       type: v.type,
       versionLabel: v.versionLabel,
       bpm: v.bpm,
-      camelotKey: v.camelotKey,
+      camelotKey: normalizeCamelotKey(v.camelotKey),
       energy: v.energy,
       durationSeconds: v.durationSeconds,
       introSeconds: v.introSeconds,
@@ -252,7 +252,7 @@ export const catalogRepository = {
         versionType: v.type,
         versionLabel: v.versionLabel,
         bpm: v.bpm,
-        camelotKey: v.camelotKey,
+        camelotKey: normalizeCamelotKey(v.camelotKey),
         durationSeconds: v.durationSeconds,
         hasWaveform: v.assets.some((a) => a.type === "WAVEFORM"),
       });

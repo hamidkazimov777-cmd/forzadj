@@ -3,12 +3,21 @@
  * Совместимые ключи: тот же, ±1 по кругу (12↔1), и параллельный (A↔B).
  */
 
-export function camelotNeighbors(key: string): string[] {
-  const match = key.toUpperCase().match(/^(\d{1,2})([AB])$/);
-  if (!match) return [key];
+export function normalizeCamelotKey(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const match = value.trim().toUpperCase().match(/^(\d{1,2})([AB])$/);
+  if (!match) return null;
+  const n = Number(match[1]);
+  if (n < 1 || n > 12) return null;
+  return `${n}${match[2]}`;
+}
+
+export function camelotNeighbors(key: unknown): string[] {
+  const normalized = normalizeCamelotKey(key);
+  if (!normalized) return [];
+  const match = normalized.match(/^(\d{1,2})([AB])$/)!;
   const n = Number(match[1]);
   const letter = match[2];
-  if (n < 1 || n > 12) return [key];
 
   const prev = n === 1 ? 12 : n - 1;
   const next = n === 12 ? 1 : n + 1;
@@ -24,8 +33,9 @@ const CAMELOT_TO_CLASSIC: Record<string, string> = {
   "7B": "F", "8B": "C", "9B": "G", "10B": "D", "11B": "A", "12B": "E",
 };
 
-export function classicKeyOf(camelot: string): string | null {
-  return CAMELOT_TO_CLASSIC[camelot.toUpperCase()] ?? null;
+export function classicKeyOf(camelot: unknown): string | null {
+  const normalized = normalizeCamelotKey(camelot);
+  return normalized ? CAMELOT_TO_CLASSIC[normalized] ?? null : null;
 }
 
 /**
@@ -34,11 +44,10 @@ export function classicKeyOf(camelot: string): string | null {
  * помогает диджею видеть совместимость по цвету. A/B одного номера — один цвет.
  * Возвращает CSS-цвет (oklch) или undefined, если ключ не распознан.
  */
-export function camelotColor(key: string | null | undefined): string | undefined {
-  const m = key?.toUpperCase().match(/^(\d{1,2})([AB])$/);
-  if (!m) return undefined;
-  const n = Number(m[1]);
-  if (n < 1 || n > 12) return undefined;
+export function camelotColor(key: unknown): string | undefined {
+  const normalized = normalizeCamelotKey(key);
+  if (!normalized) return undefined;
+  const n = Number(normalized.slice(0, -1));
   const hue = ((n - 1) * 30) % 360;
   return `oklch(0.74 0.15 ${hue})`;
 }
@@ -75,9 +84,10 @@ const MAJOR_PC_TO_CAMELOT: Record<number, string> = {
  * или null, если распознать не удалось.
  */
 export function keyToCamelot(
-  tonic: string,
-  scale: string,
+  tonic: unknown,
+  scale: unknown,
 ): string | null {
+  if (typeof tonic !== "string" || typeof scale !== "string") return null;
   const pc = PITCH_CLASS[tonic.trim().toUpperCase()];
   if (pc === undefined) return null;
   const s = scale.trim().toLowerCase();

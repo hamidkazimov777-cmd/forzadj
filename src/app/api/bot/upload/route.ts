@@ -31,6 +31,18 @@ interface BotUploadMetadata {
   mimeType: string;
 }
 
+const ARTWORK_MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+function artworkFormat(file: File): { ext: string; mime: string } | null {
+  const mime = file.type.toLowerCase();
+  const ext = ARTWORK_MIME_TO_EXT[mime];
+  return ext ? { ext, mime } : null;
+}
+
 const VERSION_MAP: Record<string, VersionType> = {
   Original: "ORIGINAL",
   Extended: "EXTENDED",
@@ -65,6 +77,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing file or metadata" }, { status: 400 });
   }
   const artworkFile = artworkEntry instanceof File ? artworkEntry : null;
+  const artwork = artworkFile ? artworkFormat(artworkFile) : null;
+  if (artworkFile && !artwork) {
+    return NextResponse.json(
+      { error: "Artwork must be JPEG, PNG, or WebP" },
+      { status: 400 },
+    );
+  }
 
   let meta: BotUploadMetadata;
   try {
@@ -89,11 +108,17 @@ export async function POST(req: NextRequest) {
     const track = await trackRepository.createDraft({ title, versionType });
     const version = track.versions[0];
 
-    // 2. Upload file directly to storage
+    // 2. Re-encode before storage and processing. The worker always sees the
+    // final audio and cover, so an asynchronous queue cannot overwrite it.
     const fileBuffer = Buffer.from(await fileEntry.arrayBuffer());
     const ext = (meta.fileName.match(/\.([a-z0-9]+)$/i)?.[1] ?? "mp3").toLowerCase();
     const storageKey = `tracks/${track.id}/${version.id}/original.${ext}`;
-    await getStorage().put("audio", storageKey, fileBuffer, { contentType: meta.mimeType });
+    const artworkBuffer = artworkFile ? Buffer.from(await artworkFile.arrayBuffer()) : null;
+    const taggedBuffer = await embedArtworkIntoAudio(fileBuffer, artworkBuffer, ext, {
+      title,
+      artist: meta.artist,
+    });
+    await getStorage().put("audio", storageKey, taggedBuffer, { contentType: meta.mimeType });
 
     // 3. Create asset record (status defaults to UPLOADED)
     // Use a clean filename (artist - title.ext) instead of the raw upload
@@ -106,7 +131,7 @@ export async function POST(req: NextRequest) {
       storageKey,
       originalName: cleanOriginalName,
       mime: meta.mimeType,
-      sizeBytes: BigInt(fileBuffer.length),
+      sizeBytes: BigInt(taggedBuffer.length),
     });
 
     // 4. Set artist if known
@@ -152,41 +177,27 @@ export async function POST(req: NextRequest) {
       releaseDate,
     });
 
-    // 10. Trigger asset processing (preview + waveform + embedded artwork extraction).
-    // Must run BEFORE branded artwork upload: asset.process soft-deletes any existing
-    // ARTWORK asset before creating one from embedded ID3 tags.
+    // 10. The final original is ready for processing. Keep the asset in
+    // PROCESSING until the worker has extracted metadata, preview and waveform.
     await assetRepository.setStatus(asset.id, "PROCESSING");
-    await getJobQueue().enqueue("asset.process", { assetId: asset.id });
 
-    // 11. Re-encode AFTER asset.process (so branded artwork overwrites the embedded
-    //    cover) and always rewrite the title/artist ID3 tags to the clean values —
-    //    not just when artwork is present — so the downloaded file always matches
-    //    what the catalog displays. Then run artwork.optimize for WebP variants.
-    const artworkBuffer = artworkFile ? Buffer.from(await artworkFile.arrayBuffer()) : null;
-
-    const taggedBuffer = await embedArtworkIntoAudio(fileBuffer, artworkBuffer, ext, {
-      title,
-      artist: meta.artist,
-    });
-    await getStorage().put("audio", storageKey, taggedBuffer, { contentType: meta.mimeType });
-    // Update sizeBytes so Content-Length on download matches the re-encoded file.
-    await assetRepository.setStatus(asset.id, "READY", { sizeBytes: BigInt(taggedBuffer.length) });
-
-    if (artworkFile && artworkBuffer) {
-      const artworkKey = `tracks/${track.id}/${version.id}/artwork.png`;
-      await getStorage().put("artwork", artworkKey, artworkBuffer, { contentType: "image/png" });
+    if (artwork && artworkBuffer) {
+      const artworkKey = `tracks/${track.id}/${version.id}/artwork.${artwork.ext}`;
+      await getStorage().put("artwork", artworkKey, artworkBuffer, { contentType: artwork.mime });
       await assetRepository.softDeleteByVersionAndType(version.id, "ARTWORK");
       const artworkAsset = await assetRepository.create({
         versionId: version.id,
         type: "ARTWORK",
         storageKey: artworkKey,
-        originalName: "artwork.png",
-        mime: "image/png",
+        originalName: `artwork.${artwork.ext}`,
+        mime: artwork.mime,
         sizeBytes: BigInt(artworkBuffer.length),
       });
       await assetRepository.setStatus(artworkAsset.id, "READY");
       await getJobQueue().enqueue("artwork.optimize", { storageKey: artworkKey });
     }
+
+    await getJobQueue().enqueue("asset.process", { assetId: asset.id });
 
     // Invalidate the catalog cache so the new track appears immediately across
     // all views (dashboard "Новинки" grid, /new, /pool). Studio actions do the

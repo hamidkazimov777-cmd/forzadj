@@ -15,8 +15,8 @@ import type { AnalysisInput, AudioAnalyzer, AudioFeatures } from "../analysis.ty
 interface EssentiaLike {
   version?: string;
   arrayToVector(arr: Float32Array): { delete?: () => void };
-  PercivalBpmEstimator(vec: unknown): { bpm: number };
-  KeyExtractor(vec: unknown): { key: string; scale: string; strength?: number };
+  PercivalBpmEstimator(vec: unknown): { bpm?: unknown };
+  KeyExtractor(vec: unknown): { key?: unknown; scale?: unknown; strength?: unknown };
 }
 
 let essentiaPromise: Promise<EssentiaLike> | null = null;
@@ -50,14 +50,16 @@ export const essentiaAnalyzer: AudioAnalyzer = {
       const features: Partial<AudioFeatures> = {};
 
       const bpmRaw = essentia.PercivalBpmEstimator(vec).bpm;
-      if (Number.isFinite(bpmRaw) && bpmRaw > 0) {
+      if (typeof bpmRaw === "number" && Number.isFinite(bpmRaw) && bpmRaw > 0) {
         features.bpm = Math.round(bpmRaw * 10) / 10;
       }
 
       const key = essentia.KeyExtractor(vec);
-      if (key?.key && key?.scale) {
-        features.musicalKey = `${key.key} ${key.scale}`;
-        const camelot = keyToCamelot(key.key, key.scale);
+      const tonic = typeof key?.key === "string" ? key.key.trim() : "";
+      const scale = typeof key?.scale === "string" ? key.scale.trim() : "";
+      if (tonic && scale) {
+        features.musicalKey = `${tonic} ${scale}`;
+        const camelot = keyToCamelot(tonic, scale);
         if (camelot) features.camelotKey = camelot;
         if (typeof key.strength === "number") features.keyStrength = key.strength;
       }
