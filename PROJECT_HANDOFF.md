@@ -3,7 +3,7 @@
 > **Основной технический документ.** Обновляется при каждом архитектурном,
 > функциональном или структурном изменении. Отражает ТЕКУЩЕЕ состояние репозитория.
 >
-> Последнее обновление: 2026-08-11 (фикс падения Studio-страниц: Turbopack + bound server actions)
+> Последнее обновление: 2026-08-13 (чистка хвостов Essentia; анализ — Convertra AudioCore)
 
 ---
 
@@ -29,7 +29,7 @@
 | Каталог / Pool           | Полностью работает: фильтры, поиск, плеер, скачивание                    |
 | Dashboard (пост-логин)   | Реализован: новинки, чарт недели, жанры, последние скачивания            |
 | Studio (контент-зона)    | Работает: загрузка треков, паки, управление пользователями               |
-| Аудио-анализ             | Essentia.js: BPM, Key, Camelot — автоматически после загрузки            |
+| Аудио-анализ             | Convertra AudioCore (TS-порт): BPM, Key, Camelot — автоматически после загрузки |
 | Плеер                    | Mini-player: глобальный, не прерывается при навигации                    |
 | Паки (Editorial)         | Публичная витрина + ZIP-скачивание                                       |
 | Крейты                   | Личные + публичные (/c/[slug])                                            |
@@ -51,7 +51,7 @@
 | ORM / DB            | Prisma 7 → PostgreSQL 16, локально на VPS (Timeweb, РФ) — см. §7.1  |
 | Auth                | Supabase Auth v1 (magic-link сессии), собственный слой поверх      |
 | Storage             | Supabase Storage (3 бакета: audio / previews / artwork) — за пределами РФ, не персональные данные |
-| Audio analysis      | essentia.js (WASM, Node runtime)                                    |
+| Audio analysis      | Convertra AudioCore — чистый TS-порт (multi-band tempo + HPCP/Shaath key) |
 | Audio metadata      | music-metadata                                                      |
 | Image processing    | sharp 0.35 (WebP resize при загрузке обложек)                       |
 | Icons               | lucide-react                                                        |
@@ -129,7 +129,7 @@ forzadjbeta/
 │   │   │       ├── supabase-admin-auth.ts  # ensureSupabaseUser, createSessionTokenHash
 │   │   │       ├── supabase-server.ts
 │   │   │       └── supabase-middleware.ts
-│   │   ├── audio/                 # Пайплайн анализа (Essentia)
+│   │   ├── audio/                 # Пайплайн анализа (Convertra AudioCore, TS)
 │   │   ├── jobs/                  # Фоновые задачи (inline adapter)
 │   │   ├── repositories/          # Prisma-репозитории
 │   │   ├── services/              # Бизнес-логика
@@ -327,7 +327,7 @@ jobs/handlers/audio-analyze.ts
       → Storage.get("audio", storageKey)     // скачивает оригинал
       → decodeToMonoFloat32()                // PCM через music-metadata
       → runAnalysis()
-          → essentiaAnalyzer.analyze()       // BPM + Key (essentia.js WASM)
+          → convertraAnalyzer.analyze()      // BPM + Key (чистый TS DSP)
       → trackVersionRepository.setAnalysisResult()
           // Заполняет bpm, musicalKey, camelotKey, audioFeatures
           // Только если поле пустое — ручная правка приоритетнее
@@ -631,6 +631,7 @@ npm_config_cache=.npm-cache npm install
 
 | Коммит    | Дата       | Описание                                                         |
 |-----------|------------|------------------------------------------------------------------|
+| `<pending>` | 2026-08-13 | chore(cleanup): убраны хвосты Essentia (next.config externals, комментарии, README/HANDOFF стек/статус) — анализ полностью на Convertra AudioCore (TS) |
 | `e42d15c` | 2026-08-11 | fix(downloads): убран `.bind` и из download-preflight/removeVersion (паки/крейты, ZipDownloadButton, TrackList) — превентивно от того же Turbopack-бага bound server actions; id передаётся аргументом |
 | `e5b371a` | 2026-08-11 | fix(studio): страница трека/пака падала («Server Reference ID did not match … Received x») — Turbopack-баг с `.bind()` server-actions в `<form>`; id передаём через hidden-input + formData |
 | `f0c312c` | 2026-08-11 | fix(catalog): счётчики жанров в фильтре/дашборде учитывали архивные (soft-deleted) треки — `listGenresWithCounts()` не фильтровал `deletedAt` во вложенном `_count` (глобальный soft-delete-патч не перехватывает вложенные relation-count) |
@@ -726,7 +727,7 @@ next.config.ts                    # middlewareClientMaxBodySize: 150MB (для �
 - [x] Редакционные паки + ZIP скачивание
 - [x] Крейты DJ (личные + публичные)
 - [x] Чарты (авто по скачиваниям)
-- [x] Авто-анализ BPM/Key (Essentia.js)
+- [x] Авто-анализ BPM/Key (Convertra AudioCore, TS-порт)
 - [x] Настроение трека (Mood: WARM_UP / PRIME_TIME / AFTER_PARTY)
 - [x] Dashboard после логина
 - [x] Автоматическая оптимизация обложек (WebP 4 размера через Sharp)

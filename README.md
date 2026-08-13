@@ -21,7 +21,7 @@ ForzaDJ is a production-grade full-stack platform built for DJs to discover, pre
 **Product Highlights:**
 - **Frictionless Onboarding**: Passwordless, one-tap authentication via Telegram.
 - **Uninterrupted UX**: A global, persistent mini-player that survives page navigation — built on a custom Next.js App Router architecture.
-- **Audio Intelligence**: Real-time extraction of BPM and musical key via Essentia.js (WebAssembly) and waveform generation via FFmpeg.
+- **Audio Intelligence**: Automatic BPM and musical key (Camelot) extraction via a pure-TypeScript Convertra AudioCore port (multi-band tempo + HPCP/Shaath key detection), plus waveform generation via FFmpeg.
 - **Admin Automation**: Content ingestion is 100% automated. Track uploads, metadata tagging, and publishing are handled via an AI-assisted Telegram Admin Bot, streamlining the platform management.
 
 ---
@@ -51,7 +51,7 @@ ForzaDJ is designed as a scalable ecosystem, separating the public-facing platfo
 - **Framework**: Next.js 15.5 (App Router, Server Components)
 - **Database & Auth**: PostgreSQL 16 & Supabase Auth v1
 - **Styling**: Tailwind CSS v4, custom "Studio Glass" design token layer
-- **Audio Processing**: Essentia.js (WASM) for DSP, FFmpeg for transcoding/ID3
+- **Audio Processing**: pure-TypeScript Convertra AudioCore port for BPM/key DSP, FFmpeg for transcoding/ID3
 - **Image Processing**: Sharp for asynchronous WebP variant generation
 
 ---

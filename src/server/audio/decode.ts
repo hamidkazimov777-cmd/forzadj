@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 /**
  * Декодирование аудио в моно-PCM Float32 через ffmpeg (тот же бинарь, что
- * уже используется для превью/waveform). Формат f32le удобен для Essentia.
+ * уже используется для превью/waveform). f32le — вход для Convertra-анализа.
  */
 
 /** Convertra AudioCore contract: mono PCM at 22.05 kHz. */
