@@ -64,7 +64,8 @@ export function TrackList({
   favoritedVersionIds,
   crates,
   crateActions,
-  removeVersion,
+  removeFromCrate,
+  crateId,
   guest = false,
   linkQuery = "",
   queue,
@@ -78,8 +79,16 @@ export function TrackList({
   /** Крейты пользователя + actions — для кнопки «в крейт». */
   crates?: CrateSummary[];
   crateActions?: CrateActionFns;
-  /** Если передан — показывается кнопка удаления версии (из плейлиста). */
-  removeVersion?: (versionId: string) => Promise<{ ok: boolean }>;
+  /**
+   * Если переданы — показывается кнопка удаления версии из плейлиста.
+   * Несвязанный server action + crateId отдельно (НЕ `.bind`): Turbopack-прод
+   * ломает bound-аргументы server-action reference (см. content.actions.ts).
+   */
+  removeFromCrate?: (
+    crateId: string,
+    versionId: string,
+  ) => Promise<{ ok: boolean }>;
+  crateId?: string;
   /**
    * Гостевой режим: превью играет, но действия с аккаунтом (избранное,
    * скачивание) вместо выполнения предлагают войти.
@@ -304,8 +313,11 @@ export function TrackList({
                       size="icon"
                     />
                   )}
-                  {removeVersion && def && (
-                    <RemoveButton versionId={def.id} onRemove={removeVersion} />
+                  {removeFromCrate && crateId && def && (
+                    <RemoveButton
+                      versionId={def.id}
+                      onRemove={(vid) => removeFromCrate(crateId, vid)}
+                    />
                   )}
                 </>
               )}

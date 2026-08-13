@@ -71,7 +71,8 @@ export default async function PackDetailPage({
         {pack.tracks.length > 0 &&
           (user ? (
             <ZipDownloadButton
-              preflight={preflightPackDownloadAction.bind(null, pack.slug)}
+              preflight={preflightPackDownloadAction}
+              preflightArg={pack.slug}
               href={`/api/packs/${pack.slug}/download`}
               idleLabel="Скачать пак (ZIP)"
             />

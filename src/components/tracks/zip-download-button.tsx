@@ -23,10 +23,19 @@ interface Preflight {
  */
 export function ZipDownloadButton({
   preflight,
+  preflightArg,
   href,
   idleLabel,
 }: {
-  preflight: () => Promise<Preflight | { error: "forbidden" | "not_found" }>;
+  /**
+   * Несвязанный server action + аргумент отдельно (НЕ `.bind(null, id)`):
+   * Turbopack-прод кодирует bound-аргументы битым server-reference — см.
+   * content.actions.ts. Здесь id передаём как обычный аргумент вызова.
+   */
+  preflight: (
+    arg: string,
+  ) => Promise<Preflight | { error: "forbidden" | "not_found" }>;
+  preflightArg: string;
   href: string;
   idleLabel: string;
 }) {
@@ -36,7 +45,7 @@ export function ZipDownloadButton({
   function handleClick() {
     setWarning(null);
     startTransition(async () => {
-      const pre = await preflight();
+      const pre = await preflight(preflightArg);
       if ("error" in pre) {
         toast.error(pre.error === "forbidden" ? "Нет доступа" : "Не найдено");
         return;

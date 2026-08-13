@@ -67,7 +67,8 @@ export default async function CrateDetailPage({
         />
         {versionIds.length > 0 && (
           <ZipDownloadButton
-            preflight={preflightCrateDownloadAction.bind(null, crate.id)}
+            preflight={preflightCrateDownloadAction}
+            preflightArg={crate.id}
             href={`/api/collections/${crate.id}/download`}
             idleLabel="Скачать плейлист (ZIP)"
           />
@@ -88,7 +89,8 @@ export default async function CrateDetailPage({
             requestDownload={requestDownloadAction}
             toggleFavorite={toggleFavoriteAction}
             favoritedVersionIds={[...favoritedSet]}
-            removeVersion={removeFromCrateAction.bind(null, crate.id)}
+            removeFromCrate={removeFromCrateAction}
+            crateId={crate.id}
           />
         )}
       </div>
