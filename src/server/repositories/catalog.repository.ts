@@ -231,9 +231,17 @@ export const catalogRepository = {
 
     const out: PlayerTrack[] = [];
     for (const t of rows) {
+      // Если задан фильтр по типу версии — в очередь должна попасть именно
+      // версия этого типа (Original/Extended/Remix/Mashup), а не первая
+      // попавшаяся. Иначе пак/плеер получают чужую версию трека, и фильтр
+      // версий фактически не участвует в результате. Fallback к общему пулу
+      // сохранён на случай рассинхрона (trackWhere уже гарантирует наличие).
+      const typedPool = filters.type
+        ? t.versions.filter((x) => x.type === filters.type)
+        : t.versions;
+      const pool = typedPool.length > 0 ? typedPool : t.versions;
       const v =
-        t.versions.find((x) => x.assets.some((a) => a.type === "PREVIEW")) ??
-        t.versions[0];
+        pool.find((x) => x.assets.some((a) => a.type === "PREVIEW")) ?? pool[0];
       if (!v) continue;
       const mains = t.artists
         .filter((a) => a.role === "MAIN")
