@@ -217,12 +217,47 @@ PackBot состоит из двух изолированных, но связа
   (б) серверный лимит ≤20 треков и запрет пустого пака; (в) `revalidatePath("/packs")`
   для мгновенного обновления публичной витрины.
 
-### Что осталось проверить вживую
-Живой E2E-тест `POST /create` не был выполнен: dev-сервер пользователя (PID на :3000)
-завис ещё до правок (перестал отвечать на любые запросы, включая `meta`). Второй `next dev`
-на общий `.next` запускать нельзя (см. «Известные проблемы» №3). После перезапуска
-dev-сервера прогнать: create(PUBLISHED) → пак `PUBLIC` с треками → страница `/packs/<slug>`
-отдаёт 200 и список треков.
+### 🔴 Корневая причина витрины/публикации: STORAGE_DRIVER указывает на отключённый Supabase
+Storage мигрировал на **Cloudflare R2**, но локальный `.env` всё ещё содержит
+`STORAGE_DRIVER="supabase"` **и не содержит R2-переменных**. Supabase-проект ограничен по
+квотам (`exceed_egress_quota`, `exceed_storage_size_quota`), поэтому:
+- `createSignedDownloadUrl` бросал исключение → `packCoverUrl` пробрасывал → **`/packs` и
+  главная `/` падали в 500** для любого пака с обложкой;
+- загрузка обложки при публикации падала → (до фикса) пак застревал `PRIVATE` («после
+  публикации пак отсутствует на сайте»).
+
+Подтверждено логами dev-сервера (`SupabaseStorageAdapter.createSignedDownloadUrl failed:
+... exceed_egress_quota ...`).
+
+**Требуется (действие владельца, секреты не редактировались автоматически):**
+в `.env` (локально и на Timeweb VPS) задать:
+```bash
+STORAGE_DRIVER="r2"
+R2_ENDPOINT="https://<account>.r2.cloudflarestorage.com"
+R2_BUCKET="<bucket>"
+R2_ACCESS_KEY_ID="<key>"
+R2_SECRET_ACCESS_KEY="<secret>"
+```
+Дефолт драйвера в коде уже `r2` (`src/server/storage/index.ts`) — достаточно убрать
+устаревший `STORAGE_DRIVER="supabase"` и добавить R2-креды.
+
+Код дополнительно защищён (см. ниже): даже при сбое Storage витрина/главная больше не 500,
+а публикация пака не срывается (пак создаётся без обложки).
+
+- `src/server/services/pack.service.ts` — `packCoverUrl` оборачивает подпись обложки в
+  `try/catch` → при сбое Storage возвращает `null` (пак без обложки), а не роняет
+  страницу в 500.
+
+### Живой E2E (после перезапуска dev-сервера) — выполнен ✅
+- `search?genre=afro-house&types=REMIX&limit=6` → 6 versionId.
+- `POST /create` (PUBLISHED, без обложки) → `200 {success, packId, slug, url}`.
+- БД: пак `visibility=PUBLIC`, `deleted_at=null`, `items=6`, типы версий `REMIX:6`
+  (фильтр версий реально участвует — сохранена именно REMIX-версия).
+- `/packs/<slug>` → **HTTP 200** (не 404), список треков присутствует, нет «нет треков».
+- `/packs` и `/` → **200** после фикса `packCoverUrl` (до фикса — 500 из-за Supabase).
+- Тестовый пак после проверки удалён (soft-delete), витрина чистая.
+
+Исходный dev-сервер пользователя на :3000 был перезапущен (завис ещё до правок).
 
 ## Checklist Production Ready
 

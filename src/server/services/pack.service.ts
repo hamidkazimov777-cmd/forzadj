@@ -21,10 +21,18 @@ export interface PackSummary {
 
 export async function packCoverUrl(coverKey: string | null): Promise<string | null> {
   if (!coverKey) return null;
-  const signed = await getStorage().createSignedDownloadUrl("artwork", coverKey, {
-    expiresInSeconds: 3600,
-  });
-  return signed.url;
+  // Подпись обложки не должна ронять страницу: если Storage недоступен
+  // (квоты/сбой провайдера), пак показывается без обложки, а не 500 на всю
+  // витрину /packs и главную. Ошибка логируется для диагностики.
+  try {
+    const signed = await getStorage().createSignedDownloadUrl("artwork", coverKey, {
+      expiresInSeconds: 3600,
+    });
+    return signed.url;
+  } catch (err) {
+    console.error("[pack.service] packCoverUrl failed for", coverKey, "-", err);
+    return null;
+  }
 }
 
 export function getPublishedPacks(): Promise<PackSummary[]> {
