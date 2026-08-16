@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
     const usedSlugs = new Set(
       await collectionRepository.usedTrackSlugsForCriteria(genres, moods),
     );
-    let uniqueTracks = Array.from(uniqueMap.values()).filter(
+    const uniqueTracks = Array.from(uniqueMap.values()).filter(
       (t) => !usedSlugs.has(t.trackSlug),
     );
 
