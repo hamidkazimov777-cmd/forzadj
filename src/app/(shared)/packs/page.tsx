@@ -3,6 +3,11 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { getPublishedPacks } from "@/server/services/pack.service";
 
+// Данные кэшируются в getPublishedPacks через unstable_cache (тег "packs",
+// TTL 300с). Страница рендерится статически и обновляется мгновенно, когда
+// студийные server actions или бот сбрасывают тег через /api/bot/revalidate.
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "Паки",
   description:

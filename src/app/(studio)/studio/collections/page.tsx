@@ -8,6 +8,9 @@ import { collectionRepository } from "@/server/repositories/collection.repositor
 import { createPackAction, deletePackAction } from "@/server/actions/pack.actions";
 
 export const metadata = { title: "Редакционные паки" };
+// Страница читает cookies (requireStudioPermission) → рендерится динамически
+// на каждый запрос. Отдельный force-dynamic избыточен; данные всегда свежие.
+// Ревалидация от бота (/api/bot/revalidate) дополнительно чистит роут-кэш.
 
 export default async function AdminCollectionsPage() {
   await requireStudioPermission("collections.manage");
