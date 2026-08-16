@@ -148,6 +148,10 @@ export const collectionRepository = {
     slug: string;
     description?: string;
     ownerId: string;
+    /** Критерии подбора пака (жанры/настроения/версии) — сохраняются в
+     *  autoRule.packCriteria, чтобы исключать повторы треков между паками
+     *  одной темы (тот же жанр + настроение). */
+    criteria?: { genres: string[]; moods: string[]; versions: string[] };
   }) {
     return prisma.collection.create({
       data: {
@@ -157,9 +161,50 @@ export const collectionRepository = {
         description: input.description?.trim() || null,
         ownerId: input.ownerId,
         visibility: "PRIVATE", // публикуется отдельным действием
+        ...(input.criteria ? { autoRule: { packCriteria: input.criteria } } : {}),
       },
       select: { id: true, slug: true },
     });
+  },
+
+  /**
+   * Слаги треков, уже использованных в паках той же темы (пересечение по жанру
+   * И по настроению). Пустой набор критериев трактуется как wildcard (совпадает
+   * с любым). Нужен боту, чтобы не повторять треки в однотипных паках.
+   */
+  async usedTrackSlugsForCriteria(
+    genres: string[],
+    moods: string[],
+  ): Promise<string[]> {
+    const packs = await prisma.collection.findMany({
+      where: { type: "EDITORIAL", deletedAt: null },
+      select: {
+        autoRule: true,
+        items: {
+          select: { version: { select: { track: { select: { slug: true } } } } },
+        },
+      },
+    });
+    const out = new Set<string>();
+    for (const p of packs) {
+      const crit = (
+        p.autoRule as { packCriteria?: { genres?: string[]; moods?: string[] } } | null
+      )?.packCriteria;
+      if (!crit) continue;
+      const pg = crit.genres ?? [];
+      const pm = crit.moods ?? [];
+      const gMatch =
+        genres.length === 0 || pg.length === 0 || genres.some((x) => pg.includes(x));
+      const mMatch =
+        moods.length === 0 || pm.length === 0 || moods.some((x) => pm.includes(x));
+      if (gMatch && mMatch) {
+        for (const it of p.items) {
+          const slug = it.version?.track?.slug;
+          if (slug) out.add(slug);
+        }
+      }
+    }
+    return [...out];
   },
 
   /** Все паки для админки (любой видимости), с числом треков. */

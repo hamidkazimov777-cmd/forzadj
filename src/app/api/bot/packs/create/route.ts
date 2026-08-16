@@ -38,6 +38,15 @@ export async function POST(req: NextRequest) {
   const status = form.get("status");
   const artworkEntry = form.get("artwork");
 
+  // Критерии подбора (csv) — сохраняем в паке для защиты от повторов треков.
+  const csv = (v: FormDataEntryValue | null): string[] =>
+    typeof v === "string" ? v.split(",").map((s) => s.trim()).filter(Boolean) : [];
+  const criteria = {
+    genres: csv(form.get("genres")),
+    moods: csv(form.get("moods")),
+    versions: csv(form.get("versions")),
+  };
+
   if (typeof title !== "string" || typeof tracksRaw !== "string" || typeof status !== "string") {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
@@ -86,6 +95,7 @@ export async function POST(req: NextRequest) {
       slug: uniqueSlug(title),
       description: typeof description === "string" ? description : undefined,
       ownerId,
+      criteria,
     });
 
     // 2. Add tracks
