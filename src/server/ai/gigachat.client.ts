@@ -128,6 +128,35 @@ async function getToken(): Promise<string> {
   return fetchToken();
 }
 
+// --- Глобальная сериализация вызовов (Freemium GigaChat = 1 поток) ---
+// Все запросы к API проходят строго по одному (process-wide mutex): это
+// исключает 429 из-за конкурентности, когда несколько пользователей жмут
+// «подобрать» одновременно. queueDepth ограничивает глубину ожидания — при
+// наплыве лишние запросы отклоняются и штатно уходят в fallback (см.
+// recommend.service), а не копятся бесконечно, вешая сервер.
+const MAX_QUEUE = 8;
+let queueDepth = 0;
+let lockTail: Promise<void> = Promise.resolve();
+
+async function withGigaLock<T>(fn: () => Promise<T>): Promise<T> {
+  if (queueDepth >= MAX_QUEUE) {
+    throw new Error("GigaChat перегружен (очередь заполнена)");
+  }
+  queueDepth++;
+  const prev = lockTail;
+  let release!: () => void;
+  lockTail = new Promise<void>((r) => (release = r));
+  try {
+    await prev; // ждём свою очередь — гарантированно один активный запрос
+    return await fn();
+  } finally {
+    queueDepth--;
+    release();
+  }
+}
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
   content: string;
@@ -173,19 +202,26 @@ export async function gigachatComplete(
       payload,
     );
 
-  let res = await send(await getToken());
-  if (res.status === 401) {
-    tokenCache = null;
-    res = await send(await getToken());
-  }
-  if (res.status !== 200) {
-    throw new Error(`GigaChat chat ${res.status}: ${res.body.slice(0, 300)}`);
-  }
-
-  const data = JSON.parse(res.body) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-  const content = data.choices?.[0]?.message?.content;
-  if (!content) throw new Error("GigaChat: пустой ответ");
-  return content;
+  return withGigaLock(async () => {
+    let res = await send(await getToken());
+    // 401 — протух токен: обновляем и повторяем один раз.
+    if (res.status === 401) {
+      tokenCache = null;
+      res = await send(await getToken());
+    }
+    // 429 — превышена частота (лимит запросов в секунду): ретрай с бэкоффом.
+    for (let attempt = 0; res.status === 429 && attempt < 2; attempt++) {
+      await sleep(1200 * (attempt + 1));
+      res = await send(await getToken());
+    }
+    if (res.status !== 200) {
+      throw new Error(`GigaChat chat ${res.status}: ${res.body.slice(0, 300)}`);
+    }
+    const data = JSON.parse(res.body) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) throw new Error("GigaChat: пустой ответ");
+    return content;
+  });
 }
