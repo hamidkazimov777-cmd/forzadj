@@ -1061,7 +1061,19 @@ CA качается через `curl -k` и **проверяется** проб�
 CA подлинный. Флаг `GIGACHAT_ALLOW_INSECURE_TLS=1` — только для локальной отладки.
 
 **Env сайта (добавлено):** `GIGACHAT_AUTH_KEY` (Basic base64), `GIGACHAT_SCOPE`
-(`GIGACHAT_API_PERS`), `GIGACHAT_MODEL` (`GigaChat`), `GIGACHAT_ALLOW_INSECURE_TLS`.
+(`GIGACHAT_API_PERS`), `GIGACHAT_MODEL` (`GigaChat-2-Pro`), `GIGACHAT_CA_CERT_PATH`,
+`GIGACHAT_ALLOW_INSECURE_TLS`.
+
+**Модель и токены (Freemium до 18.08.2027).** У каждой модели свой бесплатный пул:
+Lite `GigaChat`/`GigaChat-2` (250M), Pro `GigaChat-2-Pro` (40M — выбрана для качества),
+Max `GigaChat-2-Max` (25M). Ultra через API этому ключу недоступен. Один подбор ≈ 4–5k
+токенов. Смена модели — env `GIGACHAT_MODEL` + рестарт.
+
+**Конкурентность (Freemium = 1 поток).** В `gigachat.client.ts` — process-wide mutex
+(`withGigaLock`): все вызовы GigaChat идут строго по одному, что исключает 429 при
+одновременных пользователях. Лимит очереди 8 (лишнее → fallback), ретрай на 429.
+Порт OAuth — **9443** (не 443). Ответ модели может прийти в ```json-обёртке — парсер
+берёт от первого `{` до последнего `}`.
 
 **Дальше по дорожной карте ИИ:** умный плейлист (сохранить ИИ-сет в Collection),
 «собрать сет вокруг трека», умный поиск свободным текстом в `/pool`.
