@@ -19,6 +19,7 @@
 ForzaDJ is a production-grade full-stack platform built for DJs to discover, preview, and download exclusive tracks. It operates entirely without subscriptions, driven by a voluntary donation model.
 
 **Product Highlights:**
+- **AI Set Builder**: Describe a party in plain language and get a ready-to-play, harmonically-ordered set curated from the real catalog — powered by GigaChat, with zero hallucinated tracks.
 - **Frictionless Onboarding**: Passwordless, one-tap authentication via Telegram.
 - **Uninterrupted UX**: A global, persistent mini-player that survives page navigation — built on a custom Next.js App Router architecture.
 - **Audio Intelligence**: Automatic BPM and musical key (Camelot) extraction via a pure-TypeScript Convertra AudioCore port (multi-band tempo + HPCP/Shaath key detection), plus waveform generation via FFmpeg.
@@ -35,20 +36,22 @@ ForzaDJ is designed as a scalable ecosystem, separating the public-facing platfo
 │                  forzadj.ru  (Next.js)                  │
 │                                                         │
 │  ├── App Router (Server Components & Actions)           │
+│  ├── AI Set Builder (/ai) ── GigaChat 2-pass engine     │
 │  ├── Global Persistent Audio Player                     │
 │  ├── Inline Job Queue (FFmpeg preview & waveform sync)  │
 │  └── API /bot/upload ← (Secret Webhook for Admin Bot)   │
-└──────────────┬──────────────────────────────────────────┘
-               │
-   ┌───────────┴────────────┐
-   │       Supabase         │
-   │  Auth v1 (Magic-link)  │
-   │  Storage & PostgreSQL  │
-   └────────────────────────┘
+└─────────┬───────────────────────────────────┬───────────┘
+          │                                   │
+ ┌────────┴─────────┐              ┌──────────┴──────────┐
+ │     Supabase     │              │   GigaChat (Sber)   │
+ │ Auth v1 + Postgres│             │  RU LLM · free tier │
+ │  + Cloudflare R2  │             │  set recommendations│
+ └───────────────────┘             └─────────────────────┘
 ```
 
 **Core Stack:**
 - **Framework**: Next.js 15.5 (App Router, Server Components)
+- **AI**: GigaChat (Sber) as a filter-translation + curation engine — recommends real catalog tracks, never invents them
 - **Database & Auth**: PostgreSQL 16 & Supabase Auth v1
 - **Styling**: Tailwind CSS v4, custom "Studio Glass" design token layer
 - **Audio Processing**: pure-TypeScript Convertra AudioCore port for BPM/key DSP, FFmpeg for transcoding/ID3
