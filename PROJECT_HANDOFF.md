@@ -1046,13 +1046,19 @@ Convertra AudioCore. Причина: KeyExtractor Essentia возвращал н
   5 мин на пользователя.
 
 **⚠️ TLS-пифолл (GigaChat за российским CA).** Sber отдаётся за «Russian Trusted
-Root CA». Без него запрос падает с ошибкой сертификата. На проде **обязательно**:
+Root CA». Без него запрос падает с ошибкой сертификата. На проде задать CA одним
+из способов:
 ```
-# в pm2 env / .env процесса сайта
-NODE_EXTRA_CA_CERTS=/opt/forzadj/certs/russian_trusted_root_ca.pem
+# Способ 1 (рекомендуется): путь в .env — приложение подхватит сам (https.Agent ca)
+GIGACHAT_CA_CERT_PATH=/opt/forzadj/certs/russian_trusted_ca.pem
+# Способ 2: глобально в окружении процесса pm2
+NODE_EXTRA_CA_CERTS=/opt/forzadj/certs/russian_trusted_ca.pem
 ```
-Скачать: `russiantrustedca.pem` с gu.spb.ru / gosuslugi (публичный корневой CA).
-Флаг `GIGACHAT_ALLOW_INSECURE_TLS=1` — только для локальной отладки, в проде `0`.
+PEM должен содержать корневой + промежуточный Russian Trusted CA (бандл). Источник —
+gu.spb.ru / gosuslugi. Bootstrap-нюанс: сам источник тоже за российским TLS, поэтому
+CA качается через `curl -k` и **проверяется** пробным verified-подключением к
+`ngw.devices.sberbank.ru` (`curl --cacert <pem>`): если Sber-эндпоинт валидируется —
+CA подлинный. Флаг `GIGACHAT_ALLOW_INSECURE_TLS=1` — только для локальной отладки.
 
 **Env сайта (добавлено):** `GIGACHAT_AUTH_KEY` (Basic base64), `GIGACHAT_SCOPE`
 (`GIGACHAT_API_PERS`), `GIGACHAT_MODEL` (`GigaChat`), `GIGACHAT_ALLOW_INSECURE_TLS`.

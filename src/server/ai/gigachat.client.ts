@@ -1,4 +1,5 @@
 import https from "node:https";
+import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { aiConfig } from "@/lib/config/ai";
 
@@ -24,11 +25,27 @@ const CHAT_PATH = "/api/v1/chat/completions";
 // Кэш токена в памяти процесса. Обновляем заранее (за 60 с до истечения).
 let tokenCache: { token: string; expiresAt: number } | null = null;
 
+// Российский CA читаем один раз (файл может отсутствовать — тогда полагаемся
+// на системный trust store / NODE_EXTRA_CA_CERTS).
+let caCache: Buffer | null | undefined;
+function loadCa(): Buffer | null {
+  if (caCache !== undefined) return caCache;
+  const path = aiConfig.caCertPath;
+  try {
+    caCache = path ? readFileSync(path) : null;
+  } catch {
+    caCache = null;
+  }
+  return caCache;
+}
+
 /** insecure-agent только когда явно разрешено флагом (локальная отладка). */
 function agentFor(host: string): https.Agent {
+  const ca = loadCa();
   return new https.Agent({
     host,
     rejectUnauthorized: !aiConfig.allowInsecureTls,
+    ...(ca ? { ca } : {}),
     keepAlive: true,
   });
 }

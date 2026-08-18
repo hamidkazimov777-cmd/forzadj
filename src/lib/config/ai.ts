@@ -17,6 +17,14 @@ export const aiConfig = {
     return process.env.GIGACHAT_MODEL?.trim() || "GigaChat";
   },
   /**
+   * Путь к PEM с российским CA (Russian Trusted Root/Sub CA). Если задан —
+   * клиент подсовывает его прямо в https.Agent (ca), не завися от глобального
+   * NODE_EXTRA_CA_CERTS. Альтернатива NODE_EXTRA_CA_CERTS остаётся рабочей.
+   */
+  get caCertPath(): string | null {
+    return process.env.GIGACHAT_CA_CERT_PATH?.trim() || null;
+  },
+  /**
    * Отключение проверки TLS — ТОЛЬКО для локальной отладки без российского CA.
    * В проде должен быть выставлен NODE_EXTRA_CA_CERTS, а этот флаг — "0".
    */
