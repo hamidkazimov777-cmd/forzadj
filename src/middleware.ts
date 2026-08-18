@@ -13,6 +13,7 @@ import { SESSION_COOKIE } from "@/server/auth/core/session-constants";
  */
 const PROTECTED_PREFIXES = [
   "/dashboard",
+  "/ai",
   "/pool",
   "/new",
   "/charts",

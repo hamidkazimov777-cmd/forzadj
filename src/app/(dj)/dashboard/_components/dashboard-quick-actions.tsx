@@ -6,9 +6,11 @@ import {
   Package,
   SlidersHorizontal,
   Sparkles,
+  Wand2,
 } from "lucide-react";
 
 const ACTIONS = [
+  { title: "ИИ-подбор", href: "/ai", icon: Wand2 },
   { title: "Каталог", href: "/pool", icon: Library },
   { title: "Новинки", href: "/new", icon: Sparkles },
   { title: "Паки", href: "/packs", icon: Package },

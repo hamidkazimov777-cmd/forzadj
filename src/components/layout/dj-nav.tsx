@@ -14,6 +14,7 @@ import {
   Package,
   SlidersHorizontal,
   Sparkles,
+  Wand2,
 } from "lucide-react";
 import {
   Sheet,
@@ -34,6 +35,7 @@ interface NavItem {
 
 const PRIMARY: NavItem[] = [
   { href: "/dashboard", label: "Главная", icon: LayoutDashboard },
+  { href: "/ai", label: "ИИ-подбор", icon: Wand2 },
   { href: "/pool", label: "Каталог", icon: Library },
   { href: "/new", label: "Новинки", icon: Sparkles },
   { href: "/charts", label: "Чарты", icon: BarChart3 },

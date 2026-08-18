@@ -268,6 +268,25 @@ export const catalogRepository = {
     return out;
   },
 
+  /**
+   * Пул кандидатов под фильтры без пагинации (cap = limit) — для ИИ-курирования:
+   * первый проход GigaChat даёт фильтры, отсюда берётся расширенный пул, второй
+   * проход отбирает/упорядочивает связный сет. Возвращает полные карточки.
+   */
+  async candidatePool(
+    filters: CatalogFilters,
+    limit = 120,
+  ): Promise<TrackCardDto[]> {
+    const genreIds = await resolveGenreIds(filters);
+    const tracks = await prisma.track.findMany({
+      where: trackWhere(filters, genreIds),
+      include: catalogInclude,
+      orderBy: trackOrderBy(filters),
+      take: limit,
+    });
+    return tracks.map(toCardDto);
+  },
+
   async findBySlug(slug: string): Promise<TrackCardDto | null> {
     const track = await prisma.track.findFirst({
       where: { slug, status: "PUBLISHED" },

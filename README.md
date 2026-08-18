@@ -59,6 +59,7 @@ ForzaDJ is designed as a scalable ecosystem, separating the public-facing platfo
 ## ✨ Features
 
 ### For Users (DJs)
+- **AI Set Builder** (`/ai`): Describe the party in plain language ("afro set on the terrace at sunset, 30 tracks") and get a ready-to-play set curated from the real catalog. Powered by **GigaChat** as a two-pass engine — request → catalog filters, then candidate pool → curated ordering (energy arc, BPM/Camelot flow). Never hallucinates: output is always published catalog tracks (play / download / add to crate as usual).
 - **Rich Catalog**: High-performance filtering (BPM, Camelot Key, Genre, Mood).
 - **Audio Previews**: 30-second fast-streaming MP3 previews with interactive waveforms.
 - **Personal Crates**: Create, manage, and share personal track collections (`/c/[slug]`).

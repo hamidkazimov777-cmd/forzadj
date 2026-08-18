@@ -1013,6 +1013,55 @@ Convertra AudioCore. Причина: KeyExtractor Essentia возвращал н
 
 ---
 
+## 28. ИИ-подбор сета на GigaChat (2026-08-18)
+
+Новый раздел `/ai` — ИИ собирает готовый сет из **реального каталога** по
+свободному запросу диджея («афро-сет на веранде на закате, 30 треков»).
+
+**Архитектура — ИИ как «переводчик запроса в фильтры», а не генератор названий.**
+Двухпроходная схема исключает галлюцинации: на выходе всегда опубликованные треки
+из нашей БД (играются/скачиваются/в крейт как обычный каталог).
+
+1. **Проход 1** (`recommend.service.ts`): запрос → строгий JSON-фильтр
+   (`genres[] слагами из реального списка`, `bpmMin/Max`, `mood`, `type`,
+   `cleanOnly`, `count`). Валидация через zod, слаги сверяются с
+   `taxonomyRepository.listGenres()`.
+2. **Пул кандидатов**: `catalogRepository.candidatePool(filters, 120)`. Если мало —
+   фильтры ослабляются по шагам (снять BPM → снять mood → снять жанры → популярное).
+3. **Проход 2**: пул → ИИ отбирает и упорядочивает связный сет (энергетическая
+   дуга, соседство по BPM/Camelot). Возврат — упорядоченные индексы.
+4. **Fallback**: при любой ошибке ИИ/сети — детерминированная выдача по ключевым
+   словам (`degraded: true`, показывается плашка). Страница никогда не падает.
+
+**Файлы:**
+- `src/lib/config/ai.ts` — конфиг (env, лимиты сета, rate-limit).
+- `src/server/ai/gigachat.client.ts` — OAuth (кэш токена ~30 мин) + chat, на
+  нативном `node:https` (управляемый TLS). Только Node runtime.
+- `src/server/ai/recommend.service.ts` — двухпроходный движок + fallback.
+- `src/server/repositories/catalog.repository.ts` — метод `candidatePool()`.
+- `src/app/(dj)/ai/` — `page.tsx` (Suspense-стрим результата), `loading.tsx`,
+  `_components/ai-prompt.tsx` (чат-строка + примеры).
+- Точки входа: сайдбар (`dj-nav`), быстрые действия дашборда.
+- Защита: `/ai` в `PROTECTED_PREFIXES` (middleware) + rate-limit 12 запросов /
+  5 мин на пользователя.
+
+**⚠️ TLS-пифолл (GigaChat за российским CA).** Sber отдаётся за «Russian Trusted
+Root CA». Без него запрос падает с ошибкой сертификата. На проде **обязательно**:
+```
+# в pm2 env / .env процесса сайта
+NODE_EXTRA_CA_CERTS=/opt/forzadj/certs/russian_trusted_root_ca.pem
+```
+Скачать: `russiantrustedca.pem` с gu.spb.ru / gosuslugi (публичный корневой CA).
+Флаг `GIGACHAT_ALLOW_INSECURE_TLS=1` — только для локальной отладки, в проде `0`.
+
+**Env сайта (добавлено):** `GIGACHAT_AUTH_KEY` (Basic base64), `GIGACHAT_SCOPE`
+(`GIGACHAT_API_PERS`), `GIGACHAT_MODEL` (`GigaChat`), `GIGACHAT_ALLOW_INSECURE_TLS`.
+
+**Дальше по дорожной карте ИИ:** умный плейлист (сохранить ИИ-сет в Collection),
+«собрать сет вокруг трека», умный поиск свободным текстом в `/pool`.
+
+---
+
 *Этот документ — живой технический артефакт. Обновляется при любом изменении
 архитектуры, функциональности, деплоя, структуры БД или аутентификации.
 Актуальность сверяется по git HEAD ветки `main`.*
