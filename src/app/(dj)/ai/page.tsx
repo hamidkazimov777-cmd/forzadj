@@ -6,6 +6,8 @@ import { recommendSet } from "@/server/ai/recommend.service";
 import { checkRateLimit } from "@/server/services/rate-limit";
 import { AI_RATE_LIMIT } from "@/lib/config/ai";
 import { filtersToQuery } from "@/server/services/search.service";
+import { catalogRepository } from "@/server/repositories/catalog.repository";
+import { isRetiredGenreName } from "@/lib/content-metadata";
 import { favoriteRepository } from "@/server/repositories/favorite.repository";
 import { collectionRepository } from "@/server/repositories/collection.repository";
 import { requestDownloadAction } from "@/server/actions/download.actions";
@@ -31,6 +33,15 @@ export default async function AiPage({
 
   const user = await requireUser();
 
+  // Реальные топ-жанры для примеров-подсказок (чтобы они всегда попадали
+  // в существующие жанры каталога).
+  const genreRows = await catalogRepository.listGenresWithCounts();
+  const topGenres = genreRows
+    .filter((g) => g._count.tracks > 0 && !isRetiredGenreName(g.name))
+    .sort((a, b) => b._count.tracks - a._count.tracks)
+    .slice(0, 4)
+    .map((g) => g.name);
+
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
       <header className="flex flex-col gap-1">
@@ -44,7 +55,7 @@ export default async function AiPage({
         </p>
       </header>
 
-      <AiPrompt initial={q} />
+      <AiPrompt initial={q} genres={topGenres} />
 
       {q && (
         <Suspense key={q} fallback={<AiPending />}>

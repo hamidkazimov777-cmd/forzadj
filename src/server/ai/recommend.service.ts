@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { gigachatComplete } from "./gigachat.client";
 import { catalogRepository } from "@/server/repositories/catalog.repository";
-import { taxonomyRepository } from "@/server/repositories/taxonomy.repository";
 import { isRetiredGenreName } from "@/lib/content-metadata";
 import { toPlayerTrack, defaultVersionOf, artistLineOf } from "@/lib/player-track";
 import { AI_SET, AI_PROMPT_MAX_LEN, aiConfig } from "@/lib/config/ai";
@@ -138,11 +137,15 @@ export async function recommendSet(rawPrompt: string): Promise<AiSetResult> {
   if (!prompt) throw new Error("Пустой запрос");
   if (!aiConfig.isConfigured) return fallback(prompt, "GigaChat не настроен");
 
-  // Список реальных жанров — ИИ выбирает слаги только из него.
-  const genres = (await taxonomyRepository.listGenres()).filter(
-    (g) => !isRetiredGenreName(g.name),
-  );
-  const genreCatalog = genres.map((g) => `${g.slug} (${g.name})`).join(", ");
+  // Реальные жанры С КОЛИЧЕСТВОМ треков — ИИ выбирает слаги только из этого
+  // списка и предпочитает наполненные жанры. Пустые жанры не показываем вовсе,
+  // чтобы ИИ не отправлял выборку в заведомо пустой фильтр.
+  const genres = (await catalogRepository.listGenresWithCounts())
+    .filter((g) => g._count.tracks > 0 && !isRetiredGenreName(g.name))
+    .sort((a, b) => b._count.tracks - a._count.tracks);
+  const genreCatalog = genres
+    .map((g) => `${g.slug} (${g.name}, ${g._count.tracks} треков)`)
+    .join(", ");
 
   // ---- Проход 1: запрос → фильтры ----
   let parsedFilters: z.infer<typeof filtersSchema>;
@@ -158,8 +161,13 @@ export async function recommendSet(rawPrompt: string): Promise<AiSetResult> {
             "count (сколько треков, число), genres (массив СЛАГОВ строго из списка ниже), " +
             "bpmMin, bpmMax (числа), mood (одно из WARM_UP|PRIME_TIME|AFTER_PARTY), " +
             "type (ORIGINAL|EXTENDED|REMIX|MASHUP, если явно нужно), cleanOnly (true если просят без мата). " +
-            "Не выдумывай жанры вне списка. Если параметр не нужен — не включай его.\n" +
-            `Доступные жанры (slug (name)): ${genreCatalog}`,
+            "ВАЖНО про жанры: используй ТОЛЬКО слаги из списка ниже. Если пользователь назвал жанр, " +
+            "которого в списке нет (например «techno», «мелодик», «deep»), НЕ выдумывай — подбери " +
+            "БЛИЖАЙШИЙ по смыслу из списка (techno→tech-house, мелодик→house/afro-house). " +
+            "Предпочитай жанры с бОльшим числом треков. Если пользователь не назвал жанр — не задавай genres вовсе. " +
+            "Подсказка по mood: прогрев/разогрев→WARM_UP, пик/прайм-тайм→PRIME_TIME, афтепати/чил→AFTER_PARTY. " +
+            "Если параметр не нужен — не включай его.\n" +
+            `Доступные жанры (slug (name, число треков)): ${genreCatalog}`,
         },
         { role: "user", content: prompt },
       ],

@@ -5,24 +5,39 @@ import { useRouter } from "next/navigation";
 import { Sparkles, ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const EXAMPLES = [
-  "Афро-сет на веранде на закате, 30 треков",
-  "Тёплый прогрев перед прайм-таймом, house 120–124",
-  "Жёсткий пик ночи, techno без вокала",
-  "After-party мелодик, спокойные 25 треков",
-];
-
 const MAX = 500;
+
+/**
+ * Примеры-подсказки строятся из РЕАЛЬНЫХ топ-жанров каталога (приходят с
+ * сервера) — чтобы запрос всегда попадал в существующие жанры, а не в
+ * выдуманные («techno», «мелодик»), которых у нас нет.
+ */
+function buildExamples(genres: string[]): string[] {
+  const g = (i: number, fallback: string) => genres[i] ?? fallback;
+  return [
+    `${g(0, "Tech House")} сет на закате, 25 треков`,
+    `Тёплый прогрев, ${g(1, "Afro House").toLowerCase()} 122–126 BPM`,
+    `Прайм-тайм, ${g(2, "House").toLowerCase()} поэнергичнее, 30 треков`,
+    `Вечеринка open format, микс жанров, 20 треков`,
+  ];
+}
 
 /**
  * Чат-строка ИИ-подбора: свободный запрос → навигация на /ai?q=...
  * Серверная страница делает сам подбор (GigaChat), а loading.tsx показывает
  * состояние ожидания во время генерации.
  */
-export function AiPrompt({ initial = "" }: { initial?: string }) {
+export function AiPrompt({
+  initial = "",
+  genres = [],
+}: {
+  initial?: string;
+  genres?: string[];
+}) {
   const [value, setValue] = useState(initial);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
+  const examples = buildExamples(genres);
 
   const submit = (text: string) => {
     const q = text.trim();
@@ -73,7 +88,7 @@ export function AiPrompt({ initial = "" }: { initial?: string }) {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {EXAMPLES.map((ex) => (
+        {examples.map((ex) => (
           <button
             key={ex}
             type="button"
