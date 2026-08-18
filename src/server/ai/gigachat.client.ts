@@ -17,10 +17,15 @@ import { aiConfig } from "@/lib/config/ai";
  * Только Node runtime (не Edge) — как и весь аудио-слой.
  */
 
+// OAuth слушает на порту 9443 (не 443!) — см. GigaChat OpenAPI.
 const OAUTH_HOST = "ngw.devices.sberbank.ru";
+const OAUTH_PORT = 9443;
 const OAUTH_PATH = "/api/v2/oauth";
 const API_HOST = "gigachat.devices.sberbank.ru";
+const API_PORT = 443;
 const CHAT_PATH = "/api/v1/chat/completions";
+// Наличие User-Agent помогает избежать ошибок авторизации (рекомендация Sber).
+const USER_AGENT = "ForzaDJ/1.0";
 
 // Кэш токена в памяти процесса. Обновляем заранее (за 60 с до истечения).
 let tokenCache: { token: string; expiresAt: number } | null = null;
@@ -40,10 +45,9 @@ function loadCa(): Buffer | null {
 }
 
 /** insecure-agent только когда явно разрешено флагом (локальная отладка). */
-function agentFor(host: string): https.Agent {
+function agentFor(): https.Agent {
   const ca = loadCa();
   return new https.Agent({
-    host,
     rejectUnauthorized: !aiConfig.allowInsecureTls,
     ...(ca ? { ca } : {}),
     keepAlive: true,
@@ -86,12 +90,14 @@ async function fetchToken(): Promise<string> {
   const res = await request(
     {
       host: OAUTH_HOST,
+      port: OAUTH_PORT,
       path: OAUTH_PATH,
       method: "POST",
-      agent: agentFor(OAUTH_HOST),
+      agent: agentFor(),
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         Accept: "application/json",
+        "User-Agent": USER_AGENT,
         RqUID: randomUUID(),
         Authorization: `Basic ${authKey}`,
         "Content-Length": Buffer.byteLength(form),
@@ -152,12 +158,14 @@ export async function gigachatComplete(
     request(
       {
         host: API_HOST,
+        port: API_PORT,
         path: CHAT_PATH,
         method: "POST",
-        agent: agentFor(API_HOST),
+        agent: agentFor(),
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          "User-Agent": USER_AGENT,
           Authorization: `Bearer ${token}`,
           "Content-Length": Buffer.byteLength(payload),
         },
