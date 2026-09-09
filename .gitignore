@@ -55,3 +55,6 @@ next-env.d.ts
 # Материалы подготовки к продаже — НЕ коммитить в продуктовый репозиторий
 # (содержат оценку стоимости, стратегию продажи, слабые места).
 sale-package/
+
+# Local pnpm content-addressable store (never commit)
+.pnpm-store/

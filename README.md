@@ -1,86 +1,65 @@
-<div align="center">
-
 # ForzaDJ
 
-**Full-stack DJ platform & automation ecosystem**
+Full-stack DJ pool: DJs discover, preview and download tracks; the catalogue is
+kept full by an automated Telegram ingestion pipeline. Live at
+[forzadj.ru](https://forzadj.ru).
 
-🌐 **Live:** [forzadj.ru](https://forzadj.ru)
+## What it does
 
-[![Next.js](https://img.shields.io/badge/Next.js-15.5-black?style=flat-square&logo=next.js)]()
-[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20Storage-3ECF8E?style=flat-square&logo=supabase&logoColor=white)]()
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)]()
+- **Catalogue with real audio metadata.** Every track carries a BPM and a
+  musical key (Camelot), so it can be filtered and mixed by DJs. Both are
+  computed on the server at ingestion, not entered by hand.
+- **Previews and waveforms.** 30-second MP3 previews and waveform data are
+  generated with FFmpeg so the player can scrub without loading the full file.
+- **Persistent player.** A global mini-player survives page navigation across
+  the App Router, so playback does not stop when you move between pages.
+- **Telegram auth.** Passwordless sign-in through Telegram — no password store to
+  run or leak.
+- **Crates.** Users build and share personal track collections at `/c/[slug]`.
+- **AI set builder** (`/ai`). A plain-language request ("afro set on a terrace at
+  sunset, 30 tracks") is turned into a playable set. GigaChat runs as a two-pass
+  filter-and-order engine over the **real catalogue** — it selects and sequences
+  published tracks (energy arc, BPM/Camelot flow) rather than inventing titles.
+- **Automated publishing.** A companion Telegram admin bot accepts audio files,
+  classifies genre, transcodes lossless masters to 320k MP3, embeds artwork into
+  ID3, and pushes to the site API. Content operations are automated end to end.
 
-</div>
+## Technical notes
 
----
+- **On-device DSP port, not a service.** BPM and key detection is a
+  pure-TypeScript port of the Convertra AudioCore method (multi-band tempo +
+  HPCP/Shaath key detection) in `src/server/audio/analyzers/convertra-analyzer.ts`.
+  An earlier Essentia.js/WASM path was removed — there is no native or WASM audio
+  dependency now.
+- **App Router architecture.** Server Components and Server Actions; the
+  persistent player is built to survive navigation rather than remount per route.
+- **Storage split.** Postgres (via Supabase) for data and auth; Cloudflare R2 for
+  audio and image assets; Sharp generates WebP image variants asynchronously.
+- **Ingestion is a webhook, not a form.** The admin bot posts to a secret
+  server endpoint; the website itself has no manual upload surface in the hot
+  path.
 
-## 🎧 Overview
+## Stack
 
-ForzaDJ is a production-grade full-stack platform built for DJs to discover, preview, and download exclusive tracks. It operates entirely without subscriptions, driven by a voluntary donation model.
+Next.js 15 (App Router) · TypeScript · Supabase (Auth + Postgres 16) ·
+Cloudflare R2 · Tailwind CSS v4 · FFmpeg · Sharp · GigaChat (set curation) ·
+pure-TypeScript Convertra AudioCore port (BPM/key)
 
-**Product Highlights:**
-- **AI Set Builder**: Describe a party in plain language and get a ready-to-play, harmonically-ordered set curated from the real catalog — powered by GigaChat, with zero hallucinated tracks.
-- **Frictionless Onboarding**: Passwordless, one-tap authentication via Telegram.
-- **Uninterrupted UX**: A global, persistent mini-player that survives page navigation — built on a custom Next.js App Router architecture.
-- **Audio Intelligence**: Automatic BPM and musical key (Camelot) extraction via a pure-TypeScript Convertra AudioCore port (multi-band tempo + HPCP/Shaath key detection), plus waveform generation via FFmpeg.
-- **Admin Automation**: Content ingestion is 100% automated. Track uploads, metadata tagging, and publishing are handled via an AI-assisted Telegram Admin Bot, streamlining the platform management.
+## Ecosystem
 
----
+- [forzadj-admin-bot](https://github.com/hamidkazimov777-cmd/forzadj-admin-bot) — track ingestion and publishing.
+- [forzadj-bots](https://github.com/hamidkazimov777-cmd/forzadj-bots) — moderation and support bots.
 
-## 📐 Architecture & Tech Stack
+## Known limitations
 
-ForzaDJ is designed as a scalable ecosystem, separating the public-facing platform from the internal admin tooling.
+- No automated test suite in this repository yet; correctness is checked
+  manually and in production.
+- GigaChat is a Russian-hosted free-tier LLM; the set builder inherits its rate
+  limits and availability, and falls back to plain catalogue filtering when the
+  model is unreachable.
+- BPM/key accuracy is the TypeScript port's, which trades some of the native
+  engine's precision for running in a serverless Node runtime with no binary
+  dependency.
+- Single region; not built for multi-region deployment.
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│                  forzadj.ru  (Next.js)                  │
-│                                                         │
-│  ├── App Router (Server Components & Actions)           │
-│  ├── AI Set Builder (/ai) ── GigaChat 2-pass engine     │
-│  ├── Global Persistent Audio Player                     │
-│  ├── Inline Job Queue (FFmpeg preview & waveform sync)  │
-│  └── API /bot/upload ← (Secret Webhook for Admin Bot)   │
-└─────────┬───────────────────────────────────┬───────────┘
-          │                                   │
- ┌────────┴─────────┐              ┌──────────┴──────────┐
- │     Supabase     │              │   GigaChat (Sber)   │
- │ Auth v1 + Postgres│             │  RU LLM · free tier │
- │  + Cloudflare R2  │             │  set recommendations│
- └───────────────────┘             └─────────────────────┘
-```
-
-**Core Stack:**
-- **Framework**: Next.js 15.5 (App Router, Server Components)
-- **AI**: GigaChat (Sber) as a filter-translation + curation engine — recommends real catalog tracks, never invents them
-- **Database & Auth**: PostgreSQL 16 & Supabase Auth v1
-- **Styling**: Tailwind CSS v4, custom "Studio Glass" design token layer
-- **Audio Processing**: pure-TypeScript Convertra AudioCore port for BPM/key DSP, FFmpeg for transcoding/ID3
-- **Image Processing**: Sharp for asynchronous WebP variant generation
-
----
-
-## ✨ Features
-
-### For Users (DJs)
-- **AI Set Builder** (`/ai`): Describe the party in plain language ("afro set on the terrace at sunset, 30 tracks") and get a ready-to-play set curated from the real catalog. Powered by **GigaChat** as a two-pass engine — request → catalog filters, then candidate pool → curated ordering (energy arc, BPM/Camelot flow). Never hallucinates: output is always published catalog tracks (play / download / add to crate as usual).
-- **Rich Catalog**: High-performance filtering (BPM, Camelot Key, Genre, Mood).
-- **Audio Previews**: 30-second fast-streaming MP3 previews with interactive waveforms.
-- **Personal Crates**: Create, manage, and share personal track collections (`/c/[slug]`).
-- **Community Submissions**: DJs can submit their own edits/remixes, which are sent to a Telegram moderation bot.
-
-### For Admins (Studio)
-- **AI-Powered Publishing**: The dedicated [Telegram Admin Bot](https://github.com/hamidkazimov777-cmd/forzadj-admin-bot) accepts MP3 files, runs AI classification for genres, and pushes directly to the Next.js API.
-- **Studio Dashboard**: Web-based batch uploader and rich metadata editor.
-- **Asset Optimization**: Lossless files (WAV/FLAC) are automatically transcoded to high-quality 320k MP3s, with automated artwork branding embedded into ID3 tags.
-
----
-
-## 🚀 Ecosystem
-
-This repository is part of a larger architecture. See the companion repositories:
-- **[ForzaDJ Admin Bot](https://github.com/hamidkazimov777-cmd/forzadj-admin-bot)**: The ingestion pipeline.
-- **[ForzaDJ Bots](https://github.com/hamidkazimov777-cmd/forzadj-bots)**: Moderation and support tooling.
-
----
-**Built by Hamid Kazimov** — Product Builder & Software Creator.  
-[Contact on Telegram](https://t.me/hamidkazim)
+Built by Hamid Kazimov — [Telegram](https://t.me/hamidkazim).
